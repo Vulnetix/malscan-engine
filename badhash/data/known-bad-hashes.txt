@@ -1,0 +1,13 @@
+# Known-bad artifact hashes (one per line).
+#
+# Format: <hex-digest>[ <whitespace|comma|#> comment]
+#   - any hex digest length >= 32 (md5/sha1/sha256/sha512/blake2) is accepted
+#   - lines beginning with '#' and blank lines are ignored
+#   - an optional "sha256:" / "sha512:" prefix is stripped
+#
+# This embedded seed list is intentionally small: the authoritative, growing set
+# of known-bad hashes lives in the shared database as MalwareIoc file-hash rows
+# (loaded at processor startup via db.LoadKnownBadHashes and merged into this
+# set). Add a hash here only when it must be blocked even before it has been
+# persisted as an IOC (e.g. a hash from an external advisory that pre-dates our
+# own detection of the carrier package).
