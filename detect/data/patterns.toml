@@ -1,0 +1,1736 @@
+# traur pattern database
+# Each section corresponds to a feature name.
+# Patterns are regular expressions matched against file content.
+
+[[pkgbuild_analysis]]
+id = "P-CURL-PIPE"
+pattern = 'curl\s[^|\n]*\|\s*(ba)?sh'
+points = 90
+description = "curl output piped to shell (download-and-execute)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-WGET-PIPE"
+pattern = 'wget\s[^|\n]*\|\s*(ba)?sh'
+points = 90
+description = "wget output piped to shell (download-and-execute)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-DEVTCP"
+pattern = '/dev/tcp/'
+points = 95
+description = "Bash reverse shell via /dev/tcp"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-NC"
+pattern = '\b(nc|ncat)\s+[^;&|\n]*(-e|-c)\s'
+points = 95
+description = "Netcat reverse shell"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-SOCAT"
+pattern = 'socat\s.*TCP.*EXEC'
+points = 90
+description = "Socat reverse shell"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-PYTHON"
+pattern = 'socket\..*connect.*subprocess'
+points = 85
+description = "Python reverse shell pattern"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-EVAL-BASE64"
+pattern = '(eval.*base64|base64.*eval)'
+points = 85
+description = "Base64-decoded payload executed via eval"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-BASE64"
+pattern = 'base64\s+(\S+\s+)*(-d|--decode)'
+points = 60
+description = "Base64 decoding (possible payload hiding)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-EVAL-VAR"
+pattern = 'eval\s+["$]'
+points = 50
+description = "Dynamic code execution via eval"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-SOURCE-REMOTE"
+pattern = '(source|\.)\s+<\(curl'
+points = 90
+description = "Sourcing remote script via process substitution"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-GZIP-EXEC"
+pattern = '(gunzip|zcat)\s.*\|\s*(ba)?sh'
+points = 70
+description = "Compressed payload piped to shell"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-SSH-ACCESS"
+pattern = '~/\.ssh/|/home/[^/]+/\.ssh/'
+points = 75
+description = "Accessing SSH keys"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-BROWSER-DATA"
+pattern = '\.(mozilla|config/chromium|config/google-chrome|config/BraveSoftware)/'
+points = 70
+description = "Accessing browser profile data"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-GPG-ACCESS"
+pattern = '~/\.gnupg/|/home/[^/]+/\.gnupg/'
+points = 65
+description = "Accessing GPG keyring"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-PROFILE-MOD"
+pattern = '(>>?\s*~/\.(bashrc|zshrc|profile|bash_profile))'
+points = 55
+description = "Modifying shell profile (persistence)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-SYSTEMD-CREATE"
+pattern = 'install.*\.service.*systemd|systemctl\s+enable'
+points = 35
+description = "Creating/enabling systemd service"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-CRON-CREATE"
+pattern = 'crontab|/etc/cron\.d/'
+points = 45
+description = "Creating cron job (persistence)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-LD-PRELOAD"
+pattern = 'LD_PRELOAD\s*='
+points = 60
+description = "LD_PRELOAD injection"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-PASSWD-READ"
+pattern = '/etc/(passwd|shadow)'
+points = 60
+description = "Reading system password files"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-DISCORD-WEBHOOK"
+pattern = 'discord(app)?\.com/api/webhooks/'
+points = 70
+description = "Discord webhook URL (data exfiltration channel)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-URL-SHORTENER"
+pattern = '(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
+points = 60
+description = "URL shortener (hiding real destination)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-CURL-PIPE-PYTHON"
+pattern = 'curl\s[^|\n]*\|\s*python[23]?'
+points = 90
+description = "curl output piped to Python interpreter (download-and-execute)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-CURL-PIPE-PERL"
+pattern = 'curl\s[^|\n]*\|\s*perl'
+points = 90
+description = "curl output piped to Perl interpreter (download-and-execute)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-WGET-PIPE-PYTHON"
+pattern = 'wget\s[^|\n]*\|\s*python[23]?'
+points = 90
+description = "wget output piped to Python interpreter (download-and-execute)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-PYTHON-INLINE"
+pattern = "python[23]?\\s+-c\\s+[\"']"
+points = 45
+description = "Python inline code execution"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-SUID-BIT"
+pattern = 'chmod\s+(-\S+\s+)*[ugo]*\+s\s|chmod\s+(-\S+\s+)*[2-7][0-7]{3}\s'
+points = 70
+description = "Setting SUID/SGID bit (privilege escalation)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-MKFIFO"
+pattern = 'mkfifo\s'
+points = 55
+description = "Named pipe creation (possible reverse shell component)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-OPENSSL-CLIENT"
+pattern = 'openssl\s+s_client'
+points = 55
+description = "OpenSSL client connection (possible encrypted C2 channel)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-CLIPBOARD-READ"
+pattern = '(xclip|xsel|wl-paste)\s'
+points = 50
+description = "Clipboard access (possible credential theft)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-DISK-READ"
+pattern = '\bdd\s+if=/dev/sd'
+points = 60
+description = "Direct disk device read (data exfiltration)"
+override_gate = false
+
+# Cryptocurrency mining
+[[pkgbuild_analysis]]
+id = "P-MINER-BINARY"
+pattern = '(xmrig|cpuminer|minerd|ethminer|bfgminer|cgminer|nbminer|phoenixminer|lolminer|gminer|teamredminer)'
+points = 70
+description = "Reference to cryptocurrency mining software"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-STRATUM-URL"
+pattern = 'stratum\+[a-z]+://'
+points = 85
+description = "Stratum mining protocol URL (cryptocurrency mining)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-MINING-POOL"
+pattern = '(pool\.minergate|nanopool\.org|2miners\.com|f2pool\.com|ethermine\.org|nicehash\.com|miningpoolhub\.com|unmineable\.com|hashvault\.pro|moneroocean\.stream)'
+points = 80
+description = "Known cryptocurrency mining pool domain"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-CRYPTO-WALLET"
+pattern = '(4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}|\bbc1[a-zA-HJ-NP-Z0-9]{39,59}|0x[0-9a-fA-F]{40})'
+points = 75
+description = "Cryptocurrency wallet address (Monero/Bitcoin/Ethereum)"
+override_gate = false
+
+# Python remote code execution
+[[pkgbuild_analysis]]
+id = "P-PYTHON-EXEC-URL"
+pattern = 'exec\s*\(\s*(urlopen|requests\.get|urllib)'
+points = 90
+description = "Python fetch-and-execute (exec with URL fetch)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-PYTHON-DYNAMIC-IMPORT"
+pattern = "__import__\\s*\\(\\s*['\"]os['\"]\\s*\\)\\s*\\.\\s*system"
+points = 65
+description = "Python dynamic import to execute system commands"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-PYTHON-EXEC-COMPOUND"
+pattern = 'python[23]?\s+.*-c\s+.*exec\s*\('
+points = 80
+description = "Python one-liner with exec() (obfuscated code execution)"
+override_gate = false
+
+# Download-chmod-execute chains
+[[pkgbuild_analysis]]
+id = "P-CHMOD-EXEC-CHAIN"
+pattern = 'chmod\s+(-\S+\s+)*\+x\s+\S+\s*[;&|]+\s*\./'
+points = 75
+description = "chmod +x followed by execution (download-chmod-execute chain)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-WGET-CHMOD-EXEC"
+pattern = '(curl|wget)\s[^;&|\n]*\S+\s*[;&|]+\s*chmod\s+(-\S+\s+)*\+x'
+points = 85
+description = "Download followed by chmod +x (download-and-execute preparation)"
+override_gate = false
+
+# /tmp staging
+[[pkgbuild_analysis]]
+id = "P-TMP-EXECUTION"
+pattern = '(chmod\s+(-\S+\s+)*\+x\s+/tmp/|>\s*/tmp/\S+\s*[;&|]+\s*(ba)?sh\s+/tmp/)'
+points = 70
+description = "Writing or executing files in /tmp (common malware staging)"
+override_gate = false
+
+# Process backgrounding/hiding
+[[pkgbuild_analysis]]
+id = "P-NOHUP-BACKGROUND"
+pattern = 'nohup\s+\S+.*&'
+points = 55
+description = "nohup with backgrounding (persistent hidden process)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-DEVNULL-BACKGROUND"
+pattern = '(curl|wget|python[23]?|bash|sh)\s+.*>/dev/null.*&'
+points = 65
+description = "Network/shell command backgrounded with suppressed output"
+override_gate = false
+
+# System reconnaissance
+[[pkgbuild_analysis]]
+id = "P-SYSINFO-RECON"
+pattern = '(\buname\s+-a|\bcat\s+/proc/cpuinfo|\blspci|\bip\s+addr|\bhostname\s+-[fI]|\bcat\s+/etc/machine-id|\bdmidecode)'
+points = 40
+description = "System information gathering (reconnaissance)"
+override_gate = false
+
+# Hex/octal obfuscation
+[[pkgbuild_analysis]]
+id = "P-PRINTF-HEX"
+pattern = 'printf\s+.*(\\x[0-9a-fA-F]{2}){4,}'
+points = 60
+description = "printf with hex escape sequences (obfuscated payload)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-XXD-DECODE"
+pattern = 'xxd\s+(\S+\s+)*(-r|-revert)'
+points = 55
+description = "xxd reverse (hex to binary decode, possible payload)"
+override_gate = false
+
+# Kernel module / rootkit
+[[pkgbuild_analysis]]
+id = "P-KERNEL-MODULE-LOAD"
+pattern = '(insmod|modprobe)\s+[^-]'
+points = 50
+description = "Kernel module loading (potential rootkit)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-KERNEL-MODULE-WRITE"
+pattern = '/lib/modules/|/etc/modules-load\.d/'
+points = 45
+description = "Writing to kernel module directories"
+override_gate = false
+
+# Pastebin URLs in PKGBUILD body (not just source array)
+[[pkgbuild_analysis]]
+id = "P-PASTEBIN-CODE"
+pattern = '(curl|wget)\s+[^;|&\n]*(pastebin\.com|paste\.ee|hastebin\.com|ptpb\.pw|ix\.io|dpaste\.com|ghostbin\.com|rentry\.co|termbin\.com)'
+points = 75
+description = "Downloading from paste service in build/package code (mutable untrusted source)"
+override_gate = false
+
+# DNS/HTTP exfiltration
+[[pkgbuild_analysis]]
+id = "P-DNS-EXFIL"
+pattern = '(dig|nslookup|host)\s+\$'
+points = 60
+description = "DNS lookup with variable interpolation (possible DNS exfiltration)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-CURL-POST-DATA"
+pattern = 'curl\s+[^;|&\n]*(-d\s+\$|--data[^;|&\n]*\$|-X\s+POST[^;|&\n]*\$)'
+points = 55
+description = "curl POST with variable data (possible data exfiltration)"
+override_gate = false
+
+# Archive extract-and-execute
+[[pkgbuild_analysis]]
+id = "P-ARCHIVE-EXEC"
+pattern = '(tar\s+[^;|&\n]*-?x[^;|&\n]*|unzip\s+[^;|&\n]*)[;&|]+\s*(\./|chmod\s+(-\S+\s+)*\+x)'
+points = 55
+description = "Archive extraction followed by execution (extract-and-execute chain)"
+override_gate = false
+
+# Environment variable theft
+[[pkgbuild_analysis]]
+id = "P-ENV-TOKEN-ACCESS"
+pattern = '\$(AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|GITHUB_TOKEN|GH_TOKEN|GITLAB_TOKEN|NPM_TOKEN|DOCKER_PASSWORD|API_KEY|SECRET_KEY|PRIVATE_KEY|DATABASE_URL|SLACK_TOKEN|DISCORD_TOKEN)'
+points = 55
+description = "Accessing sensitive environment variables (token/credential theft)"
+override_gate = false
+
+# Shell obfuscation
+[[pkgbuild_analysis]]
+id = "P-IFS-OBFUSCATION"
+pattern = '\$\{?IFS\}?'
+points = 60
+description = "$IFS variable used as command separator (shell obfuscation)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-ANSI-C-HEX"
+pattern = '''\$'\\x[0-9a-fA-F]{2}'''
+points = 65
+description = "ANSI-C hex quoting to hide command strings"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-ROT13"
+pattern = '\btr\s.*n-za-m'
+points = 60
+description = "ROT13 encoding/decoding (payload obfuscation)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-OCTAL-ENCODE"
+pattern = '(printf|echo\s+-e)\s+.*\\[0-7]{3}.*\\[0-7]{3}.*\\[0-7]{3}'
+points = 55
+description = "Octal-encoded payload in printf/echo (3+ sequences)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-REV-EXEC"
+pattern = 'rev\s.*\|\s*(ba)?sh'
+points = 70
+description = "Reversed string piped to shell (obfuscation)"
+override_gate = false
+
+# Reverse shells - additional languages
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-PERL"
+pattern = 'perl\s.*Socket.*connect|perl\s.*INET.*exec'
+points = 85
+description = "Perl reverse shell (Socket + connect/exec)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-RUBY"
+pattern = 'ruby\s.*TCPSocket'
+points = 85
+description = "Ruby reverse shell (TCPSocket)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-AWK"
+pattern = 'awk\s.*/inet/tcp'
+points = 85
+description = "Awk reverse shell (/inet/tcp)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-LUA"
+pattern = 'lua\s.*socket\.tcp|lua.*socket.*connect'
+points = 85
+description = "Lua reverse shell (socket.tcp)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-REVSHELL-PHP"
+pattern = 'php\s.*fsockopen|php.*socket_connect'
+points = 85
+description = "PHP reverse shell (fsockopen/socket_connect)"
+override_gate = true
+
+# Download-and-execute variants
+[[pkgbuild_analysis]]
+id = "P-DECOMPRESS-EXEC"
+pattern = '(bunzip2|bzcat|xzcat|unxz|lzcat|zstdcat|lz4cat)\s.*\|\s*(ba)?sh'
+points = 70
+description = "Decompressed payload piped to shell"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-PROC-SUB-DOWNLOAD"
+pattern = '<\(\s*(curl|wget)\s'
+points = 75
+description = "Process substitution with download command"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-RUBY-EXEC-URL"
+pattern = 'ruby.*(Net::HTTP|open-uri|URI\.open).*(eval|exec|system)|ruby.*(eval|exec|system).*(Net::HTTP|open-uri|URI\.open)'
+points = 85
+description = "Ruby fetch-and-execute"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-PERL-EXEC-URL"
+pattern = 'perl.*LWP.*(system|exec)|perl.*HTTP::Tiny.*(system|exec)'
+points = 85
+description = "Perl fetch-and-execute (LWP/HTTP::Tiny + system/exec)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-DEV-UDP"
+pattern = '/dev/udp/'
+points = 85
+description = "Bash /dev/udp network connection"
+override_gate = true
+
+# Encoding bypasses
+[[pkgbuild_analysis]]
+id = "P-BASE32"
+pattern = 'base32\s+(\S+\s+)*(-d|--decode)'
+points = 60
+description = "Base32 decoding (payload hiding)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-OPENSSL-DECRYPT"
+pattern = 'openssl\s+(enc|aes-256-cbc|des|bf)\s.*-d'
+points = 65
+description = "OpenSSL decryption (encrypted payload)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-TELNET-PIPE"
+pattern = 'telnet\s+\S+\s+\d+\s*\|'
+points = 70
+description = "Telnet connection piped to command"
+override_gate = false
+
+# Persistence mechanisms
+[[pkgbuild_analysis]]
+id = "P-XDG-AUTOSTART"
+pattern = '\.config/autostart'
+points = 55
+description = "XDG autostart entry creation"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-SYSTEMD-USER"
+pattern = '\.config/systemd/user/'
+points = 50
+description = "Systemd user service creation (no root required)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-UDEV-RULE"
+pattern = '/etc/udev/rules\.d/'
+points = 45
+description = "Udev rule creation"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-AT-JOB"
+pattern = '\bat\s+(now|midnight|noon|teatime|\d{1,2}:\d{2})'
+points = 60
+description = "at job scheduling (deferred execution)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-PROMPT-COMMAND"
+pattern = 'PROMPT_COMMAND\s*='
+points = 65
+description = "PROMPT_COMMAND injection (runs on every prompt)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-BASH-LOGOUT"
+pattern = '\.bash_logout'
+points = 55
+description = ".bash_logout modification (runs on session exit)"
+override_gate = false
+
+# Privilege escalation
+[[pkgbuild_analysis]]
+id = "P-SUDOERS-MOD"
+pattern = '/etc/sudoers'
+points = 75
+description = "Sudoers file access/modification"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-POLKIT-RULE"
+pattern = '/etc/polkit-1/rules\.d/'
+points = 55
+description = "Polkit rule creation"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-SETCAP"
+pattern = 'setcap\s+cap_'
+points = 65
+description = "Linux capability manipulation"
+override_gate = false
+
+# Anti-forensics
+[[pkgbuild_analysis]]
+id = "P-HISTORY-CLEAR"
+pattern = 'unset\s+HISTFILE|HISTFILE=/dev/null|history\s+-c|set\s+\+o\s+history'
+points = 70
+description = "Shell history clearing/suppression"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-LOG-CLEAR"
+pattern = '\brm\s+(-\S+\s+)*/var/log|truncate\s+.*\s+/var/log|>\s*/var/log/'
+points = 75
+description = "System log clearing/truncation"
+override_gate = false
+
+# AUR-specific and other
+[[pkgbuild_analysis]]
+id = "P-PACMAN-HOOK"
+pattern = '/usr/share/libalpm/hooks/|/etc/pacman\.d/hooks/'
+points = 50
+description = "Pacman hook creation (unusual for AUR packages)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-DD-WRITE"
+pattern = '\bdd\s+.*of=/dev/'
+points = 70
+description = "dd writing to device file"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-ALIAS-OVERRIDE"
+pattern = 'alias\s+(ls|cat|cd|rm|mv|cp|sudo|su|passwd|login|ssh)='
+points = 65
+description = "Alias override of common system commands"
+override_gate = false
+
+# Install script patterns
+[[install_script_analysis]]
+id = "P-INSTALL-CURL"
+pattern = 'curl\s'
+points = 45
+description = "curl in install script (should not download during install)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-WGET"
+pattern = 'wget\s'
+points = 45
+description = "wget in install script (should not download during install)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-PIPE-SHELL"
+pattern = 'curl[^|\n]*\|\s*(ba)?sh|wget[^|\n]*\|\s*(ba)?sh'
+points = 90
+description = "Download-and-execute in install script"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-INSTALL-PERSISTENCE"
+pattern = 'systemctl\s+enable|crontab|/etc/cron\.d/'
+points = 45
+description = "Persistence mechanism in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-PROFILE-MOD"
+pattern = '>>?\s*~/\.(bashrc|zshrc|profile)'
+points = 55
+description = "Shell profile modification in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-SSH-ACCESS"
+pattern = '~/\.ssh/|/home/[^/]+/\.ssh/'
+points = 80
+description = "Accessing SSH keys from install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-BROWSER-DATA"
+pattern = '\.(mozilla|config/chromium|config/google-chrome|config/BraveSoftware)/'
+points = 75
+description = "Accessing browser profile data from install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-GPG-ACCESS"
+pattern = '~/\.gnupg/|/home/[^/]+/\.gnupg/'
+points = 70
+description = "Accessing GPG keyring from install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-PASSWD-READ"
+pattern = '/etc/(passwd|shadow)'
+points = 65
+description = "Reading system password files from install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-BASE64"
+pattern = 'base64\s+(\S+\s+)*(-d|--decode)'
+points = 65
+description = "Base64 decoding in install script (possible payload hiding)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-EVAL"
+pattern = 'eval\s+["$]'
+points = 55
+description = "Dynamic code execution via eval in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-NOHUP"
+pattern = 'nohup\s+\S+.*&'
+points = 75
+description = "nohup with backgrounding in install script (persistent hidden process)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-TMP-EXEC"
+pattern = '(chmod\s+(-\S+\s+)*\+x\s+/tmp/|>\s*/tmp/\S+\s*[;&|]+\s*(ba)?sh\s+/tmp/)'
+points = 80
+description = "Executing from /tmp in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-CHMOD-EXEC"
+pattern = 'chmod\s+(-\S+\s+)*\+x\s+\S+\s*[;&|]+\s*\./'
+points = 80
+description = "chmod +x followed by execution in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-PYTHON-EXEC"
+pattern = 'exec\s*\(\s*(urlopen|requests\.get|urllib)'
+points = 90
+description = "Python fetch-and-execute in install script"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-INSTALL-DEVNULL-BG"
+pattern = '(curl|wget|python[23]?|bash|sh)\s+.*>/dev/null.*&'
+points = 75
+description = "Network/shell command backgrounded with suppressed output in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-MINER"
+pattern = '(xmrig|cpuminer|minerd|ethminer|stratum\+[a-z]+://)'
+points = 85
+description = "Cryptocurrency mining references in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-KERNEL-MOD"
+pattern = '(insmod|modprobe)\s+[^-]'
+points = 70
+description = "Kernel module loading in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-ENV-TOKENS"
+pattern = '\$(AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|GITHUB_TOKEN|GH_TOKEN|GITLAB_TOKEN|NPM_TOKEN|DOCKER_PASSWORD|API_KEY|SECRET_KEY|PRIVATE_KEY|SLACK_TOKEN|DISCORD_TOKEN)'
+points = 65
+description = "Accessing sensitive environment variables in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-IFS"
+pattern = '\$\{?IFS\}?'
+points = 65
+description = "$IFS used in install script (obfuscation)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-ANSI-C-HEX"
+pattern = '''\$'\\x[0-9a-fA-F]{2}'''
+points = 70
+description = "ANSI-C hex quoting in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-ROT13"
+pattern = '\btr\s.*n-za-m'
+points = 65
+description = "ROT13 encoding in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-HISTORY-CLEAR"
+pattern = 'unset\s+HISTFILE|HISTFILE=/dev/null|history\s+-c|set\s+\+o\s+history'
+points = 75
+description = "Shell history clearing in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-LOG-CLEAR"
+pattern = '\brm\s+(-\S+\s+)*/var/log|truncate\s+.*\s+/var/log|>\s*/var/log/'
+points = 80
+description = "Log clearing in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-SUDOERS-MOD"
+pattern = '/etc/sudoers'
+points = 80
+description = "Sudoers access in install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-PROMPT-COMMAND"
+pattern = 'PROMPT_COMMAND\s*='
+points = 70
+description = "PROMPT_COMMAND injection from install script"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-INSTALL-XDG-AUTOSTART"
+pattern = '\.config/autostart'
+points = 60
+description = "XDG autostart creation from install script"
+override_gate = false
+
+# Source URL patterns
+[[source_url_analysis]]
+id = "P-RAW-IP-URL"
+pattern = 'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+points = 50
+description = "Source URL uses raw IP address instead of domain"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-URL-SHORTENER"
+pattern = '(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
+points = 60
+description = "Source URL uses URL shortener (hiding real destination)"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-DISCORD-WEBHOOK"
+pattern = 'discord(app)?\.com/api/webhooks/'
+points = 70
+description = "Discord webhook URL (data exfiltration channel)"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-PASTEBIN"
+pattern = '(pastebin\.com|paste\.ee|hastebin\.com|ptpb\.pw|ix\.io)/'
+points = 50
+description = "Source from paste service (untrusted, mutable content)"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-DYNAMIC-DNS"
+pattern = '(duckdns\.org|no-ip\.com|ddns\.net|dynu\.com)/'
+points = 55
+description = "Source uses dynamic DNS (common in C2 infrastructure)"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-TELEGRAM-BOT"
+pattern = '(telegram\.org/bot|api\.telegram\.org/bot)'
+points = 65
+description = "Telegram bot API URL (data exfiltration channel)"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-TUNNEL-SERVICE"
+pattern = '(ngrok\.io|serveo\.net|localtunnel\.me|localhost\.run)/'
+points = 55
+description = "Tunnel service URL (obfuscated endpoint)"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-HTTP-SOURCE"
+pattern = 'http://[^$\s]'
+points = 15
+description = "Plain HTTP source URL (no TLS, MITM risk)"
+override_gate = false
+
+[[source_url_analysis]]
+id = "P-FILEHOST-SOURCE"
+pattern = '(anonfiles\.com|file\.io|transfer\.sh|tmpfiles\.org|gofile\.io|pixeldrain\.com|mediafire\.com)'
+points = 45
+description = "Source from ephemeral/anonymous file hosting (untrusted, mutable content)"
+override_gate = false
+
+# P-ONION-SOURCE moved to the dedicated analyzeOnion detector (onion.go) which
+# also scans install scripts + the latest commit diff and flags .onion as a
+# possible C2/exfil endpoint (finding id P-ONION-C2).
+
+[[source_url_analysis]]
+id = "P-MEGA-SOURCE"
+pattern = '(mega\.nz|mega\.co\.nz)/'
+points = 40
+description = "Source from MEGA file hosting (encrypted, unverifiable)"
+override_gate = false
+
+# =====================================================================
+# GTFOBins Command Analysis
+# Detects abuse of legitimate binaries catalogued on GTFOBins.
+# Covers: reverse shells, download-and-execute pipes, non-obvious
+# command execution, alternative downloaders, bind shells, and
+# library injection techniques not caught by other features.
+# =====================================================================
+
+# --- Reverse Shells via interpreters not covered elsewhere ---
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-NODE"
+pattern = '''node\s+(-e|--eval)\s.*\bnet\b.*\bSocket\b|require\s*\(\s*['"](?:net|child_process)['"]\s*\).*\bconnect\b'''
+points = 85
+description = "Node.js reverse shell (net.Socket connect)"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-JULIA"
+pattern = 'julia\s+.*TCPSocket|julia\s+.*Sockets\.\s*connect'
+points = 85
+description = "Julia reverse shell (TCPSocket)"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-TCLSH"
+pattern = '(tclsh|wish)\s.*\bsocket\b'
+points = 85
+description = "Tcl reverse shell (socket connect)"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-JJS"
+pattern = '(jjs|jrunscript|jshell)\s.*Runtime\s*\.\s*getRuntime.*exec'
+points = 85
+description = "Java Nashorn/JShell reverse shell (Runtime.exec)"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-KSH"
+pattern = 'ksh\s.*(/dev/tcp/|/dev/udp/)'
+points = 85
+description = "Ksh reverse shell via /dev/tcp or /dev/udp"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-GDB"
+pattern = 'gdb\s.*-ex\s.*python.*import\s+(socket|subprocess|os)'
+points = 85
+description = "GDB reverse shell via embedded Python"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-GO"
+pattern = '\bgo\s+run\s.*net\.Dial'
+points = 80
+description = "Go reverse shell (net.Dial)"
+override_gate = true
+
+# --- Bind Shells ---
+
+[[gtfobins_analysis]]
+id = "G-BINDSHELL-SOCAT"
+pattern = 'socat\s.*LISTEN.*EXEC|socat\s.*EXEC.*LISTEN'
+points = 85
+description = "Socat bind shell (LISTEN + EXEC)"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-BINDSHELL-NC"
+pattern = '\b(nc|ncat)\s+.*-l\s.*(-e|-c)\s|\b(nc|ncat)\s+.*(-e|-c)\s.*-l'
+points = 90
+description = "Netcat bind shell (listen + exec)"
+override_gate = true
+
+# --- Pipe-to-Interpreter Download-and-Execute (Override Gates) ---
+
+[[gtfobins_analysis]]
+id = "G-PIPE-NODE"
+pattern = '(curl|wget)\s[^|\n]*\|\s*node\b'
+points = 90
+description = "Download piped to Node.js interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-RUBY"
+pattern = '(curl|wget)\s[^|\n]*\|\s*ruby\b'
+points = 90
+description = "Download piped to Ruby interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-PHP"
+pattern = '(curl|wget)\s[^|\n]*\|\s*php\b'
+points = 90
+description = "Download piped to PHP interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-LUA"
+pattern = '(curl|wget)\s[^|\n]*\|\s*lua\b'
+points = 90
+description = "Download piped to Lua interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-TCLSH"
+pattern = '(curl|wget)\s[^|\n]*\|\s*(tclsh|wish)\b'
+points = 90
+description = "Download piped to Tcl interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-RSCRIPT"
+pattern = '(curl|wget)\s[^|\n]*\|\s*Rscript\b'
+points = 90
+description = "Download piped to R interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-JULIA"
+pattern = '(curl|wget)\s[^|\n]*\|\s*julia\b'
+points = 90
+description = "Download piped to Julia interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-AWK"
+pattern = '(curl|wget)\s[^|\n]*\|\s*(g?awk|mawk|nawk)\b'
+points = 85
+description = "Download piped to Awk interpreter"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-JJS"
+pattern = '(curl|wget)\s[^|\n]*\|\s*(jjs|jrunscript|jshell)\b'
+points = 90
+description = "Download piped to Java Nashorn/JShell"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-KSH"
+pattern = '(curl|wget)\s[^|\n]*\|\s*ksh\b'
+points = 90
+description = "Download piped to Ksh shell"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-CSH"
+pattern = '(curl|wget)\s[^|\n]*\|\s*(csh|tcsh)\b'
+points = 90
+description = "Download piped to C shell"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-ZSH"
+pattern = '(curl|wget)\s[^|\n]*\|\s*zsh\b'
+points = 90
+description = "Download piped to Zsh shell"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-FISH"
+pattern = '(curl|wget)\s[^|\n]*\|\s*fish\b'
+points = 90
+description = "Download piped to Fish shell"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-PIPE-DASH"
+pattern = '(curl|wget)\s[^|\n]*\|\s*dash\b'
+points = 90
+description = "Download piped to Dash shell"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-ALT-PIPE-SHELL"
+pattern = '(aria2c|lwp-download|lwp-request|finger|whois|tftp|smbclient)\s[^|\n]*\|\s*(ba)?sh\b'
+points = 90
+description = "Alternative downloader piped to shell"
+override_gate = true
+
+# --- Non-Obvious Command Execution (GTFOBins techniques) ---
+
+[[gtfobins_analysis]]
+id = "G-TAR-CHECKPOINT"
+pattern = 'tar\s.*--checkpoint-action\s*=\s*exec'
+points = 85
+description = "tar --checkpoint-action=exec (arbitrary command execution)"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-ZIP-EXEC"
+pattern = '\bzip\s.*-TT\s'
+points = 75
+description = "zip -TT command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-GDB-EXEC"
+pattern = 'gdb\s.*(-batch|--batch)\s'
+points = 55
+description = "GDB batch mode execution (can run arbitrary commands)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-VIM-SHELL"
+pattern = '(vi|vim|nvim|rvim|vimdiff|view|ex)\s+.*-c\s.*[!:]\s*!'
+points = 70
+description = "Vim/Neovim shell escape via -c flag"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-EXPECT-EXEC"
+pattern = 'expect\s+(-c\s|.*\bspawn\b)'
+points = 55
+description = "Expect spawn/command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-NSENTER"
+pattern = 'nsenter\s.*(-t|--target)\s'
+points = 55
+description = "nsenter namespace entry (container escape / privilege escalation)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CAPSH"
+pattern = 'capsh\s+--\s'
+points = 60
+description = "capsh privilege escalation (capability shell)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-UNSHARE"
+pattern = 'unshare\s.*\b(sh|bash|zsh|ksh|csh|dash|fish)\b'
+points = 55
+description = "unshare with shell execution (namespace escape)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-NMAP-SCRIPT"
+pattern = 'nmap\s.*--script\s*='
+points = 55
+description = "Nmap scripting engine (can execute arbitrary Lua code)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-SSH-PROXYCOMMAND"
+pattern = 'ssh\s.*-o\s*ProxyCommand'
+points = 50
+description = "SSH ProxyCommand (arbitrary command execution on connect)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-PKEXEC"
+pattern = 'pkexec\s'
+points = 55
+description = "pkexec privilege escalation via polkit"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-EMACS-EXEC"
+pattern = 'emacs\s.*--eval.*shell-command|emacs\s.*-batch.*--eval'
+points = 55
+description = "Emacs batch mode shell command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-RLWRAP-SHELL"
+pattern = 'rlwrap\s+.*(nc|ncat|socat|bash|sh|python|perl|ruby|php)\b'
+points = 60
+description = "rlwrap wrapping shell/network tool (interactive reverse shell)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-SQLITE-EXEC"
+pattern = 'sqlite3\s.*\.(shell|system)\b'
+points = 55
+description = "SQLite3 .shell/.system command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-SCREEN-EXEC"
+pattern = 'screen\s.*-X\s+stuff'
+points = 55
+description = "GNU Screen keystroke injection (-X stuff)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-TMUX-SEND"
+pattern = 'tmux\s.*(send-keys|send)\s'
+points = 50
+description = "tmux send-keys command injection"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-BUSYBOX-SHELL"
+pattern = 'busybox\s+(nc|telnetd|sh|ash)\s'
+points = 65
+description = "Busybox shell/network subcommand abuse"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOAS"
+pattern = 'doas\s'
+points = 45
+description = "doas privilege escalation (sudo alternative)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CHROOT-SHELL"
+pattern = 'chroot\s+\S+\s+(/bin/)?(sh|bash|zsh)\b'
+points = 50
+description = "chroot with shell execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOCKER-RUN"
+pattern = '(docker|podman)\s+run\s.*(-v|--volume|--mount)\s'
+points = 50
+description = "Docker/Podman run with volume mount (host filesystem access)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-SYSTEMD-RUN"
+pattern = 'systemd-run\s'
+points = 55
+description = "systemd-run transient service execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-STRACE-EXEC"
+pattern = 'strace\s.*-o\s*/dev/null\s'
+points = 50
+description = "strace with output to /dev/null (hidden command execution)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-SCRIPT-EXEC"
+pattern = 'script\s+(-c|--command)\s'
+points = 45
+description = "script -c command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-FLOCK-EXEC"
+pattern = 'flock\s+\S+\s+(sh|bash|python|perl|ruby|php|curl|wget)\b'
+points = 50
+description = "flock lock file with suspicious command execution"
+override_gate = false
+
+# --- Alternative Download Utilities ---
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-ARIA2C"
+pattern = 'aria2c\s'
+points = 40
+description = "aria2c download utility (alternative to curl/wget)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-LWP"
+pattern = '(lwp-download|lwp-request)\s'
+points = 45
+description = "Perl LWP download utility"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-TFTP"
+pattern = 'tftp\s'
+points = 55
+description = "TFTP file transfer (unauthenticated, commonly abused)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-FINGER"
+pattern = 'finger\s+[^@\s]+@'
+points = 55
+description = "finger protocol data transfer (GTFOBins exfiltration technique)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-WHOIS"
+pattern = 'whois\s+-h\s+\S+\s+-p\s+\d+'
+points = 55
+description = "whois as data transfer channel (non-standard port)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-FTP"
+pattern = '\b(ftp|ncftp|lftp|psftp)\s+[^;|&\n]*(-i|-n|<<)'
+points = 40
+description = "Scripted FTP transfer (automated file download)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-SMBCLIENT"
+pattern = 'smbclient\s+//.*\s+-c\s'
+points = 50
+description = "SMB client scripted file transfer"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-SCP"
+pattern = 'scp\s+[^;|&\n]*\S+@\S+:\S+'
+points = 35
+description = "SCP remote file copy"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-RSYNC"
+pattern = 'rsync\s+[^;|&\n]*\S+@\S+:|rsync\s+[^;|&\n]*rsync://'
+points = 35
+description = "rsync from remote server"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-NODE"
+pattern = 'node\s+.*(-e|--eval)\s.*\bhttp\b.*\bget\b|npm\s+exec\s|npx\s+\S'
+points = 50
+description = "Node.js HTTP download or npx remote execution"
+override_gate = false
+
+# --- Interpreter Inline Execution (supporting signals) ---
+
+[[gtfobins_analysis]]
+id = "G-NODE-INLINE"
+pattern = 'node\s+(-e|--eval)\s'
+points = 40
+description = "Node.js inline code execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-RUBY-INLINE"
+pattern = 'ruby\s+(-e)\s'
+points = 35
+description = "Ruby inline code execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-PHP-INLINE"
+pattern = 'php\s+(-r)\s'
+points = 40
+description = "PHP inline code execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-LUA-INLINE"
+pattern = 'lua\s+(-e)\s'
+points = 40
+description = "Lua inline code execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-R-INLINE"
+pattern = '(Rscript\s+-e|R\s+.*--vanilla\s+-e)\s'
+points = 40
+description = "R inline code execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-JULIA-INLINE"
+pattern = 'julia\s+(-e|--eval)\s'
+points = 40
+description = "Julia inline code execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-JAVA-INLINE"
+pattern = '(jjs|jshell|jrunscript)\s'
+points = 45
+description = "Java Nashorn/JShell inline execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-TCLSH-INLINE"
+pattern = '(tclsh|wish)\s+<<'
+points = 40
+description = "Tcl inline heredoc execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-GDB-PYTHON"
+pattern = 'gdb\s+.*-ex\s.*\bpython\b'
+points = 55
+description = "GDB embedded Python execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-GNUPLOT-EXEC"
+pattern = 'gnuplot\s.*-e\s.*system\b'
+points = 55
+description = "gnuplot system() command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-OCTAVE-EXEC"
+pattern = 'octave\s+.*--eval\s.*system\b'
+points = 55
+description = "GNU Octave system() command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-GUILE-EXEC"
+pattern = 'guile\s.*-c\s.*system\b'
+points = 55
+description = "Guile Scheme system() command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-IRONSQL-EXEC"
+pattern = 'irb\s.*-r\s|irb\s.*-e\s'
+points = 40
+description = "Ruby IRB interactive session with code execution"
+override_gate = false
+
+# --- Library Injection ---
+
+[[gtfobins_analysis]]
+id = "G-LD-LIBRARY-PATH"
+pattern = 'LD_LIBRARY_PATH\s*='
+points = 50
+description = "LD_LIBRARY_PATH manipulation (shared library injection)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-LDCONFIG-CUSTOM"
+pattern = 'ldconfig\s.*-f\s'
+points = 50
+description = "Custom ldconfig configuration (shared library path hijack)"
+override_gate = false
+
+# --- GTFOBins File Write Abuse ---
+
+[[gtfobins_analysis]]
+id = "G-TEE-SENSITIVE"
+pattern = 'tee\s+[^;|&\n]*(/etc/sudoers|/etc/passwd|/etc/shadow|/etc/cron|\.ssh/authorized_keys)'
+points = 75
+description = "tee writing to sensitive system file"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CP-SENSITIVE"
+pattern = '\bcp\s+[^;|&\n]*/etc/(shadow|sudoers)|\bcp\s+[^;|&\n]*\.ssh/(id_rsa|id_ed25519|authorized_keys)'
+points = 65
+description = "Copying sensitive authentication files"
+override_gate = false
+
+# --- GTFOBins Encoding/Exfiltration via Unusual Channels ---
+
+[[gtfobins_analysis]]
+id = "G-BASENC-DECODE"
+pattern = '(basenc|base58|ascii85)\s+.*(-d|--decode)'
+points = 55
+description = "Non-standard base encoding decode (payload hiding)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-HPING-EXFIL"
+pattern = 'hping3\s'
+points = 60
+description = "hping3 packet crafting (data exfiltration / covert channel)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CANCEL-EXFIL"
+pattern = 'cancel\s.*-h\s+\S+\s.*-U\s'
+points = 55
+description = "CUPS cancel command data exfiltration"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-RESTIC-EXFIL"
+pattern = 'restic\s+.*backup\s'
+points = 45
+description = "restic backup to remote (potential data exfiltration)"
+override_gate = false
+
+# --- Missing Reverse/Bind Shell Gaps ---
+
+[[gtfobins_analysis]]
+id = "G-REVSHELL-OPENSSL"
+pattern = 'openssl\s+s_server\s'
+points = 80
+description = "OpenSSL s_server (encrypted bind shell / C2 listener)"
+override_gate = true
+
+[[gtfobins_analysis]]
+id = "G-BINDSHELL-GO"
+pattern = '\bgo\s+run\s.*net\.Listen'
+points = 75
+description = "Go bind shell (net.Listen)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-BINDSHELL-LUA"
+pattern = 'lua\s.*socket\.bind|lua\s.*socket\.tcp\(\).*listen'
+points = 75
+description = "Lua bind shell (socket.bind)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-BUSYBOX-WGET"
+pattern = 'busybox\s+wget\s'
+points = 50
+description = "Busybox wget alternative downloader"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-BUSYBOX-FTPD"
+pattern = 'busybox\s+ftpd\s'
+points = 70
+description = "Busybox ftpd (bind FTP server for exfiltration)"
+override_gate = false
+
+# --- Non-Obvious Command Execution Gaps ---
+
+[[gtfobins_analysis]]
+id = "G-FIND-EXEC"
+pattern = 'find\s.*-exec\s+(/bin/)?(sh|bash|dash|zsh|ksh|csh)\b'
+points = 60
+description = "find -exec with shell (GTFOBins command execution)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-XARGS-SHELL"
+pattern = 'xargs\s+.*\b(sh|bash|dash|zsh|ksh)\b\s+-c\s'
+points = 60
+description = "xargs executing shell with -c (command injection vector)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-SED-EXEC"
+pattern = "sed\\s+(-[neEi]+\\s+)?.*[0-9/]e[\\s;']"
+points = 65
+description = "GNU sed e command (executes pattern space as shell command)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-SPLIT-FILTER"
+pattern = 'split\s.*--filter\s*='
+points = 70
+description = "split --filter (executes command per output chunk)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CPIO-RSH"
+pattern = 'cpio\s.*--rsh-command\s'
+points = 70
+description = "cpio --rsh-command (arbitrary command execution)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DC-SHELL"
+pattern = '\bdc\s.*[!]'
+points = 55
+description = "dc calculator shell escape (! command)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-M4-EXEC"
+pattern = '\bm4\s.*esyscmd\b|\bm4\s.*syscmd\b'
+points = 60
+description = "m4 macro processor shell execution (esyscmd/syscmd)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-IP-NETNS-EXEC"
+pattern = '\bip\s+netns\s+exec\s'
+points = 55
+description = "ip netns exec (namespace command execution)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-GCC-WRAPPER"
+pattern = 'gcc\s.*-wrapper\s|g\+\+\s.*-wrapper\s'
+points = 60
+description = "GCC -wrapper (arbitrary command execution via compiler)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CMAKE-EXEC"
+pattern = 'cmake\s.*-E\s+env\s|cmake\s.*execute_process'
+points = 50
+description = "CMake command execution (env wrapper or execute_process)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-PSQL-SHELL"
+pattern = 'psql\s.*-c\s.*\\!'
+points = 60
+description = "PostgreSQL psql shell escape (\\!)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOTNET-EXEC"
+pattern = 'dotnet\s+fsi\s|dotnet\s+script\s'
+points = 50
+description = ".NET F# interactive or dotnet-script execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-TCPDUMP-EXEC"
+pattern = 'tcpdump\s.*-z\s'
+points = 65
+description = "tcpdump -z post-rotation command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOCKER-EXEC"
+pattern = '(docker|podman)\s+exec\s'
+points = 45
+description = "Docker/Podman exec into running container"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOCKER-CP"
+pattern = '(docker|podman)\s+cp\s'
+points = 40
+description = "Docker/Podman file copy (container boundary crossing)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-NANO-SHELL"
+pattern = 'nano\s+-s\s'
+points = 55
+description = "nano -s spell checker shell command substitution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-ED-SHELL"
+pattern = '\bed\b\s.*<<<.*[!]'
+points = 55
+description = "ed editor shell escape (! command)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CODE-TUNNEL"
+pattern = 'code\s+tunnel\b|code\s+.*--remote-tunnel\b'
+points = 70
+description = "VS Code tunnel (remote access establishment)"
+override_gate = false
+
+# --- Download Gaps ---
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-SFTP"
+pattern = 'sftp\s+[^;|&\n]*\S+@\S+'
+points = 35
+description = "SFTP remote file transfer"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-DOWNLOAD-SSHFS"
+pattern = 'sshfs\s'
+points = 45
+description = "SSHFS remote filesystem mount (remote file access)"
+override_gate = false
+
+# --- Library Load Gaps ---
+
+[[gtfobins_analysis]]
+id = "G-SSH-KEYGEN-LIB"
+pattern = 'ssh-keygen\s.*-D\s'
+points = 65
+description = "ssh-keygen -D shared library load (code injection)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-MYSQL-LIB"
+pattern = 'mysql\s.*--default-auth\s*='
+points = 55
+description = "MySQL --default-auth shared library load"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-NGINX-LIB"
+pattern = 'nginx\s.*-g\s.*load_module\b'
+points = 55
+description = "nginx load_module (shared library injection)"
+override_gate = false
+
+# --- Privilege Escalation Gaps ---
+
+[[gtfobins_analysis]]
+id = "G-CHATTR"
+pattern = 'chattr\s+\+i\s'
+points = 55
+description = "chattr +i makes files immutable (anti-removal persistence)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-CHOWN-SENSITIVE"
+pattern = 'chown\s+[^;|&\n]*/etc/(shadow|sudoers|passwd)|chown\s+[^;|&\n]*\.ssh/'
+points = 65
+description = "chown on sensitive authentication files"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-LN-SENSITIVE"
+pattern = '\bln\s+(-sf?|--symbolic)\s+[^;|&\n]*/etc/(sudoers|shadow|passwd)|\bln\s+(-sf?|--symbolic)\s+[^;|&\n]*\.ssh/'
+points = 60
+description = "Symlink attack on sensitive files"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-MOUNT-BIND"
+pattern = 'mount\s.*--bind\s|mount\s.*-o\s*bind'
+points = 55
+description = "Bind mount (filesystem overlay for privilege escalation)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-INSTALL-SUID"
+pattern = 'install\s+.*-m\s*[2-7][0-7]{3}\s'
+points = 70
+description = "install with SUID/SGID mode bits"
+override_gate = false
+
+# --- File Write Abuse Gaps ---
+
+[[gtfobins_analysis]]
+id = "G-REDIS-WRITE"
+pattern = 'redis-cli\s.*config\s+set\s'
+points = 65
+description = "Redis config set (arbitrary file write via RDB dump)"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-GIT-EXTDIFF"
+pattern = 'GIT_EXTERNAL_DIFF\s*=|git\s.*--ext-diff\s*='
+points = 55
+description = "Git external diff command execution"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-IPTABLES-WRITE"
+pattern = 'iptables-save\s.*>\s'
+points = 40
+description = "iptables-save arbitrary file write"
+override_gate = false
+
+# --- Upload/Exfiltration Gaps ---
+
+[[gtfobins_analysis]]
+id = "G-AB-EXFIL"
+pattern = '\bab\s+.*-p\s'
+points = 55
+description = "Apache Bench POST data exfiltration"
+override_gate = false
+
+[[gtfobins_analysis]]
+id = "G-TAILSCALE-EXFIL"
+pattern = 'tailscale\s+file\s+cp\s'
+points = 55
+description = "Tailscale file copy (VPN-based data exfiltration)"
+override_gate = false
+
