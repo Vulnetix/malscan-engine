@@ -296,7 +296,7 @@ func analyzeDataBlobs(content string) []Finding {
 		}
 		if !hasHex && longHexRE.MatchString(line) {
 			out = append(out, Finding{
-				ID: "SA-DATA-BLOB-HEX", Points: 50,
+				ID: "SA-DATA-BLOB-HEX", Points: 50, Class: ClassContext,
 				Description: "embedded long hex string (possible encoded payload)",
 				MatchedLine: trimSpace(line),
 			})
@@ -304,7 +304,7 @@ func analyzeDataBlobs(content string) []Finding {
 		}
 		if !hasB64 && longBase64RE.MatchString(line) && !longHexRE.MatchString(line) {
 			out = append(out, Finding{
-				ID: "SA-DATA-BLOB-BASE64", Points: 50,
+				ID: "SA-DATA-BLOB-BASE64", Points: 50, Class: ClassContext,
 				Description: "embedded long base64 string (possible encoded payload)",
 				MatchedLine: trimSpace(line),
 			})
