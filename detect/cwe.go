@@ -23,12 +23,24 @@ func cweForSignal(id string) string {
 	case strings.Contains(base, "DISCORD-WEBHOOK"),
 		strings.Contains(base, "CURL-POST-DATA"),
 		strings.Contains(base, "DNS-EXFIL"),
+		strings.Contains(base, "ENV-EXFIL"),
 		strings.Contains(base, "SYSINFO-RECON"):
 		return "CWE-200" // Exposure of Sensitive Information
 	case strings.Contains(base, "REVSHELL"),
 		strings.Contains(base, "DEV-UDP"),
-		strings.Contains(base, "BINDSHELL"):
-		return "CWE-94" // Improper Control of Generation of Code
+		strings.Contains(base, "BINDSHELL"),
+		strings.Contains(base, "EVAL-DECODE"),
+		strings.Contains(base, "NEW-FUNCTION"),
+		strings.Contains(base, "DYNAMIC-REQUIRE"),
+		strings.Contains(base, "NODE-EVAL"),
+		strings.Contains(base, "CHILDPROC-DECODE"),
+		strings.Contains(base, "EXEC-DECODE"),
+		strings.Contains(base, "COMPILE-EXEC"),
+		strings.Contains(base, "DYNAMIC-IMPORT-DECODE"),
+		strings.Contains(base, "OPEN-PIPE"),
+		strings.Contains(base, "PROCESS-EXEC"),
+		strings.Contains(base, "BUILD-SHELL"):
+		return "CWE-94" // Improper Control of Generation of Code (dynamic code execution / command injection)
 	case strings.Contains(base, "MINER"),
 		strings.Contains(base, "STRATUM"),
 		strings.Contains(base, "MINING-POOL"):

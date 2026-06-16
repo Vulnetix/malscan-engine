@@ -1734,3 +1734,514 @@ points = 55
 description = "Tailscale file copy (VPN-based data exfiltration)"
 override_gate = false
 
+
+# ---------------------------------------------------------------------------
+# JavaScript / npm ecosystem rules. These scan the package's scripts block and
+# (for packages declaring lifecycle hooks) the published tarball JavaScript.
+# Regexes target JS-only constructs (Buffer.from/atob/require) so they do not
+# fire on shell PKGBUILDs or Ruby formulae.
+# ---------------------------------------------------------------------------
+
+[[pkgbuild_analysis]]
+id = "P-JS-EVAL-DECODE"
+pattern = 'eval\s*\(\s*(Buffer\.from|atob|globalThis\.atob|window\.atob)'
+points = 55
+description = "eval() of a base64/hex-decoded payload (dynamic code execution)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-JS-NEW-FUNCTION-DECODE"
+pattern = 'new\s+Function\s*\(\s*(Buffer\.from|atob|globalThis\.atob)'
+points = 52
+description = "new Function() built from a base64-decoded payload (dynamic code execution)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-JS-CHILDPROC-DECODE"
+pattern = '(child_process|exec|execSync|spawn|spawnSync)[^\n]{0,120}(Buffer\.from\s*\(|atob\s*\()'
+points = 50
+description = "child_process exec/spawn of a base64-decoded command (download-and-execute)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-JS-ENV-EXFIL"
+pattern = 'JSON\.stringify\s*\(\s*process\.env'
+points = 35
+description = "serialises process.env (potential credential/secret exfiltration)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-JS-OBFUSCATOR-SIG"
+pattern = '_0x[a-f0-9]{4,6}\s*[=\[(,]'
+points = 25
+description = "javascript-obfuscator-style hex identifiers (obfuscated code)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-JS-DYNAMIC-REQUIRE-NET"
+pattern = 'require\s*\(\s*(atob|Buffer\.from)'
+points = 48
+description = "dynamic require() of a decoded module name (obfuscated dependency load)"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-NPM-HOOK-NODE-EVAL"
+pattern = 'node\s+(--eval|-e)\b'
+points = 55
+description = "lifecycle install hook executes inline node code (node -e/--eval)"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-NPM-HOOK-DECODE"
+pattern = '(atob|Buffer\.from)\s*\('
+points = 45
+description = "lifecycle install hook decodes a base64 payload"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-NPM-HOOK-ENV-EXFIL"
+pattern = 'process\.env\b[^\n]{0,80}(https?://|fetch\(|\.post\(|net\.|dns\.)'
+points = 50
+description = "lifecycle install hook reads process.env and contacts the network (secret exfiltration)"
+override_gate = true
+
+# ---------------------------------------------------------------------------
+# Python / PyPI ecosystem rules. These scan setup.py (executes at pip install
+# time) and concatenated sdist sources. Regexes target Python constructs so
+# they do not fire on shell PKGBUILDs or Ruby formulae.
+# ---------------------------------------------------------------------------
+
+[[install_script_analysis]]
+id = "P-PY-SETUP-EXEC"
+pattern = '(os\.system|subprocess\.(Popen|call|run|check_output|check_call))\s*\('
+points = 42
+description = "setup.py spawns a subprocess at install time (download-and-execute vector)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-PY-SETUP-EVAL-DECODE"
+pattern = '(exec|eval)\s*\(\s*(base64\.b64decode|bytes\.fromhex|__import__\(.{0,30}base64)'
+points = 55
+description = "setup.py exec/eval of a base64/hex-decoded payload (dynamic code execution)"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-PY-SETUP-URLLIB"
+pattern = '(urllib\.request\.urlopen|urllib\.urlopen|requests\.get|urlretrieve)\s*\('
+points = 40
+description = "setup.py downloads from the network at install time"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-PY-EXEC-DECODE"
+pattern = '(exec|eval)\s*\(\s*(base64\.b64decode|bytes\.fromhex|codecs\.decode|marshal\.loads|zlib\.decompress)'
+points = 55
+description = "exec/eval of a decoded/decompressed payload (dynamic code execution)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-PY-COMPILE-EXEC"
+pattern = 'exec\s*\(\s*compile\s*\('
+points = 48
+description = "exec(compile(...)) dynamic code execution"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-PY-DYNAMIC-IMPORT-DECODE"
+pattern = '__import__\s*\(\s*(base64\.b64decode|bytes\.fromhex)'
+points = 50
+description = "__import__ of a decoded module name (obfuscated import)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-PY-ENV-EXFIL"
+pattern = '(os\.environ|getpass|platform\.node\(\))[^\n]{0,80}(requests\.(post|get)|urlopen|socket\.|httpx\.)'
+points = 35
+description = "reads environment/host info and contacts the network (recon/exfil)"
+override_gate = false
+
+# ---------------------------------------------------------------------------
+# Ruby / RubyGems ecosystem rules. Scan the gemspec (install-time, native
+# extensions) and concatenated gem sources.
+# ---------------------------------------------------------------------------
+
+[[pkgbuild_analysis]]
+id = "P-RUBY-EVAL-DECODE"
+pattern = '\beval\s*\(?\s*(Base64\.(strict_)?decode64|\[[^\]]*\]\.pack)'
+points = 55
+description = "Ruby eval of a base64/packed-decoded payload (dynamic code execution)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-RUBY-OPEN-PIPE"
+pattern = '\b(IO\.popen|Open3\.(popen3|capture3))\s*\('
+points = 30
+description = "Ruby IO.popen/Open3 subprocess execution"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-RUBY-KERNEL-EXEC-DECODE"
+pattern = '\b(system|exec|spawn)\b[^\n]{0,80}(Base64\.(strict_)?decode64|\.unpack1?\()'
+points = 55
+description = "Ruby system/exec/spawn of a base64/packed-decoded command (OS command injection)"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-GEM-EXEC-DECODE"
+pattern = '\b(system|exec|eval)\b[^\n]{0,80}(Base64\.(strict_)?decode64|\.unpack1?\()'
+points = 55
+description = "Gemspec/extension hook executes a base64/packed-decoded command"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-GEM-POST-INSTALL-URL"
+pattern = 'post_install_message[^\n]{0,200}https?://'
+points = 30
+description = "Gemspec post_install_message references a remote URL"
+override_gate = false
+
+# ---------------------------------------------------------------------------
+# Rust / Cargo ecosystem rules. Scan build.rs (executes at `cargo build` time)
+# and concatenated crate sources.
+# ---------------------------------------------------------------------------
+
+[[install_script_analysis]]
+id = "P-CARGO-BUILD-PROCESS-EXEC"
+pattern = '(std::process::Command|Command::new)\s*\('
+points = 30
+description = "build.rs spawns a process at build time (std::process::Command)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-CARGO-BUILD-SHELL"
+pattern = '(Command::new|process::Command)[^\n]{0,60}(sh|bash|cmd|powershell)'
+points = 50
+description = "build.rs invokes a shell at build time (download-and-execute vector)"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-CARGO-BUILD-DOWNLOAD"
+pattern = '(reqwest|ureq|hyper|isahc)::[^\n]{0,40}(get|post)\s*\(|https?://[^\n"]{0,120}\.(sh|ps1|exe|bin)'
+points = 45
+description = "build.rs downloads a remote resource at build time"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-RUST-INCLUDE-BYTES-DECODE"
+pattern = 'include_bytes!\s*\([^\n]{0,200}(base64|from_hex|xor|decrypt)'
+points = 40
+description = "embedded byte blob paired with a runtime decoder (obfuscated payload)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "P-RUST-ENV-EXFIL"
+pattern = 'std::env::var(_os)?\s*\([^\n]{0,80}(reqwest|ureq|TcpStream|UdpSocket)'
+points = 35
+description = "reads an environment variable then contacts the network (secret exfil)"
+override_gate = false
+
+# ---------------------------------------------------------------------------
+# Go module rules. .go sources → pkgbuild_analysis; go.mod → install_script.
+# Go runs no install scripts, so detection targets in-package exec/obfuscation.
+# ---------------------------------------------------------------------------
+
+[[pkgbuild_analysis]]
+id = "GO-EXEC-SHELL"
+pattern = 'exec\.Command\(\s*"(/bin/)?(ba)?sh"\s*,\s*"-c"'
+points = 55
+description = "exec.Command invoking a shell with -c (arbitrary command execution)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "GO-SYSCALL-EXEC"
+pattern = 'syscall\.(Exec|ForkExec)\('
+points = 50
+description = "syscall.Exec/ForkExec direct process replacement/spawn"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "GO-B64-DECODE-EXEC"
+pattern = 'base64\.(StdEncoding|RawStdEncoding|URLEncoding)\.DecodeString[^\n]{0,200}exec\.'
+points = 55
+description = "base64-decoded payload passed to exec (staged execution)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "GO-CGO-DOWNLOAD"
+pattern = '#cgo[^\n]{0,200}(curl|wget|https?://)'
+points = 50
+description = "cgo directive fetching remote code at build time"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "GO-GENERATE-CURL"
+pattern = '//go:generate\s[^\n]{0,200}(curl|wget)\s'
+points = 45
+description = "//go:generate runs curl/wget (download-and-run at generate time)"
+override_gate = false
+
+[[install_script_analysis]]
+id = "GO-MOD-REPLACE-REMOTE"
+pattern = 'replace\s[^\n]{0,120}=>\s[^\n]{0,120}(https?://|git@)'
+points = 30
+description = "go.mod replace directive redirecting a dependency to a remote source"
+override_gate = false
+
+# ---------------------------------------------------------------------------
+# .NET / PowerShell / NuGet rules. install.ps1/init.ps1 + .targets/.props →
+# install_script_analysis; MSBuild in sources → pkgbuild_analysis.
+# ---------------------------------------------------------------------------
+
+[[install_script_analysis]]
+id = "P-NUGET-PS-IEX-DOWNLOAD"
+pattern = '(?i)iex\s*\(\s*new-object\s+net\.webclient\)\.downloadstring'
+points = 55
+description = "PowerShell IEX of DownloadString (download-and-execute) in NuGet install hook"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-NUGET-PS-INVOKE-EXPRESSION"
+pattern = '(?i)invoke-expression\s'
+points = 35
+description = "PowerShell Invoke-Expression in NuGet install hook"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-NUGET-PS-ENCODEDCOMMAND"
+pattern = '(?i)-enc(odedcommand)?\s+[A-Za-z0-9+/=]{40,}'
+points = 55
+description = "PowerShell base64 -EncodedCommand payload in NuGet install hook"
+override_gate = true
+
+[[install_script_analysis]]
+id = "P-NUGET-PS-FROMBASE64"
+pattern = '(?i)\[(system\.)?convert\]::frombase64string'
+points = 38
+description = "PowerShell base64 decode of payload in NuGet install hook"
+override_gate = false
+
+[[install_script_analysis]]
+id = "P-NUGET-MSBUILD-INLINE-EXEC"
+pattern = '(?i)<usingtask[^>]*taskfactory\s*=\s*"(code|roslyncodetask)factory"'
+points = 50
+description = "MSBuild inline-task code execution via CodeTaskFactory in NuGet .targets/.props"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "P-NUGET-PS-ENV-EXFIL"
+pattern = '(?i)\$env:[a-z_]+[^\n]{0,80}(invoke-webrequest|invoke-restmethod|net\.webclient)'
+points = 38
+description = "PowerShell environment-variable exfiltration to network in NuGet package"
+override_gate = false
+
+# ---------------------------------------------------------------------------
+# PHP / Composer / Packagist rules. composer.json scripts → install_script;
+# .php sources → pkgbuild_analysis.
+# ---------------------------------------------------------------------------
+
+[[pkgbuild_analysis]]
+id = "PHP-EVAL-DECODE"
+pattern = 'eval\s*\(\s*(base64_decode|gzinflate|gzuncompress|str_rot13)\s*\('
+points = 55
+description = "PHP eval() of a base64/gzip/rot13-decoded payload (obfuscated code execution)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "PHP-ASSERT-VAR"
+pattern = 'assert\s*\(\s*\$'
+points = 45
+description = "PHP assert() on a variable used as a dynamic code-execution sink"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "PHP-CREATE-FUNCTION"
+pattern = 'create_function\s*\(\s*[^,]*,\s*\$'
+points = 45
+description = "PHP create_function() dynamic code construction (eval backdoor vector)"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "PHP-SHELL-EXEC-VAR"
+pattern = '(system|exec|shell_exec|passthru|proc_open|popen)\s*\(\s*\$'
+points = 45
+description = "PHP OS command execution sink invoked on a variable"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "PHP-OBFUSCATION-CHAIN"
+pattern = '(gzinflate|gzuncompress)\s*\(\s*(base64_decode|str_rot13)\s*\('
+points = 45
+description = "PHP nested gzinflate/str_rot13 obfuscation wrapping a decoded payload"
+override_gate = false
+
+[[install_script_analysis]]
+id = "PHP-COMPOSER-CURL-PIPE"
+pattern = '(curl|wget)\s[^"\n]{0,200}\|\s*(ba)?sh'
+points = 55
+description = "Composer lifecycle script pipes curl/wget to a shell (download-and-execute)"
+override_gate = true
+
+[[install_script_analysis]]
+id = "PHP-COMPOSER-PHP-EVAL"
+pattern = 'php\s+-r\s+[^\n]{0,120}(eval|base64_decode|system|exec)'
+points = 55
+description = "Composer script invokes php -r with an eval/base64_decode/system payload"
+override_gate = true
+
+# ---------------------------------------------------------------------------
+# Java / Maven rules. pom.xml → install_script_analysis; sources → pkgbuild.
+# ---------------------------------------------------------------------------
+
+[[install_script_analysis]]
+id = "MAVEN-POM-EXEC-PLUGIN"
+pattern = '<artifactId>\s*(exec-maven-plugin|gmavenplus-plugin|groovy-maven-plugin|maven-antrun-plugin)\s*</artifactId>'
+points = 30
+description = "POM declares a build plugin that executes arbitrary code/scripts at build time"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "MAVEN-JAVA-RUNTIME-EXEC"
+pattern = 'Runtime\s*\.\s*getRuntime\s*\(\s*\)\s*\.\s*exec\s*\('
+points = 35
+description = "Java Runtime.getRuntime().exec() spawns an OS process"
+override_gate = false
+
+[[pkgbuild_analysis]]
+id = "MAVEN-JAVA-DEFINECLASS-DECODE"
+pattern = '(Base64|getDecoder|decodeBase64)[^\n]{0,200}(defineClass|Class\s*\.\s*forName)'
+points = 45
+description = "Base64 decode chained into defineClass/Class.forName (runtime loading of decoded bytecode)"
+override_gate = true
+
+[[pkgbuild_analysis]]
+id = "MAVEN-JAVA-URLCLASSLOADER-REMOTE"
+pattern = 'new\s+URLClassLoader\s*\([^\n]{0,160}https?://'
+points = 45
+description = "URLClassLoader constructed against a remote URL (loads + executes networked code)"
+override_gate = true
+
+# --- Elixir / Erlang / Hex ---
+[[install_script_analysis]]
+id = "HEX-MIX-CODE-EVAL"
+pattern = 'Code\.eval_(string|quoted)\('
+points = 50
+description = "mix.exs evaluates dynamically constructed Elixir at compile time"
+override_gate = true
+[[install_script_analysis]]
+id = "HEX-MIX-BASE64-EVAL"
+pattern = 'Base\.decode64[^\n]{0,80}(Code\.eval|System\.cmd|:os\.cmd)'
+points = 55
+description = "mix.exs base64-decodes then executes/evaluates a payload"
+override_gate = true
+[[install_script_analysis]]
+id = "HEX-MIX-OS-CMD"
+pattern = ':os\.cmd\('
+points = 35
+description = "mix.exs invokes Erlang :os.cmd at compile time"
+override_gate = false
+[[pkgbuild_analysis]]
+id = "HEX-SRC-BASE64-EVAL"
+pattern = 'Base\.decode64[^\n]{0,80}(Code\.eval|System\.cmd|:os\.cmd|:erlang\.binary_to_term)'
+points = 55
+description = "base64-decoded blob fed to an executor/evaluator/deserializer (packed BEAM payload)"
+override_gate = true
+[[pkgbuild_analysis]]
+id = "HEX-SRC-ENV-EXFIL"
+pattern = 'System\.get_env[^\n]{0,120}(HTTPoison|:httpc|Finch|Req\.|Tesla)'
+points = 35
+description = "reads env/secrets then sends them over an HTTP client (exfil)"
+override_gate = false
+
+# --- Dart / pub.dev ---
+[[pkgbuild_analysis]]
+id = "DART-PROCESS-SHELL"
+pattern = 'Process\.(run|start)\s*\(\s*"(/bin/)?(ba)?sh"'
+points = 55
+description = "Dart Process.run/start spawning a shell (command execution)"
+override_gate = true
+[[pkgbuild_analysis]]
+id = "DART-HTTPCLIENT-PROCESS-EXEC"
+pattern = 'HttpClient\(\)[\s\S]{0,400}Process\.(run|start)'
+points = 50
+description = "dart:io HttpClient download followed by Process exec (download-and-run)"
+override_gate = true
+[[pkgbuild_analysis]]
+id = "DART-BASE64-PROCESS"
+pattern = 'base64\.decode[\s\S]{0,300}Process\.(run|start)'
+points = 50
+description = "base64-decoded payload passed to Process exec"
+override_gate = true
+[[install_script_analysis]]
+id = "DART-HOOK-CURL-PIPE"
+pattern = 'curl\s[^|\n]{0,200}\|\s*(ba)?sh'
+points = 55
+description = "Dart build hook pipes curl output to a shell (download-and-execute)"
+override_gate = true
+
+# --- R / CRAN ---
+[[install_script_analysis]]
+id = "R-INSTALL-DOWNLOAD-EXEC"
+pattern = 'download\.file\s*\([^\n]{0,200}(source|eval|system)'
+points = 55
+description = "download.file feeding source/eval/system at install time (download-and-execute)"
+override_gate = true
+[[install_script_analysis]]
+id = "R-INSTALL-SYSTEM"
+pattern = '\b(system2?|shell)\s*\('
+points = 30
+description = "shell-out (system/system2/shell) in a CRAN install-time script"
+override_gate = false
+[[pkgbuild_analysis]]
+id = "R-EVAL-PARSE-TEXT"
+pattern = 'eval\s*\(\s*parse\s*\(\s*text\s*='
+points = 30
+description = "dynamic R code execution via eval(parse(text=))"
+override_gate = false
+[[pkgbuild_analysis]]
+id = "R-ONLOAD-SYSTEM"
+pattern = '\.(onLoad|onAttach)\s*<-\s*function[\s\S]{0,400}(system2?|shell|download\.file)\s*\('
+points = 50
+description = "R load hook (.onLoad/.onAttach) runs system()/download.file at library load"
+override_gate = true
+
+# --- Julia ---
+[[install_script_analysis]]
+id = "JL-BUILD-SHELL-INTERP"
+pattern = 'run\(\s*`\s*(ba)?sh\b'
+points = 55
+description = "build.jl spawns a shell interpreter at Pkg.build time"
+override_gate = true
+[[install_script_analysis]]
+id = "JL-DOWNLOAD-EXEC"
+pattern = '(Base\.)?download\([^)]{0,120}\)[\s\S]{0,200}(include|evalfile|eval)\b'
+points = 55
+description = "build.jl downloads a remote artefact and include/eval-executes it"
+override_gate = true
+[[pkgbuild_analysis]]
+id = "JL-BASE64-INCLUDE-STRING"
+pattern = 'base64decode\([\s\S]{0,120}(include_string|Meta\.parse|eval)\b'
+points = 50
+description = "base64-decoded payload fed to include_string/eval (obfuscated execution)"
+override_gate = true
+
+# --- Conan (Python recipe; generic P-PY-* rules also apply) ---
+[[install_script_analysis]]
+id = "P-CONAN-SELF-RUN-SHELL"
+pattern = 'self\.run\s*\(\s*f?["\x27](curl|wget|bash|sh |chmod|nc |powershell|certutil)'
+points = 50
+description = "conanfile self.run() executing a shell/download command at build time"
+override_gate = true
+[[install_script_analysis]]
+id = "P-CONAN-SELF-RUN-PIPE-SHELL"
+pattern = 'self\.run\s*\([^)\n]{0,200}\|\s*(ba)?sh'
+points = 55
+description = "conanfile self.run() piping fetched output to a shell (download-and-execute)"
+override_gate = true
+
+# --- Alpine apk (APKBUILD is shell; existing pkgbuild rules also apply) ---
+[[pkgbuild_analysis]]
+id = "P-APK-SOURCE-RAW-IP"
+pattern = 'source=[^\n]{0,200}https?://[0-9]{1,3}(\.[0-9]{1,3}){3}'
+points = 45
+description = "APKBUILD source= points at a raw IP address rather than a hostname"
+override_gate = false
