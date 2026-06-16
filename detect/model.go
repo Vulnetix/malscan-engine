@@ -87,32 +87,44 @@ type Finding struct {
 	MatchedLine string // the triggering line (trimmed), when pattern-based
 }
 
-// PackageContext carries all data a detector needs. Mirrors traur's
-// PackageContext (src/shared/models.go).
+// PackageContext carries all data a detector needs. Originally modelled on
+// traur's PackageContext (src/shared/models.go), it is now ecosystem-agnostic:
+// every processor (AUR, Homebrew, npm, PyPI, RubyGems, …) maps its package's
+// primary build/manifest script into PkgbuildContent and its install hooks into
+// InstallScriptContent, and the content-based detectors run uniformly. The
+// reputation metadata (PackageMeta) and git history are optional.
 type PackageContext struct {
-	Name string // AUR package name
+	Name string // package name
 
-	// Metadata from the AUR RPC v5 info endpoint (nil if the package vanished).
-	Meta *AurMeta
+	// Ecosystem is the registry slug ("aur", "homebrew", "npm", "pypi",
+	// "rubygems", "go", "cargo", "nuget", …). Optional; lets detectors and
+	// downstream consumers branch on ecosystem and label findings.
+	Ecosystem string
 
-	PkgbuildContent      string // current PKGBUILD text ("" if unavailable)
-	InstallScriptContent string // concatenated *.install files
-	PriorPkgbuildContent string // PKGBUILD from the previous git revision (for diff)
+	// Reputation/identity metadata (nil if unavailable). Originally the AUR RPC
+	// v5 `info` subset; reused across ecosystems via the generic field set.
+	Meta *PackageMeta
 
-	GitLog []GitCommit // newest-first commit list from the AUR git repo
+	PkgbuildContent      string // primary build/manifest script text (PKGBUILD, Ruby formula, package.json scripts, setup.py, build.rs, …); "" if unavailable
+	InstallScriptContent string // concatenated install hooks (*.install, npm pre/post-install, init.ps1, build.jl, …)
+	PriorPkgbuildContent string // build script from the previous revision (for diff)
+
+	GitLog []GitCommit // newest-first commit list from the package's source repo
 
 	// MaintainerPackages: other packages owned by the same maintainer (for
 	// batch-upload detection). Optional.
-	MaintainerPackages []AurMeta
+	MaintainerPackages []PackageMeta
 
 	GithubStars    *int // upstream GitHub stargazers (nil if unknown / not GitHub)
 	GithubNotFound bool // upstream URL is a GitHub repo that returned 404
 
-	AurComments []string // recent AUR comment bodies (optional)
+	AurComments []string // recent registry comment bodies (optional)
 }
 
-// AurMeta is the subset of AUR RPC v5 `info` fields the detectors use.
-type AurMeta struct {
+// PackageMeta is the generic reputation/identity subset detectors use. Field
+// names retain their AUR origin but apply across ecosystems (e.g. NumVotes /
+// Popularity map to downloads/stars, Submitter to the original publisher).
+type PackageMeta struct {
 	Name           string
 	PackageBase    string
 	URL            string // upstream project URL
@@ -126,8 +138,12 @@ type AurMeta struct {
 	License        []string
 	Depends        []string
 	MakeDepends    []string
-	Source         []string // source=() entries from .SRCINFO
+	Source         []string // source=() / download URLs declared by the manifest
 }
+
+// AurMeta is the original name of PackageMeta, retained as a type alias so the
+// AUR and Homebrew processors (and any external callers) keep compiling.
+type AurMeta = PackageMeta
 
 // GitCommit is one commit from the AUR package git repo.
 type GitCommit struct {
