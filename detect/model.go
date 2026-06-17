@@ -52,7 +52,62 @@ const (
 	// KnownBadHashID marks a declared/source/diff hash that matches a known-bad
 	// hash (embedded list or MalwareIoc). It is ClassEvidence — mints on its own.
 	KnownBadHashID = "B-KNOWN-BAD-HASH"
+
+	// ── Ownership / hijack triggers (cross-registry) ────────────────────────────
+	// A package/repo hijack is frequently JUST a change in ownership. By itself
+	// that is NOT proof — legitimate maintainer hand-offs and orphan adoptions
+	// happen constantly — so every ownership signal is a ClassTrigger the engine
+	// CORRELATES with other indicators (see CombinedVerdict). The findings/IOCs
+	// these produce state explicitly that the signal is a compounding
+	// ownership-change indicator, not standalone evidence.
+
+	// TriggerOwnershipTransfer — the established prior owner/maintainer was
+	// replaced by a DIFFERENT current owner (the package changed hands). Generic
+	// across registries (npm _npmUser, PyPI/RubyGems maintainer, AUR Maintainer…).
+	TriggerOwnershipTransfer = "MT-OWNERSHIP-TRANSFER"
+	// TriggerOrphanAdoption — the original Submitter no longer maintains the
+	// package and a different account now does (orphan/abandonment takeover).
+	TriggerOrphanAdoption = "MT-ORPHAN-ADOPTION"
+	// TriggerOwnerKnownBad — the current owner matches a known-bad ThreatActor in
+	// our DB (the processor supplies this fact). Strongest ownership signal (P4).
+	TriggerOwnerKnownBad = "MT-OWNER-KNOWN-BAD"
 )
+
+// identityFamily groups ownership/identity triggers into INDEPENDENT families so
+// the P3 (multi-signal) gate counts distinct *kinds* of signal, not redundant
+// facets of one event (ownership-transfer + orphan-adoption are both
+// "owner-change" → count once). Returns "" for non-identity triggers.
+//
+// Families are split into CHANGE signals (an EXISTING package was altered:
+// owner-change, email) and NEWNESS signals (new-maintainer/contributor/reporter
+// — which a brand-new LEGITIMATE package necessarily has, so they must never
+// mint on their own). See isChangeFamily and the P3 rule in CombinedVerdict.
+func identityFamily(id string) string {
+	switch id {
+	case TriggerOwnershipTransfer, TriggerOrphanAdoption:
+		return "owner-change"
+	case TriggerChangedEmail:
+		return "email"
+	case TriggerNewMaintainer:
+		return "new-maintainer"
+	case TriggerNewContributor:
+		return "new-contributor"
+	case TriggerNewReporter:
+		return "new-reporter"
+	}
+	return ""
+}
+
+// isChangeFamily reports whether a family represents an EXISTING package being
+// altered (a takeover signal) rather than mere newness. P3 requires at least one
+// change family, so that the new-submitter+new-maintainer signature of a brand-new
+// legitimate package never mints.
+func isChangeFamily(fam string) bool { return fam == "owner-change" || fam == "email" }
+
+// isPayloadTrigger reports whether a trigger is a payload/behaviour signal (the
+// high-entropy heredoc today) vs. an ownership/identity signal. A payload trigger
+// correlated with any identity trigger is the P1/P2 mint path.
+func isPayloadTrigger(id string) bool { return id == EntropyTriggerID }
 
 // Trigger builds a ClassTrigger Finding. Used by the processor to inject the
 // DB/git-derived supply-chain metadata triggers into the finding set before the

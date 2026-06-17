@@ -90,34 +90,110 @@ func IsMalicious(findings []Finding) bool {
 	return false
 }
 
-// IsMaliciousCombined applies the combination gate over the full finding set
-// (engine findings plus the processor's DB/git-derived metadata triggers):
+// Verdict is the combination-gate result. Path/Reasons let the processor record
+// WHY a record was minted — so an ownership-change IOC's detail can state which
+// compounding path corroborated it (it is correlation, never standalone proof).
+type Verdict struct {
+	Malicious bool
+	Path      string   // "" | "evidence" | "owner-known-bad" | "payload+identity" | "multi-identity"
+	Reasons   []string // human-readable compounding indicators (trigger ids/descriptions)
+}
+
+// CombinedVerdict applies the combination gate and explains the result. The
+// permutations are deliberately distinct — a package/repo hijack is often JUST a
+// change in ownership, which is ONE correlatable indicator, not proof:
 //
-//   - any single ClassEvidence finding marks the package malicious (the strong
-//     download-and-execute / reverse-shell / exfil / known-bad-hash rules); OR
-//   - the combination path: a high-entropy payload (EntropyTriggerID) AND at
-//     least one OTHER distinct trigger (new reporter/maintainer/contributor or
-//     changed maintainer/contributor email).
+//	P0  any single ClassEvidence finding (download-and-execute, reverse shell,
+//	    exfil, .onion C2, known-bad hash).                         → malicious
+//	P4  the current owner matches a known-bad ThreatActor          → malicious
+//	    (TriggerOwnerKnownBad; the owner is a cataloged attacker).
+//	P1/P2  a payload/behaviour trigger (high-entropy heredoc) AND ≥1 ownership/
+//	    identity trigger — the takeover revision that also injects code.→ malicious
+//	P3  ≥2 INDEPENDENT identity families AND ≥1 is a CHANGE/takeover family
+//	    (owner-change or email-swap) — e.g. owner-transfer + email-swap, or an
+//	    orphan takeover by a new account — metadata correlation, no payload.
+//	                                                               → malicious
 //
-// Entropy alone never mints (it fires on legitimate embedded base64/cert/font
-// blobs). Metadata triggers alone never mint, and metadata-only combinations do
-// NOT mint either — every brand-new legitimate AUR package necessarily has a
-// previously-unseen submitter and maintainer. Entropy is the required anchor.
-func IsMaliciousCombined(findings []Finding) bool {
-	if IsMalicious(findings) {
-		return true
+// NOT malicious (recorded as correlation context for human/downstream review):
+//   - a SINGLE ownership/identity signal alone (an orphan adoption, a lone owner
+//     change, a lone email change). Legitimate hand-offs do this.
+//   - PURE-NEWNESS combinations: new-maintainer + new-reporter (+ new-contributor)
+//     are the signature of a brand-new LEGITIMATE package (its submitter and
+//     maintainer are both first-seen). No change family → never mints.
+//   - entropy alone (legit embedded base64/cert/font blobs).
+//   - redundant facets of ONE event: ownership-transfer + orphan-adoption are both
+//     the "owner-change" family → counts once.
+func CombinedVerdict(findings []Finding) Verdict {
+	// P0 — any factual evidence.
+	for _, f := range findings {
+		if f.Class == ClassEvidence {
+			return Verdict{true, "evidence", []string{describe(f)}}
+		}
 	}
-	hasEntropy := false
-	otherTriggers := map[string]bool{}
+
+	hasPayload := false
+	var payloadReason string
+	families := map[string]string{} // family -> a representative reason
+	ownerKnownBad := ""
 	for _, f := range findings {
 		if f.Class != ClassTrigger {
 			continue
 		}
-		if f.ID == EntropyTriggerID {
-			hasEntropy = true
+		if f.ID == TriggerOwnerKnownBad {
+			ownerKnownBad = describe(f)
 			continue
 		}
-		otherTriggers[f.ID] = true
+		if isPayloadTrigger(f.ID) {
+			hasPayload = true
+			payloadReason = describe(f)
+			continue
+		}
+		if fam := identityFamily(f.ID); fam != "" {
+			families[fam] = describe(f)
+		}
 	}
-	return hasEntropy && len(otherTriggers) >= 1
+
+	// P4 — owner is a known-bad actor.
+	if ownerKnownBad != "" {
+		return Verdict{true, "owner-known-bad", []string{ownerKnownBad}}
+	}
+	// P1/P2 — payload/behaviour correlated with any ownership/identity change.
+	if hasPayload && len(families) >= 1 {
+		reasons := []string{payloadReason}
+		for _, r := range families {
+			reasons = append(reasons, r)
+		}
+		return Verdict{true, "payload+identity", reasons}
+	}
+	// P3 — ≥2 INDEPENDENT identity families AND at least one is a CHANGE/takeover
+	// family (so a brand-new package's new-maintainer+new-reporter never mints).
+	hasChange := false
+	for fam := range families {
+		if isChangeFamily(fam) {
+			hasChange = true
+			break
+		}
+	}
+	if len(families) >= 2 && hasChange {
+		reasons := make([]string, 0, len(families))
+		for _, r := range families {
+			reasons = append(reasons, r)
+		}
+		return Verdict{true, "multi-identity", reasons}
+	}
+	// P-none — a single ownership signal / entropy alone: correlation only.
+	return Verdict{false, "", nil}
+}
+
+// describe yields a short reason string for a finding (id + description).
+func describe(f Finding) string {
+	if f.Description != "" {
+		return f.ID + ": " + f.Description
+	}
+	return f.ID
+}
+
+// IsMaliciousCombined is the boolean form of CombinedVerdict (back-compat).
+func IsMaliciousCombined(findings []Finding) bool {
+	return CombinedVerdict(findings).Malicious
 }
