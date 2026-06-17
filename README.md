@@ -10,6 +10,7 @@ VDB processors (`vdb-manager`) and the `package-firewall`.
 | `detect` | Malicious-PKGBUILD/formula detection engine (Go port of [traur](https://github.com/Sohimaster/traur), MIT). Pattern + behavioural detectors emit `Finding`s classed `evidence` (mints alone), `trigger` (combines with a high-entropy payload), or `context` (metadata only). `IsMaliciousCombined` applies the combination gate. |
 | `ioc` | Indicator-of-compromise + artifact-hash extraction from a package's PKGBUILD/install-scripts/latest-diff. |
 | `badhash` | Case-insensitive known-bad artifact-hash set: an embedded seed list, augmentable at runtime with `MalwareIoc` file-hash rows from the shared database. |
+| `goodkeys` | ALLOWLIST of known-good infrastructure signing keys/identities (GitHub `web-flow` GPG key `4AEE18F83AFDEB23`, `github-actions[bot]`, Dependabot, GitLab web-commit). Threat-actor key/email enrichment **MUST call `goodkeys.New().IsKnownGood(token)` / `IsKnownGoodEmail(email)` FIRST** and skip the DB/registry/GitHub-API actor-key lookup on a hit — a web-merged commit is signed by GitHub, not the attacker. Hardcoded, provenance-commented list; runtime-augmentable via `AddKey`/`AddEmail`. |
 
 ## Detection model
 
