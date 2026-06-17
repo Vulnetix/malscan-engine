@@ -33,6 +33,7 @@ func Detect(ctx *PackageContext) []Finding {
 	}
 
 	f = append(f, analyzeOnion(ctx)...)
+	f = append(f, analyzeHomograph(ctx)...)
 	f = append(f, analyzeChecksum(ctx)...)
 	f = append(f, analyzeName(ctx)...)
 	f = append(f, analyzeBinSource(ctx)...)
