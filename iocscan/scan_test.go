@@ -184,7 +184,7 @@ func TestMatchLine(t *testing.T) {
 	set.Add(&Indicator{Type: TypeDomain, Value: "evil-malware.example"})
 	set.Add(&Indicator{Type: TypeIPv4, Value: "185.100.157.127"})
 	set.Add(&Indicator{Type: TypeURL, Value: "http://evil-malware.example/payload"})
-	sc := newScanner(set, "/", Options{})
+	m := NewMatcher(set, 0)
 
 	cases := []struct {
 		name string
@@ -201,8 +201,8 @@ func TestMatchLine(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got := map[IndicatorType]string{}
-			for _, m := range sc.matchLine(c.line) {
-				got[m.typ] = m.value
+			for _, lm := range m.matchLine(c.line) {
+				got[lm.typ] = lm.value
 			}
 			for typ, val := range c.want {
 				if got[typ] != val {

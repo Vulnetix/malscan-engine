@@ -1,15 +1,11 @@
 package iocscan
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -47,9 +43,13 @@ type Options struct {
 	MaxFileSize int64    // skip files larger than this (default 10 MiB)
 	SkipDirs    []string // directory names to prune; nil = defaultSkipDirs
 
-	// Feed controls (all optional). Loader, when set, is used as-is and the rest
-	// are ignored — the usual path for tests and for callers that share one
-	// loader across scans.
+	// Set, when non-nil, is the preloaded indicator set to scan against — the
+	// feed is NOT loaded and the feed controls below are ignored. Use this to
+	// reuse one IndicatorSet (and its parsed feeds) across many scans.
+	Set *IndicatorSet
+
+	// Feed controls (all optional, ignored when Set is non-nil). Loader, when
+	// set, is used as-is and the rest are ignored.
 	IndexURL   string
 	CacheDir   string
 	TTL        time.Duration
@@ -59,11 +59,12 @@ type Options struct {
 	now func() time.Time // test seam for the clock
 }
 
-// Scan loads the STIX feeds for opts.Ecosystem (plus "generic"), walks opts.Root
-// honouring the depth and include/exclude-extension filters, and returns evidence
-// for every file that references a known-bad indicator. An error is returned only
-// when the feeds cannot be loaded at all (see FeedLoader.Load); the Report is
-// still returned (with host info + any warnings) in that case.
+// Scan loads the STIX feeds for opts.Ecosystem (plus "generic") — or uses
+// opts.Set when provided — walks opts.Root honouring the depth and
+// include/exclude-extension filters, and returns evidence for every file that
+// references a known-bad indicator. An error is returned only when the feeds
+// cannot be loaded at all (see FeedLoader.Load); the Report is still returned
+// (with host info + any warnings) in that case.
 func Scan(opts Options) (*Report, error) {
 	now := time.Now
 	if opts.now != nil {
@@ -79,26 +80,30 @@ func Scan(opts Options) (*Report, error) {
 		absRoot = root
 	}
 
-	loader := opts.Loader
-	if loader == nil {
-		loader = &FeedLoader{
-			IndexURL:   opts.IndexURL,
-			CacheDir:   opts.CacheDir,
-			TTL:        opts.TTL,
-			HTTPClient: opts.HTTPClient,
-			now:        opts.now,
-		}
-	}
-
-	set, warnings, lerr := loader.Load(opts.Ecosystem)
 	report := &Report{
 		Host:      hostInfo(now()),
 		Root:      absRoot,
 		Ecosystem: opts.Ecosystem,
-		Warnings:  warnings,
 	}
-	if lerr != nil {
-		return report, lerr
+
+	set := opts.Set
+	if set == nil {
+		loader := opts.Loader
+		if loader == nil {
+			loader = &FeedLoader{
+				IndexURL:   opts.IndexURL,
+				CacheDir:   opts.CacheDir,
+				TTL:        opts.TTL,
+				HTTPClient: opts.HTTPClient,
+				now:        opts.now,
+			}
+		}
+		loaded, warnings, lerr := loader.Load(opts.Ecosystem)
+		report.Warnings = warnings
+		if lerr != nil {
+			return report, lerr
+		}
+		set = loaded
 	}
 	report.IndicatorCount = set.Len()
 
@@ -148,24 +153,19 @@ func Scan(opts Options) (*Report, error) {
 	return report, nil
 }
 
-// scanner holds the resolved per-scan settings.
+// scanner holds the resolved per-scan settings and the shared Matcher.
 type scanner struct {
-	set          *IndicatorSet
-	root         string
-	maxDepth     int
-	contextLines int
-	maxSize      int64
-	binary       bool
-	includeExt   map[string]bool
-	excludeExt   map[string]bool
-	skipDirs     map[string]bool
+	matcher    *Matcher
+	root       string
+	maxDepth   int
+	maxSize    int64
+	binary     bool
+	includeExt map[string]bool
+	excludeExt map[string]bool
+	skipDirs   map[string]bool
 }
 
 func newScanner(set *IndicatorSet, root string, opts Options) *scanner {
-	ctxLines := opts.ContextLines
-	if ctxLines <= 0 {
-		ctxLines = DefaultContextLines
-	}
 	maxSize := opts.MaxFileSize
 	if maxSize <= 0 {
 		maxSize = DefaultMaxFileSize
@@ -175,15 +175,14 @@ func newScanner(set *IndicatorSet, root string, opts Options) *scanner {
 		skip = defaultSkipDirs
 	}
 	return &scanner{
-		set:          set,
-		root:         root,
-		maxDepth:     opts.Depth,
-		contextLines: ctxLines,
-		maxSize:      maxSize,
-		binary:       opts.BinaryAnalysis,
-		includeExt:   extSet(opts.IncludeExt),
-		excludeExt:   extSet(opts.ExcludeExt),
-		skipDirs:     nameSet(skip),
+		matcher:    NewMatcher(set, opts.ContextLines),
+		root:       root,
+		maxDepth:   opts.Depth,
+		maxSize:    maxSize,
+		binary:     opts.BinaryAnalysis,
+		includeExt: extSet(opts.IncludeExt),
+		excludeExt: extSet(opts.ExcludeExt),
+		skipDirs:   nameSet(skip),
 	}
 }
 
@@ -204,7 +203,8 @@ func (sc *scanner) extAllowed(path string) bool {
 
 // scanFile reads a file and dispatches to the text or binary matcher. The
 // boolean reports whether the file was actually scanned (a binary skipped
-// because BinaryAnalysis is off counts as not-scanned).
+// because BinaryAnalysis is off counts as not-scanned). Evidence records the
+// absolute path plus the repo-relative path.
 func (sc *scanner) scanFile(path string) ([]Evidence, bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -213,66 +213,14 @@ func (sc *scanner) scanFile(path string) ([]Evidence, bool, error) {
 	if len(data) == 0 {
 		return nil, true, nil
 	}
+	rel := sc.rel(path)
 	if isBinary(data) {
 		if !sc.binary {
 			return nil, false, nil
 		}
-		return sc.scanBinary(path, data), true, nil
+		return sc.matcher.matchBinary(path, rel, data), true, nil
 	}
-	return sc.scanText(path, data), true, nil
-}
-
-// scanText splits a file into lines and matches each, attaching context lines.
-func (sc *scanner) scanText(path string, data []byte) []Evidence {
-	lines := splitLines(data)
-	rel := sc.rel(path)
-	var ev []Evidence
-	for i, line := range lines {
-		for _, m := range sc.matchLine(line) {
-			ev = append(ev, Evidence{
-				IndicatorType:  m.typ,
-				IndicatorValue: m.value,
-				Indicator:      m.ind,
-				FilePath:       path,
-				RelPath:        rel,
-				LineNumber:     i + 1,
-				ColStart:       m.col,
-				ColEnd:         m.col + len(m.value),
-				MatchedLine:    line,
-				ContextBefore:  contextBefore(lines, i, sc.contextLines),
-				ContextAfter:   contextAfter(lines, i, sc.contextLines),
-			})
-		}
-	}
-	return ev
-}
-
-// scanBinary extracts printable strings from a binary and matches IOCs in them,
-// deduplicating across the whole file.
-func (sc *scanner) scanBinary(path string, data []byte) []Evidence {
-	rel := sc.rel(path)
-	seen := map[string]bool{}
-	var ev []Evidence
-	for _, sh := range extractStrings(data, stringMinLen) {
-		for _, m := range sc.matchLine(sh.value) {
-			key := string(m.typ) + "|" + strings.ToLower(m.value)
-			if seen[key] {
-				continue
-			}
-			seen[key] = true
-			ev = append(ev, Evidence{
-				IndicatorType:  m.typ,
-				IndicatorValue: m.value,
-				Indicator:      m.ind,
-				FilePath:       path,
-				RelPath:        rel,
-				IsBinary:       true,
-				ByteOffset:     sh.offset + int64(m.col),
-				MatchedLine:    truncate(sh.value, 200),
-			})
-		}
-	}
-	return ev
+	return sc.matcher.matchText(path, rel, string(data)), true, nil
 }
 
 func (sc *scanner) rel(path string) string {
@@ -282,164 +230,7 @@ func (sc *scanner) rel(path string) string {
 	return path
 }
 
-// ── Matching ──────────────────────────────────────────────────────────────
-
-type lineMatch struct {
-	typ   IndicatorType
-	value string
-	col   int
-	ind   *Indicator
-}
-
-var (
-	urlRe    = regexp.MustCompile("(?i)\\bhttps?://[^\\s'\"`<>)\\]}\\\\]+")
-	domainRe = regexp.MustCompile(`(?i)\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b`)
-	ipv4Re   = regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`)
-	ipv6Re   = regexp.MustCompile(`(?i)\b[0-9a-f:]{4,45}\b`)
-)
-
-// matchLine finds every known-bad indicator referenced in s, deduplicated by
-// (type, value). It is also used line-equivalently over strings extracted from
-// binaries.
-func (sc *scanner) matchLine(s string) []lineMatch {
-	var matches []lineMatch
-	seen := map[string]bool{}
-	add := func(typ IndicatorType, value string, col int, ind *Indicator) {
-		key := string(typ) + "|" + strings.ToLower(value)
-		if seen[key] {
-			return
-		}
-		seen[key] = true
-		matches = append(matches, lineMatch{typ: typ, value: value, col: col, ind: ind})
-	}
-
-	// URLs (and the domain inside them).
-	for _, loc := range urlRe.FindAllStringIndex(s, -1) {
-		u := s[loc[0]:loc[1]]
-		if ind := sc.set.LookupURL(u); ind != nil {
-			add(TypeURL, u, loc[0], ind)
-		}
-		if host := urlHost(u); host != "" {
-			if ind := sc.set.LookupDomain(host); ind != nil {
-				col := loc[0]
-				if idx := strings.Index(strings.ToLower(u), strings.ToLower(host)); idx >= 0 {
-					col += idx
-				}
-				add(TypeDomain, host, col, ind)
-			}
-		}
-	}
-
-	// Bare domains.
-	for _, loc := range domainRe.FindAllStringIndex(s, -1) {
-		dom := strings.TrimSuffix(s[loc[0]:loc[1]], ".")
-		if ind := sc.set.LookupDomain(dom); ind != nil {
-			add(TypeDomain, dom, loc[0], ind)
-		}
-	}
-
-	// IPv4.
-	for _, loc := range ipv4Re.FindAllStringIndex(s, -1) {
-		ipStr := s[loc[0]:loc[1]]
-		if ip := net.ParseIP(ipStr); ip != nil && ip.To4() != nil {
-			if ind := sc.set.LookupIP(ipStr); ind != nil {
-				add(TypeIPv4, ipStr, loc[0], ind)
-			}
-		}
-	}
-
-	// IPv6 (permissive candidate, validated by net.ParseIP).
-	for _, loc := range ipv6Re.FindAllStringIndex(s, -1) {
-		ipStr := s[loc[0]:loc[1]]
-		if strings.Count(ipStr, ":") < 2 {
-			continue
-		}
-		if ip := net.ParseIP(ipStr); ip != nil && ip.To4() == nil {
-			if ind := sc.set.LookupIP(ipStr); ind != nil {
-				add(TypeIPv6, ipStr, loc[0], ind)
-			}
-		}
-	}
-
-	return matches
-}
-
-// urlHost returns the host of a URL, or "" if it cannot be parsed.
-func urlHost(u string) string {
-	parsed, err := url.Parse(u)
-	if err != nil {
-		return ""
-	}
-	return parsed.Hostname()
-}
-
-// ── File helpers ────────────────────────────────────────────────────────────
-
-type stringHit struct {
-	value  string
-	offset int64
-}
-
-// extractStrings returns every printable-ASCII run of at least minLen bytes,
-// each with its starting byte offset. Mirrors the CLI binary scanner's
-// extraction but keeps all runs (no relevance filter) so IOCs can be matched.
-func extractStrings(data []byte, minLen int) []stringHit {
-	var out []stringHit
-	start := -1
-	for i, b := range data {
-		if b >= 0x20 && b <= 0x7e {
-			if start < 0 {
-				start = i
-			}
-			continue
-		}
-		if start >= 0 && i-start >= minLen {
-			out = append(out, stringHit{value: string(data[start:i]), offset: int64(start)})
-		}
-		start = -1
-	}
-	if start >= 0 && len(data)-start >= minLen {
-		out = append(out, stringHit{value: string(data[start:]), offset: int64(start)})
-	}
-	return out
-}
-
-var elfMagic = []byte{0x7f, 'E', 'L', 'F'}
-
-// isBinary classifies a file as binary if it starts with the ELF magic or
-// contains a NUL byte within the first binarySniffBytes.
-func isBinary(data []byte) bool {
-	if len(data) >= 4 && bytes.Equal(data[:4], elfMagic) {
-		return true
-	}
-	n := min(len(data), binarySniffBytes)
-	return bytes.IndexByte(data[:n], 0) >= 0
-}
-
-// splitLines splits data into lines on "\n", trimming a trailing "\r".
-func splitLines(data []byte) []string {
-	lines := strings.Split(string(data), "\n")
-	for i, l := range lines {
-		lines[i] = strings.TrimSuffix(l, "\r")
-	}
-	return lines
-}
-
-func contextBefore(lines []string, i, n int) []string {
-	start := max(i-n, 0)
-	if start >= i {
-		return nil
-	}
-	return append([]string(nil), lines[start:i]...)
-}
-
-func contextAfter(lines []string, i, n int) []string {
-	end := min(i+1+n, len(lines))
-	if i+1 >= end {
-		return nil
-	}
-	return append([]string(nil), lines[i+1:end]...)
-}
+// ── Walk helpers ─────────────────────────────────────────────────────────────
 
 // dirDepth returns the depth of dir below root: root itself is 0, an immediate
 // subdirectory is 1, and so on.
@@ -479,11 +270,4 @@ func nameSet(names []string) map[string]bool {
 		}
 	}
 	return out
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "…"
 }
