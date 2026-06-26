@@ -1,0 +1,24 @@
+[package]
+name = "malscan-frontend"
+version = "0.1.0"
+edition = "2021"
+description = "Native (egui) configuration frontend for the Vulnetix malscan-engine"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "malscan-frontend"
+path = "src/main.rs"
+
+[dependencies]
+# eframe re-exports egui, so we depend on a single crate and `use eframe::egui`.
+# Default features dropped to avoid the Linux accesskit→zbus a11y stack (not
+# needed here); keep the glow renderer, bundled fonts and X11/Wayland support.
+eframe = { version = "0.34", default-features = false, features = [
+    "default_fonts",
+    "glow",
+    "wayland",
+    "x11",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
