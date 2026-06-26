@@ -156,6 +156,13 @@ type PackageContext struct {
 	// downstream consumers branch on ecosystem and label findings.
 	Ecosystem string
 
+	// Capabilities gates which detectors Detect runs, keyed by the shared
+	// capability keys (the Cap* constants; see the config package). nil — the
+	// default — enables every detector; a key set false short-circuits that
+	// detector. Populate it from the per-ecosystem config a human authored in
+	// the frontend (config.EcosystemConfig.Capabilities).
+	Capabilities map[string]bool
+
 	// Reputation/identity metadata (nil if unavailable). Originally the AUR RPC
 	// v5 `info` subset; reused across ecosystems via the generic field set.
 	Meta *PackageMeta

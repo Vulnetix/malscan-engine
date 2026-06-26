@@ -1,0 +1,28 @@
+{
+  "ecosystem": "aur",
+  "registry_endpoint": "https://aur.archlinux.org/rpc/v5",
+  "capabilities": {
+    "badhash": true,
+    "bin-source": true,
+    "checksum": true,
+    "git-history": true,
+    "github-stars": true,
+    "goodkeys": true,
+    "gtfobins": true,
+    "homograph": true,
+    "install-script": true,
+    "ioc-extract": true,
+    "ioc-scan": true,
+    "maintainer-batch": true,
+    "manifest-diff": true,
+    "manifest-patterns": true,
+    "metadata-reputation": true,
+    "name-typosquat": true,
+    "onion-c2": true,
+    "orphan-takeover": true,
+    "ownership-hijack": true,
+    "registry-comments": true,
+    "shell-obfuscation": true,
+    "source-url-patterns": true
+  }
+}
