@@ -1,0 +1,22 @@
+{
+  "ecosystem": "cargo",
+  "registry_endpoint": "https://crates.io/api/v1",
+  "capabilities": {
+    "badhash": true,
+    "github-stars": true,
+    "goodkeys": true,
+    "gtfobins": true,
+    "homograph": true,
+    "ioc-extract": true,
+    "ioc-scan": true,
+    "maintainer-batch": true,
+    "manifest-diff": true,
+    "manifest-patterns": true,
+    "metadata-reputation": true,
+    "name-typosquat": true,
+    "onion-c2": true,
+    "ownership-hijack": true,
+    "shell-obfuscation": true,
+    "source-url-patterns": true
+  }
+}

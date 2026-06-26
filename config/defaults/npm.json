@@ -1,0 +1,23 @@
+{
+  "ecosystem": "npm",
+  "registry_endpoint": "https://registry.npmjs.org",
+  "capabilities": {
+    "badhash": true,
+    "github-stars": true,
+    "goodkeys": true,
+    "gtfobins": true,
+    "homograph": true,
+    "install-script": true,
+    "ioc-extract": true,
+    "ioc-scan": true,
+    "maintainer-batch": true,
+    "manifest-diff": true,
+    "manifest-patterns": true,
+    "metadata-reputation": true,
+    "name-typosquat": true,
+    "onion-c2": true,
+    "ownership-hijack": true,
+    "shell-obfuscation": true,
+    "source-url-patterns": true
+  }
+}

@@ -16,34 +16,74 @@ var nowUnix = func() int64 { return time.Now().Unix() }
 // Findings carry a Class: ClassEvidence detections are factual malicious
 // indicators (any one marks the package malicious); ClassContext detections are
 // reputation/risk signals recorded as metadata only.
+// Each detector is gated by its capability key (ctx.capEnabled): a config that
+// disabled it for this ecosystem short-circuits it here, so the engine runs only
+// what a human left enabled in the frontend. A nil ctx.Capabilities (the
+// default) runs everything, so existing callers are unaffected.
 func Detect(ctx *PackageContext) []Finding {
 	loadPatterns()
 	var f []Finding
 
 	if ctx.PkgbuildContent != "" {
-		f = matchSection(ctx.PkgbuildContent, "pkgbuild_analysis", "pkgbuild", "", f)
-		f = matchSection(ctx.PkgbuildContent, "source_url_analysis", "source-url", "", f)
-		f = matchSection(ctx.PkgbuildContent, "gtfobins_analysis", "gtfobins", "", f)
-		f = append(f, analyzeShell(ctx.PkgbuildContent, "", "")...)
+		if ctx.capEnabled(CapManifestPatterns) {
+			f = matchSection(ctx.PkgbuildContent, "pkgbuild_analysis", "pkgbuild", "", f)
+		}
+		if ctx.capEnabled(CapSourceURLPatterns) {
+			f = matchSection(ctx.PkgbuildContent, "source_url_analysis", "source-url", "", f)
+		}
+		if ctx.capEnabled(CapGTFObins) {
+			f = matchSection(ctx.PkgbuildContent, "gtfobins_analysis", "gtfobins", "", f)
+		}
+		if ctx.capEnabled(CapShellObfuscation) {
+			f = append(f, analyzeShell(ctx.PkgbuildContent, "", "")...)
+		}
 	}
-	if ctx.InstallScriptContent != "" {
+	if ctx.InstallScriptContent != "" && ctx.capEnabled(CapInstallScript) {
 		f = matchSection(ctx.InstallScriptContent, "install_script_analysis", "install", "", f)
-		f = matchSection(ctx.InstallScriptContent, "gtfobins_analysis", "gtfobins", "IS-", f)
-		f = append(f, analyzeShell(ctx.InstallScriptContent, "IS-", "(in install script)")...)
+		if ctx.capEnabled(CapGTFObins) {
+			f = matchSection(ctx.InstallScriptContent, "gtfobins_analysis", "gtfobins", "IS-", f)
+		}
+		if ctx.capEnabled(CapShellObfuscation) {
+			f = append(f, analyzeShell(ctx.InstallScriptContent, "IS-", "(in install script)")...)
+		}
 	}
 
-	f = append(f, analyzeOnion(ctx)...)
-	f = append(f, analyzeHomograph(ctx)...)
-	f = append(f, analyzeChecksum(ctx)...)
-	f = append(f, analyzeName(ctx)...)
-	f = append(f, analyzeBinSource(ctx)...)
-	f = append(f, analyzeOrphanTakeover(ctx)...)
-	f = append(f, analyzeGitHistory(ctx)...)
-	f = append(f, analyzePkgbuildDiff(ctx)...)
-	f = append(f, analyzeMetadata(ctx)...)
-	f = append(f, analyzeMaintainer(ctx)...)
-	f = append(f, analyzeGithubStars(ctx)...)
-	f = append(f, analyzeAurComments(ctx)...)
+	if ctx.capEnabled(CapOnionC2) {
+		f = append(f, analyzeOnion(ctx)...)
+	}
+	if ctx.capEnabled(CapHomograph) {
+		f = append(f, analyzeHomograph(ctx)...)
+	}
+	if ctx.capEnabled(CapChecksum) {
+		f = append(f, analyzeChecksum(ctx)...)
+	}
+	if ctx.capEnabled(CapNameTyposquat) {
+		f = append(f, analyzeName(ctx)...)
+	}
+	if ctx.capEnabled(CapBinSource) {
+		f = append(f, analyzeBinSource(ctx)...)
+	}
+	if ctx.capEnabled(CapOrphanTakeover) {
+		f = append(f, analyzeOrphanTakeover(ctx)...)
+	}
+	if ctx.capEnabled(CapGitHistory) {
+		f = append(f, analyzeGitHistory(ctx)...)
+	}
+	if ctx.capEnabled(CapManifestDiff) {
+		f = append(f, analyzePkgbuildDiff(ctx)...)
+	}
+	if ctx.capEnabled(CapMetadataReputation) {
+		f = append(f, analyzeMetadata(ctx)...)
+	}
+	if ctx.capEnabled(CapMaintainerBatch) {
+		f = append(f, analyzeMaintainer(ctx)...)
+	}
+	if ctx.capEnabled(CapGithubStars) {
+		f = append(f, analyzeGithubStars(ctx)...)
+	}
+	if ctx.capEnabled(CapRegistryComments) {
+		f = append(f, analyzeAurComments(ctx)...)
+	}
 
 	return f
 }
