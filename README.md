@@ -127,6 +127,30 @@ A processor that only wants the indicator set (e.g. to match its own data) can u
 `(*FeedLoader).Load(ecosystems...)` directly, which returns the merged
 `*IndicatorSet` plus any `Warning`s.
 
+### In-memory matching (no filesystem)
+
+`Scan` walks a directory, but a high-volume caller (a registry processor scanning every
+package's already-in-memory source) wants to load the feed **once** and match many content
+buffers without touching disk or re-parsing the feed per item. Use the `Matcher`:
+
+```go
+loader := &iocscan.FeedLoader{}                 // public index + tmp cache + TTL
+set, warns, err := loader.Load("npm")           // load ONCE per run; reuse `set`
+m := iocscan.NewMatcher(set, 3)                 // 3 context lines
+for _, pkg := range packages {
+    ev := m.MatchText(pkg.Name+"/index.js", pkg.SourceText) // []Evidence with line + context
+    // m.MatchBytes(name, data) auto-detects ELF/binary and extracts strings
+    findings := make([]detect.Finding, 0, len(ev))
+    for _, e := range ev {
+        findings = append(findings, e.ToFinding()) // ClassEvidence, CWE-506 → folds into the verdict
+    }
+}
+```
+
+`Scan` itself uses a `Matcher` internally, so the filesystem and in-memory paths share identical
+matching, evidence shape and dedup. Passing `Options{Set: preloaded}` to `Scan` likewise skips
+the loader and scans against an already-loaded set.
+
 ### Feed cache (temp dir, timestamped, TTL)
 
 The index (`https://vulnetix.com/malscan-stix/index.json`) and each per-ecosystem
