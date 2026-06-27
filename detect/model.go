@@ -171,6 +171,18 @@ type PackageContext struct {
 	InstallScriptContent string // concatenated install hooks (*.install, npm pre/post-install, init.ps1, build.jl, …)
 	PriorPkgbuildContent string // build script from the previous revision (for diff)
 
+	// PkgbuildExecutes declares whether PkgbuildContent is an auto-execution
+	// recipe whose commands run at build/install time (AUR PKGBUILD
+	// build()/package(), Alpine APKBUILD, a Homebrew formula install/post_install)
+	// rather than runtime source or a manually-run manifest (npm package.json
+	// scripts, a package's shipped sources). False — the zero value, so existing
+	// callers are unaffected — makes dual-use gtfobins commands (hook_only
+	// patterns; e.g. bare aria2c/docker/npx-remote) found in PkgbuildContent
+	// ClassContext instead of evidence. InstallScriptContent is always treated as
+	// a hook surface. override_gate patterns (reverse/bind shells, curl|sh) are
+	// unaffected and mint on every surface.
+	PkgbuildExecutes bool
+
 	GitLog []GitCommit // newest-first commit list from the package's source repo
 
 	// MaintainerPackages: other packages owned by the same maintainer (for
