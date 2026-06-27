@@ -2,3 +2,6 @@
 *.test
 *.out
 /vendor/
+
+# Vulnetix CLI local state / scan output
+.vulnetix/
