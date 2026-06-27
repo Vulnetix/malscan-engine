@@ -21,6 +21,13 @@ type patternRule struct {
 	Points       int    `toml:"points"`
 	Description  string `toml:"description"`
 	OverrideGate bool   `toml:"override_gate"`
+	// HookOnly marks a dual-use command (bare aria2c/docker/npx-remote, …) that is
+	// malicious evidence ONLY when it appears in an auto-execution surface (an
+	// install hook, or a PkgbuildContent whose processor set PkgbuildExecutes).
+	// Outside such a surface the hit is demoted to ClassContext corroboration. Never
+	// set on override_gate rules (reverse/bind shells, curl|sh) — those are proof
+	// regardless of context.
+	HookOnly bool `toml:"hook_only"`
 }
 
 // compiledPattern is a runtime-ready rule.
@@ -30,6 +37,7 @@ type compiledPattern struct {
 	points       int
 	description  string
 	overrideGate bool
+	hookOnly     bool
 }
 
 var (
@@ -58,6 +66,7 @@ func loadPatterns() {
 				patternsBySection[section] = append(patternsBySection[section], compiledPattern{
 					id: r.ID, re: re, points: r.Points,
 					description: r.Description, overrideGate: r.OverrideGate,
+					hookOnly: r.HookOnly,
 				})
 			}
 		}
@@ -95,12 +104,19 @@ func LogStartup(logger *slog.Logger) {
 const evidenceThreshold = 40
 
 // matchSection matches one TOML section against content.
-func matchSection(content, section, category, idPrefix string, findings []Finding) []Finding {
+// matchSection matches one TOML section against content. inHookSurface reports
+// whether content auto-executes at build/install time (an install hook, or a
+// PkgbuildContent the caller flagged PkgbuildExecutes). hook_only patterns found
+// outside such a surface are demoted to ClassContext corroboration.
+func matchSection(content, section, category, idPrefix string, inHookSurface bool, findings []Finding) []Finding {
 	loadPatterns()
 	for _, p := range patternsBySection[section] {
 		if p.re.MatchString(content) {
 			class := ClassEvidence
 			if !p.overrideGate && p.points < evidenceThreshold {
+				class = ClassContext
+			}
+			if p.hookOnly && !inHookSurface { // dual-use command outside an auto-exec surface → corroboration only
 				class = ClassContext
 			}
 			findings = append(findings, Finding{
