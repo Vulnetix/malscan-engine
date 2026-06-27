@@ -1198,6 +1198,7 @@ pattern = '(docker|podman)\s+run\s.*(-v|--volume|--mount)\s'
 points = 50
 description = "Docker/Podman run with volume mount (host filesystem access)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-SYSTEMD-RUN"
@@ -1235,6 +1236,7 @@ pattern = 'aria2c\s'
 points = 40
 description = "aria2c download utility (alternative to curl/wget)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-DOWNLOAD-LWP"
@@ -1242,6 +1244,7 @@ pattern = '(lwp-download|lwp-request)\s'
 points = 45
 description = "Perl LWP download utility"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-DOWNLOAD-TFTP"
@@ -1249,6 +1252,7 @@ pattern = 'tftp\s'
 points = 55
 description = "TFTP file transfer (unauthenticated, commonly abused)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-DOWNLOAD-FINGER"
@@ -1270,6 +1274,7 @@ pattern = '\b(ftp|ncftp|lftp|psftp)\s+[^;|&\n]*(-i|-n|<<)'
 points = 40
 description = "Scripted FTP transfer (automated file download)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-DOWNLOAD-SMBCLIENT"
@@ -1277,6 +1282,7 @@ pattern = 'smbclient\s+//.*\s+-c\s'
 points = 50
 description = "SMB client scripted file transfer"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-DOWNLOAD-SCP"
@@ -1294,67 +1300,72 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-DOWNLOAD-NODE"
-pattern = 'node\s+.*(-e|--eval)\s.*\bhttp\b.*\bget\b|npm\s+exec\s|npx\s+\S'
+# node inline that fetches over http(s); OR npx/npm-exec whose package-spec is a
+# remote URL/VCS shorthand — either in spec position (after optional boolean
+# flags) or as the value of a --package/-p selector. Bare `npx tsc`,
+# `npx eslint .`, `npx @scope/pkg`, `npx --registry https://… tool` do NOT match.
+pattern = 'node\s+(-e|--eval)\s.*\bhttps?\b.*\b(get|request)\b|(npx|npm\s+exec)\s+((-y|--yes|--no-install|-q|--quiet)\s+)*((--package[ =]|-p[ =])\s*)?(https?://|git\+(https?|ssh)://|git://|github:|gitlab:|bitbucket:|gist:)'
 points = 50
-description = "Node.js HTTP download or npx remote execution"
+description = "Node.js remote fetch-eval or npx/npm-exec of a remote URL/VCS spec"
 override_gate = false
+hook_only = true
 
 # --- Interpreter Inline Execution (supporting signals) ---
 
 [[gtfobins_analysis]]
 id = "G-NODE-INLINE"
 pattern = 'node\s+(-e|--eval)\s'
-points = 40
-description = "Node.js inline code execution"
+points = 30
+description = "Node.js inline code execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-RUBY-INLINE"
 pattern = 'ruby\s+(-e)\s'
-points = 35
-description = "Ruby inline code execution"
+points = 30
+description = "Ruby inline code execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-PHP-INLINE"
 pattern = 'php\s+(-r)\s'
-points = 40
-description = "PHP inline code execution"
+points = 30
+description = "PHP inline code execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-LUA-INLINE"
 pattern = 'lua\s+(-e)\s'
-points = 40
-description = "Lua inline code execution"
+points = 30
+description = "Lua inline code execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-R-INLINE"
 pattern = '(Rscript\s+-e|R\s+.*--vanilla\s+-e)\s'
-points = 40
-description = "R inline code execution"
+points = 30
+description = "R inline code execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-JULIA-INLINE"
 pattern = 'julia\s+(-e|--eval)\s'
-points = 40
-description = "Julia inline code execution"
+points = 30
+description = "Julia inline code execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-JAVA-INLINE"
 pattern = '(jjs|jshell|jrunscript)\s'
-points = 45
-description = "Java Nashorn/JShell inline execution"
+points = 30
+description = "Java Nashorn/JShell inline execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-TCLSH-INLINE"
 pattern = '(tclsh|wish)\s+<<'
-points = 40
-description = "Tcl inline heredoc execution"
+points = 30
+description = "Tcl inline heredoc execution (dual-use; corroboration only)"
 override_gate = false
 
 [[gtfobins_analysis]]
@@ -1388,8 +1399,8 @@ override_gate = false
 [[gtfobins_analysis]]
 id = "G-IRONSQL-EXEC"
 pattern = 'irb\s.*-r\s|irb\s.*-e\s'
-points = 40
-description = "Ruby IRB interactive session with code execution"
+points = 30
+description = "Ruby IRB interactive session with code execution (dual-use; corroboration only)"
 override_gate = false
 
 # --- Library Injection ---
@@ -1453,6 +1464,7 @@ pattern = 'restic\s+.*backup\s'
 points = 45
 description = "restic backup to remote (potential data exfiltration)"
 override_gate = false
+hook_only = true
 
 # --- Missing Reverse/Bind Shell Gaps ---
 
@@ -1483,6 +1495,7 @@ pattern = 'busybox\s+wget\s'
 points = 50
 description = "Busybox wget alternative downloader"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-BUSYBOX-FTPD"
@@ -1590,6 +1603,7 @@ pattern = '(docker|podman)\s+exec\s'
 points = 45
 description = "Docker/Podman exec into running container"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-DOCKER-CP"
@@ -1597,6 +1611,7 @@ pattern = '(docker|podman)\s+cp\s'
 points = 40
 description = "Docker/Podman file copy (container boundary crossing)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-NANO-SHELL"
@@ -1634,6 +1649,7 @@ pattern = 'sshfs\s'
 points = 45
 description = "SSHFS remote filesystem mount (remote file access)"
 override_gate = false
+hook_only = true
 
 # --- Library Load Gaps ---
 
