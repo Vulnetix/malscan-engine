@@ -201,7 +201,7 @@ func TestMatchLine(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got := map[IndicatorType]string{}
-			for _, lm := range m.matchLine(c.line) {
+			for _, lm := range m.matchLine(c.line, false) {
 				got[lm.typ] = lm.value
 			}
 			for typ, val := range c.want {
