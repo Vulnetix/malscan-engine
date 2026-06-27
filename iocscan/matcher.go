@@ -52,9 +52,10 @@ func (m *Matcher) MatchBytes(name string, data []byte) []Evidence {
 // the in-memory API passes the same logical name for both).
 func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 	lines := splitLinesString(content)
+	skipIPFile := suppressIPv4ForFile(relPath)
 	var ev []Evidence
 	for i, line := range lines {
-		for _, mm := range m.matchLine(line) {
+		for _, mm := range m.matchLine(line, skipIPFile || isMinifiedLine(line)) {
 			ev = append(ev, Evidence{
 				IndicatorType:  mm.typ,
 				IndicatorValue: mm.value,
@@ -87,7 +88,9 @@ func (m *Matcher) matchBinary(filePath, relPath string, data []byte) []Evidence 
 	seen := map[string]bool{}
 	var ev []Evidence
 	for _, sh := range extractStrings(data, stringMinLen) {
-		for _, mm := range m.matchLine(sh.value) {
+		// Binary string extraction keeps IPv4 matching — a hardcoded address in
+		// an ELF/agent is a real indicator, not minified-source noise.
+		for _, mm := range m.matchLine(sh.value, false) {
 			key := string(mm.typ) + "|" + strings.ToLower(mm.value)
 			if seen[key] {
 				continue
@@ -126,8 +129,10 @@ var (
 
 // matchLine finds every known-bad indicator referenced in s, deduplicated by
 // (type, value). It is used both line-by-line over text and over strings
-// extracted from binaries.
-func (m *Matcher) matchLine(s string) []lineMatch {
+// extracted from binaries. skipIPv4 suppresses bare-IPv4 matching for lines /
+// files whose dense numeric content (minified bundles, source maps, SVG
+// coordinates) collides with IP octets without ever referencing an address.
+func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 	var matches []lineMatch
 	seen := map[string]bool{}
 	add := func(typ IndicatorType, value string, col int, ind *Indicator) {
@@ -164,10 +169,22 @@ func (m *Matcher) matchLine(s string) []lineMatch {
 		}
 	}
 
-	// IPv4.
-	for _, loc := range ipv4Re.FindAllStringIndex(s, -1) {
-		ipStr := s[loc[0]:loc[1]]
-		if ip := net.ParseIP(ipStr); ip != nil && ip.To4() != nil {
+	// IPv4 — only when the token is actually used as an address. It must be a
+	// canonical dotted-quad (strictIPv4: four octets 0-255, no leading zeros) and
+	// be delimited by non-numeric characters (ipBoundaryOK), so a longer dotted
+	// run (a 1.2.3.4.5 version), a signed coordinate (-1.2.3.4) or a range
+	// (1.2.3.4-5) is rejected rather than matched as an IP. skipIPv4 drops the
+	// whole branch for generated/minified content (see suppressIPv4ForFile /
+	// isMinifiedLine) where IP-shaped numeric noise is pervasive.
+	if !skipIPv4 {
+		for _, loc := range ipv4Re.FindAllStringIndex(s, -1) {
+			if !ipBoundaryOK(s, loc[0], loc[1]) {
+				continue
+			}
+			ipStr := s[loc[0]:loc[1]]
+			if !strictIPv4(ipStr) {
+				continue
+			}
 			if ind := m.set.LookupIP(ipStr); ind != nil {
 				add(TypeIPv4, ipStr, loc[0], ind)
 			}
@@ -188,6 +205,101 @@ func (m *Matcher) matchLine(s string) []lineMatch {
 	}
 
 	return matches
+}
+
+// ipBoundaryOK reports whether the IPv4 candidate s[start:end] is delimited by
+// non-numeric characters on both sides — i.e. it is not part of a longer dotted
+// or signed number run. Adjacent letters are already excluded by the \b in the
+// regex; this additionally rejects the number-context delimiters '.', '+', '-'
+// and digits, so 1.2.3.4.5 (version), -1.2.3.4 (coordinate) and 1.2.3.4-9
+// (range) are not mistaken for an address.
+func ipBoundaryOK(s string, start, end int) bool {
+	if start > 0 && isNumBoundary(s[start-1]) {
+		return false
+	}
+	if end < len(s) && isNumBoundary(s[end]) {
+		return false
+	}
+	return true
+}
+
+func isNumBoundary(c byte) bool {
+	return c == '.' || c == '+' || c == '-' || (c >= '0' && c <= '9')
+}
+
+// strictIPv4 reports whether ipStr is a canonical dotted-quad: exactly four
+// octets, each a 1-3 digit number 0-255 with no leading zeros. This rejects
+// coordinate / version tokens that are not real addresses and the octal-style
+// leading-zero forms net.ParseIP is lenient about across Go versions.
+func strictIPv4(ipStr string) bool {
+	octets := 0
+	i := 0
+	for octets < 4 {
+		octets++
+		j := i
+		for j < len(ipStr) && ipStr[j] >= '0' && ipStr[j] <= '9' {
+			j++
+		}
+		n := j - i
+		if n == 0 || n > 3 {
+			return false
+		}
+		if n > 1 && ipStr[i] == '0' { // leading zero
+			return false
+		}
+		v := 0
+		for k := i; k < j; k++ {
+			v = v*10 + int(ipStr[k]-'0')
+		}
+		if v > 255 {
+			return false
+		}
+		i = j
+		if octets < 4 {
+			if i >= len(ipStr) || ipStr[i] != '.' {
+				return false
+			}
+			i++ // consume the dot
+		}
+	}
+	return i == len(ipStr)
+}
+
+// noisyIPv4Suffixes are file types whose content is dense IP-shaped numeric data
+// (vector coordinates, source-map mappings/embedded source, minified bundles)
+// that collides with IP octets but never references an address. Bare-IPv4
+// matching is suppressed for them; domain/URL matching (which carries TLD/scheme
+// signal) is unaffected.
+var noisyIPv4Suffixes = []string{".svg", ".map", ".min.js", ".min.mjs", ".min.cjs", ".min.css"}
+
+// suppressIPv4ForFile reports whether bare-IPv4 matching should be skipped for a
+// file based on its path/extension.
+func suppressIPv4ForFile(relPath string) bool {
+	p := strings.ToLower(relPath)
+	for _, suf := range noisyIPv4Suffixes {
+		if strings.HasSuffix(p, suf) {
+			return true
+		}
+	}
+	return false
+}
+
+// isMinifiedLine reports whether a line looks machine-minified — very long with
+// almost no whitespace. Such lines pack numeric data that collides with IP
+// octets, so IPv4 matching is suppressed on them. The threshold is deliberately
+// high so ordinary source/log lines (which carry real IP IOCs) are unaffected.
+func isMinifiedLine(line string) bool {
+	const minLen = 2000
+	if len(line) < minLen {
+		return false
+	}
+	ws := 0
+	for i := 0; i < len(line); i++ {
+		if c := line[i]; c == ' ' || c == '\t' {
+			ws++
+		}
+	}
+	return ws*50 < len(line) // < 2% whitespace
 }
 
 // urlHost returns the host of a URL, or "" if it cannot be parsed.
