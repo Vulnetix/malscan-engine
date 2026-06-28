@@ -31,7 +31,7 @@ func TestScanFindsTextIOCs(t *testing.T) {
 	_, loader := standardLoader(t, t.TempDir(), clk)
 	root := fixtureTree(t)
 
-	report, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, ContextLines: 1})
+	report, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, NoBadnet: true, ContextLines: 1})
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
@@ -97,7 +97,7 @@ func TestScanDepthLimit(t *testing.T) {
 	root := fixtureTree(t)
 
 	// Depth 2 must not descend into deep/a (depth 2).
-	report, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, Depth: 2})
+	report, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, NoBadnet: true, Depth: 2})
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
@@ -106,7 +106,7 @@ func TestScanDepthLimit(t *testing.T) {
 	}
 
 	// Unlimited depth finds it.
-	report2, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, Depth: 0})
+	report2, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, NoBadnet: true, Depth: 0})
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestScanExtensionFilters(t *testing.T) {
 	root := fixtureTree(t)
 
 	// Exclude .log → debug.log skipped.
-	rep, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, ExcludeExt: []string{".log"}})
+	rep, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, NoBadnet: true, ExcludeExt: []string{".log"}})
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestScanExtensionFilters(t *testing.T) {
 	}
 
 	// Include only .env → app.js and others skipped, service.env scanned.
-	rep2, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, IncludeExt: []string{".env"}})
+	rep2, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, NoBadnet: true, IncludeExt: []string{".env"}})
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
@@ -154,7 +154,7 @@ func TestScanBinaryAnalysis(t *testing.T) {
 	writeBytes(t, root, "bin/agent", blob)
 
 	// Without BinaryAnalysis the binary is skipped.
-	rep, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader})
+	rep, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, NoBadnet: true})
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestScanBinaryAnalysis(t *testing.T) {
 	}
 
 	// With BinaryAnalysis the embedded domain is found.
-	rep2, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, BinaryAnalysis: true})
+	rep2, err := Scan(Options{Root: root, Ecosystem: "npm", Loader: loader, NoBadnet: true, BinaryAnalysis: true})
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
