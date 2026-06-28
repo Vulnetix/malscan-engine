@@ -45,12 +45,33 @@ type FeedResult struct {
 // This is the runtime path behind the CLI's `malscan --fetch-definitions`, giving
 // customers fresh definitions without recompiling the engine.
 func Fetch(ctx context.Context, client *http.Client) (*Set, []FeedResult) {
+	return fetchFromFeeds(ctx, client, feeds)
+}
+
+// FetchWithFeedsFile downloads threat-intel feeds described by a caller-supplied
+// feeds.json file, parses each according to its declared parser, and returns the
+// same Set/result shape as Fetch. The file shape is:
+//
+//	{"schema_version":"badnet-feeds/v1","feeds":[{"key":"name","url":"https://...","parser":"iplist","enabled":true}]}
+//
+// Supported parser values are: iplist, netset, hosts, rss, emails, mixed, misp.
+func FetchWithFeedsFile(ctx context.Context, client *http.Client, path string) (*Set, []FeedResult, error) {
+	customFeeds, err := loadFeedsFile(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	set, results := fetchFromFeeds(ctx, client, customFeeds)
+	return set, results, nil
+}
+
+func fetchFromFeeds(ctx context.Context, client *http.Client, srcs []feed) (*Set, []FeedResult) {
 	if client == nil {
 		client = &http.Client{Timeout: DefaultFetchTimeout}
 	}
 	s := NewEmpty()
-	results := make([]FeedResult, 0, len(feeds))
-	for _, f := range feeds {
+	s.sources = feedSourceNames(srcs)
+	results := make([]FeedResult, 0, len(srcs))
+	for _, f := range srcs {
 		body, err := fetchURL(ctx, client, f.url)
 		if err != nil {
 			results = append(results, FeedResult{Name: f.name, Err: err.Error()})
@@ -136,7 +157,7 @@ func (s *Set) WriteFiles(dir string) (changed int, err error) {
 		{dataFileNames.domains, "known-bad hostnames/domains", s.Domains()},
 		{dataFileNames.emails, "known-bad threat-actor email addresses", s.Emails()},
 	}
-	srcs := feedNames()
+	srcs := s.sourceNames()
 	for _, f := range files {
 		content := renderFile(f.label, srcs, f.vals)
 		p := filepath.Join(dir, f.name)
@@ -168,12 +189,49 @@ func (s *Set) Merge(o *Set) {
 	for k := range o.emails {
 		s.emails[k] = struct{}{}
 	}
+	s.sources = mergeSources(s.sources, o.sources)
 }
 
 func feedNames() []string {
-	out := make([]string, len(feeds))
-	for i, f := range feeds {
+	return feedSourceNames(feeds)
+}
+
+func feedSourceNames(srcs []feed) []string {
+	out := make([]string, len(srcs))
+	for i, f := range srcs {
 		out[i] = f.name
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (s *Set) sourceNames() []string {
+	if len(s.sources) == 0 {
+		return feedNames()
+	}
+	out := append([]string(nil), s.sources...)
+	sort.Strings(out)
+	return out
+}
+
+func mergeSources(a, b []string) []string {
+	if len(a) == 0 {
+		return append([]string(nil), b...)
+	}
+	if len(b) == 0 {
+		return append([]string(nil), a...)
+	}
+	seen := make(map[string]struct{}, len(a)+len(b))
+	out := make([]string, 0, len(a)+len(b))
+	for _, src := range append(append([]string(nil), a...), b...) {
+		if src == "" {
+			continue
+		}
+		if _, ok := seen[src]; ok {
+			continue
+		}
+		seen[src] = struct{}{}
+		out = append(out, src)
 	}
 	sort.Strings(out)
 	return out

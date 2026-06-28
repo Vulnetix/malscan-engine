@@ -186,6 +186,148 @@ pub struct Capability {
     pub support: Support,
 }
 
+/// One badnet feed source and the parser the Go module should use for it.
+///
+/// This catalog is written to `badnet/data/feeds.json` by `just gen-defaults`.
+/// The Go `badnet` package embeds that generated file and falls back to its
+/// compiled defaults if the file is unavailable, so downstream binaries that
+/// vendor/import the module get the same feed/parser contract at runtime.
+pub struct FeedSource {
+    /// Stable key used in reports and generated source headers.
+    pub key: &'static str,
+    /// Human-friendly source name.
+    pub name: &'static str,
+    /// Feed URL fetched by `badnet.Fetch`.
+    pub url: &'static str,
+    /// Parser key understood by `badnet.parseFeed`.
+    pub parser: &'static str,
+    /// Why the feed belongs in the known-bad network set.
+    pub detail: &'static str,
+}
+
+/// Public badnet feeds, ordered deterministically for stable generated output.
+pub const FEED_SOURCES: &[FeedSource] = &[
+    FeedSource {
+        key: "dshield-block",
+        name: "DShield block list",
+        url: "https://www.dshield.org/block.txt",
+        parser: "iplist",
+        detail: "DShield suspicious source IP blocklist.",
+    },
+    FeedSource {
+        key: "dshield-ipsascii",
+        name: "DShield IPs ASCII",
+        url: "https://www.dshield.org/ipsascii.html",
+        parser: "iplist",
+        detail: "DShield top attacking IPs in plain text.",
+    },
+    FeedSource {
+        key: "crowdsec-intelligence",
+        name: "CrowdSec Intelligence Feed",
+        url: "https://feeds.crowdsec.net/free/2be9a716-39b8-5c18-bc9e-4ba7aefd8831.json",
+        parser: "misp",
+        detail: "CrowdSec malicious intelligence feed in MISP JSON form.",
+    },
+    FeedSource {
+        key: "dandelionsprout-antimalware",
+        name: "DandelionSprout Anti-Malware Hosts",
+        url: "https://raw.githubusercontent.com/DandelionSprout/adfilt/master/Alternate%20versions%20Anti-Malware%20List/AntiMalwareHosts.txt",
+        parser: "hosts",
+        detail: "Anti-malware hosts-file blocklist.",
+    },
+    FeedSource {
+        key: "feodotracker-recommended",
+        name: "Feodo Tracker recommended C2 IPs",
+        url: "https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.txt",
+        parser: "iplist",
+        detail: "Low-false-positive active botnet C2 IP list.",
+    },
+    FeedSource {
+        key: "urlhaus-hosts",
+        name: "URLhaus malware hosts",
+        url: "https://urlhaus.abuse.ch/downloads/hostfile/",
+        parser: "hosts",
+        detail: "Active malware-delivery hostnames in hosts-file format.",
+    },
+    FeedSource {
+        key: "isc-intelfeed",
+        name: "SANS ISC Intel Feed",
+        url: "https://isc.sans.edu/api/intelfeed",
+        parser: "mixed",
+        detail: "SANS ISC mixed IOC feed.",
+    },
+    FeedSource {
+        key: "isc-cloudips",
+        name: "SANS ISC cloud IPs",
+        url: "https://isc.sans.edu/api/cloudips",
+        parser: "iplist",
+        detail: "SANS ISC cloud IP threat feed.",
+    },
+    FeedSource {
+        key: "firehol-level3",
+        name: "FireHOL level 3",
+        url: "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level3.netset",
+        parser: "netset",
+        detail: "FireHOL level 3 netset, reduced to individual IPs.",
+    },
+    FeedSource {
+        key: "binarydefense-banlist",
+        name: "Binary Defense banlist",
+        url: "https://binarydefense.com/banlist.txt",
+        parser: "iplist",
+        detail: "Binary Defense observed attacker IPs.",
+    },
+    FeedSource {
+        key: "aper-phishing-reply",
+        name: "APER phishing reply addresses",
+        url: "https://svn.code.sf.net/p/aper/code/phishing_reply_addresses",
+        parser: "emails",
+        detail: "Threat-actor email addresses observed in phishing replies.",
+    },
+    FeedSource {
+        key: "projecthoneypot-p-rss",
+        name: "Project Honey Pot phishing RSS",
+        url: "https://www.projecthoneypot.org/list_of_ips.php?t=p&rss=1",
+        parser: "rss",
+        detail: "Project Honey Pot phishing IP RSS feed.",
+    },
+    FeedSource {
+        key: "projecthoneypot-rss",
+        name: "Project Honey Pot RSS",
+        url: "https://www.projecthoneypot.org/list_of_ips.php?rss=1",
+        parser: "rss",
+        detail: "Project Honey Pot IP RSS feed.",
+    },
+    FeedSource {
+        key: "cinsscore-badguys",
+        name: "CINS Score badguys",
+        url: "http://cinsscore.com/list/ci-badguys.txt",
+        parser: "iplist",
+        detail: "CINS Score suspicious IP list.",
+    },
+    FeedSource {
+        key: "alienvault-generic",
+        name: "AlienVault generic reputation",
+        url: "https://reputation.alienvault.com/reputation.generic",
+        parser: "iplist",
+        detail: "AlienVault reputation generic IP feed.",
+    },
+    FeedSource {
+        key: "alienvault-data",
+        name: "AlienVault reputation data",
+        url: "https://reputation.alienvault.com/reputation.data",
+        parser: "iplist",
+        detail: "AlienVault reputation data IP feed.",
+    },
+    FeedSource {
+        key: "bruteforceblocker",
+        name: "BruteforceBlocker",
+        url: "https://danger.rulez.sk/projects/bruteforceblocker/blist.php",
+        parser: "iplist",
+        detail: "BruteforceBlocker IP list.",
+    },
+];
+
 /// The full capability catalog, ordered roughly strongest-evidence first.
 pub const CAPABILITIES: &[Capability] = &[
     Capability {
