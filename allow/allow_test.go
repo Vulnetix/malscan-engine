@@ -52,6 +52,60 @@ func TestIPBenign(t *testing.T) {
 	}
 }
 
+func TestCodeTokenDomain(t *testing.T) {
+	code := []string{"a.top", "A.top", "re.global", "this.global", "this.GLOBAL",
+		"address.group", "convert.rgb.xyz", "rgb.xyz", "props.top"}
+	for _, h := range code {
+		if !CodeTokenDomain(h) {
+			t.Errorf("CodeTokenDomain(%q) = false, want true", h)
+		}
+	}
+	real := []string{"evilc2.top", "mybrand.xyz", "malware-drop.group",
+		"example.com", "lukeed.com", "registry.npmjs.org"}
+	for _, h := range real {
+		if CodeTokenDomain(h) {
+			t.Errorf("CodeTokenDomain(%q) = true, want false (real/distinct SLD)", h)
+		}
+	}
+}
+
+func TestVersionLikeIP(t *testing.T) {
+	ver := []string{"7.3.1.1", "21.2.5.3", "2.1.2.2", "19.1.2.14", "4.4.3.2", "1.5.9.9"}
+	for _, ip := range ver {
+		if !VersionLikeIP(ip) {
+			t.Errorf("VersionLikeIP(%q) = false, want true", ip)
+		}
+	}
+	real := []string{"129.144.52.38", "1.15.65.96", "119.0.0.0", "185.100.157.127", "45.137.21.9"}
+	for _, ip := range real {
+		if VersionLikeIP(ip) {
+			t.Errorf("VersionLikeIP(%q) = true, want false (larger octets)", ip)
+		}
+	}
+}
+
+func TestBenignDocURL(t *testing.T) {
+	doc := []string{
+		"https://tidelift.com/security", "https://dom.spec.whatwg.org",
+		"https://floating-ui.com/docs/offset", "http://chaijs.com", "https://nx.dev",
+	}
+	for _, u := range doc {
+		if !BenignDocURL(u) {
+			t.Errorf("BenignDocURL(%q) = false, want true (benign docs host)", u)
+		}
+	}
+	keep := []string{
+		"https://github.com/evil/repo/raw/main/payload.sh", // payload-capable host
+		"https://pastebin.com/N21QzeQA", "https://bit.ly/3cXEKWf",
+		"https://discord.com/api/webhooks/123/abc", "https://evil-c2.io/beacon",
+	}
+	for _, u := range keep {
+		if BenignDocURL(u) {
+			t.Errorf("BenignDocURL(%q) = true, want false (must stay matchable)", u)
+		}
+	}
+}
+
 func TestURLAndBenign(t *testing.T) {
 	if !URL("https://html.spec.whatwg.org/multipage/forms.html") {
 		t.Error("URL spec link should be benign")

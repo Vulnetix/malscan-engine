@@ -93,7 +93,9 @@ func ExtractIOCs(repo *RepoData) []IOC {
 		}
 	}
 	for _, ip := range iocIPv4RE.FindAllString(content, -1) {
-		if ip == "127.0.0.1" || ip == "0.0.0.0" {
+		// Skip loopback/null and version/coordinate-shaped quads (all octets <=31),
+		// so version tables in package source don't get minted as IP IOCs.
+		if ip == "127.0.0.1" || ip == "0.0.0.0" || allow.VersionLikeIP(ip) {
 			continue
 		}
 		emit("ipv4", ip, "")
