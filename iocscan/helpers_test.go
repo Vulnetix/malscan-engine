@@ -200,7 +200,10 @@ func standardLoader(t *testing.T, cacheDir string, clk *clock) (*stixTestServer,
 		CacheDir:   cacheDir,
 		TTL:        time.Hour,
 		HTTPClient: s.Client(),
-		now:        clk.now,
+		// Keep these index/feed tests hermetic — the TweetFeed base feed is
+		// exercised separately in tweetfeed_test.go against a local server.
+		DisableTweetFeed: true,
+		now:              clk.now,
 	}
 	return s, loader
 }
