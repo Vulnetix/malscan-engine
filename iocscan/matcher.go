@@ -181,6 +181,12 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 			if !ipBoundaryOK(s, loc[0], loc[1]) {
 				continue
 			}
+			// Reject only tokens that were never an address — a literal that a real
+			// C2 could not inhabit. Anything that COULD be a malicious endpoint
+			// (including IPv4-mapped IPv6 like ::ffff:1.2.3.4) is kept for matching.
+			if ipv4InSlashVersion(s, loc[0]) || ipv4InSVGGeometry(s, loc[0]) {
+				continue
+			}
 			ipStr := s[loc[0]:loc[1]]
 			if !strictIPv4(ipStr) {
 				continue
@@ -225,6 +231,76 @@ func ipBoundaryOK(s string, start, end int) bool {
 
 func isNumBoundary(c byte) bool {
 	return c == '.' || c == '+' || c == '-' || (c >= '0' && c <= '9')
+}
+
+// ipv4InSlashVersion reports whether the dotted-quad at s[start:] is the version
+// part of a "<word>/<quad>" token — "Chrome/119.0.0.0", "Safari/537.36" in a
+// User-Agent, or a "<path>/1.2.3.4" URL path segment. A quad bound to a word by a
+// single '/' is a software version or path component, never a connected network
+// endpoint, so it can never be a C2/exfil indicator and is dropped.
+//
+// This is deliberately narrow: a real URL host ("http://1.2.3.4") is preceded by
+// "//" — the char before the '/' is '/', not a letter — so it is NOT rejected,
+// and its full URL still matches via the url/domain branches regardless. An
+// IPv4-mapped IPv6 literal ("::ffff:1.2.3.4") is also untouched: it embeds a real
+// address that a real C2 could use, so it stays matchable.
+func ipv4InSlashVersion(s string, start int) bool {
+	return start >= 2 && s[start-1] == '/' && isASCIILetter(s[start-2])
+}
+
+func isASCIILetter(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+}
+
+// svgGeometryAttrs open an SVG vector-geometry attribute whose value is pure
+// path/coordinate data — numbers and path-command letters, never a network
+// endpoint. Both the unescaped (`d="`) and JSON/JS-escaped (`d=\"`) forms are
+// listed because icon packs ship SVG inside JSON/JS string literals (the
+// @iconify/json bodies are `"<path d=\"M…\"/>"`). Attributes that CAN carry a
+// real address (`onload=`, `xlink:href=`, `style=`) are intentionally absent, so
+// an IP smuggled into a scripted SVG is still matched.
+var svgGeometryAttrs = []string{
+	`d="`, `d='`, `d=\"`,
+	`points="`, `points='`, `points=\"`,
+	`transform="`, `transform='`, `transform=\"`,
+}
+
+// ipv4InSVGGeometry reports whether the dotted-quad at s[start:] sits inside an
+// SVG geometry attribute value (`d`, `points`, `transform`). Such values pack
+// adjacent coordinates with no separators ("c.67 0 1.15.65.96 1.29z"), and the
+// IPv4 regex splices three of them into a quad (1.15.65.96 = 1.15 / .65 / .96)
+// that was never an address — the canonical @iconify/json false positive. Because
+// geometry values contain no quotes, the candidate is "inside" the value when the
+// nearest geometry-attribute opener before it has no quote between it and the
+// candidate; a real IP in any other attribute on the same element has the
+// attribute's closing quote in between and is therefore still matched.
+func ipv4InSVGGeometry(s string, start int) bool {
+	pre := s[:start]
+	open := -1 // end index of the nearest boundary-anchored geometry opener
+	for _, attr := range svgGeometryAttrs {
+		for from := 0; ; {
+			i := strings.Index(pre[from:], attr)
+			if i < 0 {
+				break
+			}
+			idx := from + i
+			from = idx + 1
+			// The attribute name must start at a separator, else this is the tail
+			// of a longer name (the "d=\"" inside onload="…", id="…", download="…").
+			if idx > 0 && pre[idx-1] != ' ' && pre[idx-1] != '\t' {
+				continue
+			}
+			if end := idx + len(attr); end > open {
+				open = end
+			}
+		}
+	}
+	if open < 0 {
+		return false
+	}
+	// A quote between the opener and the candidate means that geometry value
+	// already closed — the candidate lives in some later, non-geometry context.
+	return !strings.ContainsAny(s[open:start], `"'`)
 }
 
 // strictIPv4 reports whether ipStr is a canonical dotted-quad: exactly four
@@ -277,6 +353,26 @@ var noisyIPv4Suffixes = []string{".svg", ".map", ".min.js", ".min.mjs", ".min.cj
 func suppressIPv4ForFile(relPath string) bool {
 	p := strings.ToLower(relPath)
 	for _, suf := range noisyIPv4Suffixes {
+		if strings.HasSuffix(p, suf) {
+			return true
+		}
+	}
+	return false
+}
+
+// inertDocSuffixes are documentation formats that are never executed and never
+// fetched as part of a package's runtime/install — Markdown in its common
+// extensions. An IP/domain/URL in inert docs (a README's example endpoint, a
+// CHANGELOG link, an API sample) is documentation, not an indicator of compromise.
+var inertDocSuffixes = []string{".md", ".markdown", ".mdx", ".mkd", ".mdown"}
+
+// isInertDoc reports whether relPath is inert documentation whose IOC references
+// must not be raised as malware findings (see inertDocSuffixes). Only Markdown is
+// listed: source maps, minified bundles and test fixtures are NOT inert — they can
+// carry a real, executed payload — so they stay scanned.
+func isInertDoc(relPath string) bool {
+	p := strings.ToLower(relPath)
+	for _, suf := range inertDocSuffixes {
 		if strings.HasSuffix(p, suf) {
 			return true
 		}
