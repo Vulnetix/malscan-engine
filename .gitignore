@@ -2,6 +2,8 @@
 *.test
 *.out
 /vendor/
+# compiled dev tools (e.g. `go build ./cmd/genblocklist`)
+/genblocklist
 
 # Vulnetix CLI local state / scan output
 .vulnetix/

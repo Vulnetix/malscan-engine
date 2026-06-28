@@ -78,6 +78,25 @@ go-vet:
 go-build:
     go build ./...
 
+# ── Threat-intel blocklists (badnet) ─────────────────────────────────────────
+
+# Refresh the embedded bad-IP/host/email blocklists from public feeds (stale-guarded)
+[group('engine')]
+gen-blocklists:
+    go run ./cmd/genblocklist
+
+# Force-refresh the embedded blocklists, ignoring the freshness check
+[group('engine')]
+gen-blocklists-force:
+    go run ./cmd/genblocklist --force
+
+# Install the version-controlled git hooks (sets core.hooksPath to .githooks)
+[group('engine')]
+install-hooks:
+    chmod +x .githooks/* 2>/dev/null || true
+    git config core.hooksPath .githooks
+    @echo "git hooks installed (core.hooksPath=.githooks)"
+
 # ── Aggregate ───────────────────────────────────────────────────────────────
 
 # Full CI-style gate: format check, lint, and tests across Rust + Go

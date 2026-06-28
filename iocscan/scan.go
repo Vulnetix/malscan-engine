@@ -48,6 +48,11 @@ type Options struct {
 	// reuse one IndicatorSet (and its parsed feeds) across many scans.
 	Set *IndicatorSet
 
+	// NoBadnet disables merging the embedded badnet blocklists (aggregated public
+	// threat-intel IPs/domains) into the internally-loaded indicator set. It has
+	// no effect when Set is provided (the caller controls that set's contents).
+	NoBadnet bool
+
 	// Feed controls (all optional, ignored when Set is non-nil). Loader, when
 	// set, is used as-is and the rest are ignored.
 	IndexURL   string
@@ -104,6 +109,9 @@ func Scan(opts Options) (*Report, error) {
 			return report, lerr
 		}
 		set = loaded
+		if !opts.NoBadnet {
+			set.addEmbeddedBadnet()
+		}
 	}
 	report.IndicatorCount = set.Len()
 
