@@ -239,6 +239,13 @@ func (sc *scanner) scanFile(path string) ([]Evidence, bool, error) {
 		return nil, true, nil
 	}
 	rel := sc.rel(path)
+	// Inert documentation (Markdown) references endpoints as examples, not as
+	// indicators of compromise — never executed or fetched at runtime (see
+	// isInertDoc). Non-inert artifacts (source maps, minified bundles, fixtures)
+	// stay scanned: they can carry a real payload.
+	if isInertDoc(rel) {
+		return nil, false, nil
+	}
 	if isBinary(data) {
 		if !sc.binary {
 			return nil, false, nil
