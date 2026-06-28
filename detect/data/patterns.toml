@@ -807,6 +807,7 @@ pattern = 'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
 points = 50
 description = "Source URL uses raw IP address instead of domain"
 override_gate = false
+pkgbuild_only = true
 
 [[source_url_analysis]]
 id = "P-URL-SHORTENER"
@@ -856,6 +857,7 @@ pattern = 'http://[^$\s]'
 points = 15
 description = "Plain HTTP source URL (no TLS, MITM risk)"
 override_gate = false
+pkgbuild_only = true
 
 [[source_url_analysis]]
 id = "P-FILEHOST-SOURCE"
@@ -1318,6 +1320,7 @@ pattern = 'node\s+(-e|--eval)\s'
 points = 30
 description = "Node.js inline code execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-RUBY-INLINE"
@@ -1325,6 +1328,7 @@ pattern = 'ruby\s+(-e)\s'
 points = 30
 description = "Ruby inline code execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PHP-INLINE"
@@ -1332,6 +1336,7 @@ pattern = 'php\s+(-r)\s'
 points = 30
 description = "PHP inline code execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-LUA-INLINE"
@@ -1339,6 +1344,7 @@ pattern = 'lua\s+(-e)\s'
 points = 30
 description = "Lua inline code execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-R-INLINE"
@@ -1346,6 +1352,7 @@ pattern = '(Rscript\s+-e|R\s+.*--vanilla\s+-e)\s'
 points = 30
 description = "R inline code execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-JULIA-INLINE"
@@ -1353,6 +1360,7 @@ pattern = 'julia\s+(-e|--eval)\s'
 points = 30
 description = "Julia inline code execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-JAVA-INLINE"
@@ -1360,6 +1368,7 @@ pattern = '(jjs|jshell|jrunscript)\s'
 points = 30
 description = "Java Nashorn/JShell inline execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-TCLSH-INLINE"
@@ -1367,6 +1376,7 @@ pattern = '(tclsh|wish)\s+<<'
 points = 30
 description = "Tcl inline heredoc execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-GDB-PYTHON"
@@ -1402,6 +1412,7 @@ pattern = 'irb\s.*-r\s|irb\s.*-e\s'
 points = 30
 description = "Ruby IRB interactive session with code execution (dual-use; corroboration only)"
 override_gate = false
+hook_only = true
 
 # --- Library Injection ---
 

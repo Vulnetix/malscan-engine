@@ -78,11 +78,21 @@ func TestGtfobinsHookContext(t *testing.T) {
 			absentID:  "G-DOWNLOAD-NODE",
 		},
 		{
-			name:      "bare node -e in manual build is corroboration only",
+			// Bare `node -e` in a non-executing declarative manifest is pure dual-use
+			// noise (this was the source of the G-NODE-INLINE false positives) — it is
+			// now suppressed entirely outside an auto-execution surface.
+			name:      "bare node -e in manual build is suppressed",
 			ctx:       &PackageContext{Name: "p", PkgbuildContent: `"build": "node -e \"require('./gen')\""`, PkgbuildExecutes: false},
 			malicious: false,
-			contextID: "G-NODE-INLINE",
-			absentID:  "", // G-NODE-INLINE must NOT be evidence
+			absentID:  "G-NODE-INLINE",
+		},
+		{
+			// Inside an install hook a dual-use inline interpreter is still recorded as
+			// corroboration context (php -r has no dedicated hook-eval evidence rule).
+			name:      "bare php -r in postinstall is corroboration context",
+			ctx:       &PackageContext{Name: "p", InstallScriptContent: `"postinstall": "php -r 'echo 1;'"`},
+			malicious: false,
+			contextID: "IS-G-PHP-INLINE",
 		},
 		{
 			name:       "node remote fetch-eval in postinstall mints",

@@ -19,7 +19,7 @@ func TestFeedLoaderColdFetchAndCacheHit(t *testing.T) {
 	if len(warns) != 0 {
 		t.Fatalf("unexpected warnings on cold load: %+v", warns)
 	}
-	if set.LookupDomain("evil-malware.example") == nil || set.LookupDomain("npm-bad.example") == nil {
+	if set.LookupDomain("evil-malware.io") == nil || set.LookupDomain("npm-bad.io") == nil {
 		t.Fatalf("merged set missing expected domains (len=%d)", set.Len())
 	}
 	if set.LookupIP("185.100.157.127") == nil {
@@ -99,7 +99,7 @@ func TestFeedLoaderChecksumMismatchFallsBackToCache(t *testing.T) {
 		t.Fatalf("expected checksum-mismatch warning for generic-dns, got %+v", warns)
 	}
 	// The cached good copy is still used → the domain is present.
-	if set.LookupDomain("evil-malware.example") == nil {
+	if set.LookupDomain("evil-malware.io") == nil {
 		t.Fatal("expected fallback to cached generic-dns indicators")
 	}
 }
@@ -124,7 +124,7 @@ func TestFeedLoaderOfflineUsesStaleCache(t *testing.T) {
 	if !hasWarningCode(warns, "stale-cache") {
 		t.Fatalf("expected stale-cache warning, got %+v", warns)
 	}
-	if set.LookupDomain("evil-malware.example") == nil {
+	if set.LookupDomain("evil-malware.io") == nil {
 		t.Fatal("offline load should serve indicators from stale cache")
 	}
 	// The warning reports a positive age.
@@ -138,7 +138,7 @@ func TestFeedLoaderOfflineUsesStaleCache(t *testing.T) {
 func TestFeedLoaderOfflineNoCacheErrors(t *testing.T) {
 	s := newStixTestServer(t)
 	// Register a valid index/feeds, then take the server down so nothing resolves.
-	feeds := []Feed{s.feedEntry("generic", "dns", makeBundle(tind{pattern: "[domain-name:value = 'x.example']"}))}
+	feeds := []Feed{s.feedEntry("generic", "dns", makeBundle(tind{pattern: "[domain-name:value = 'xbad.io']"}))}
 	s.setIndex(buildIndex(s.URL, feeds))
 	loader := &FeedLoader{
 		IndexURL:   s.indexURL(),

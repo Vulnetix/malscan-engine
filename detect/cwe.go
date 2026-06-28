@@ -45,6 +45,17 @@ func cweForSignal(id string) string {
 		strings.Contains(base, "STRATUM"),
 		strings.Contains(base, "MINING-POOL"):
 		return "CWE-400" // Uncontrolled Resource Consumption (cryptojacking)
+	case strings.Contains(base, "GLOBAL-INSTALL-HOOK"),
+		strings.Contains(base, "PTH-AUTOIMPORT"),
+		strings.Contains(base, "CARGO-CONFIG-PERSISTENCE"):
+		return "CWE-912" // Hidden Functionality (stealthy persistence)
+	case strings.Contains(base, "CRED-EXFIL"),
+		strings.Contains(base, "DECODE-EGRESS-SEQ"),
+		strings.Contains(base, "ASSEMBLYLOAD-EGRESS"):
+		return "CWE-200" // Exposure of Sensitive Information
+	case strings.Contains(base, "INSTALL-REMOTE-IMPORT"),
+		strings.Contains(base, "IMPORTLIB-EXEC"):
+		return "CWE-94" // Improper Control of Generation of Code (dynamic code execution / command injection)
 	}
 	return DefaultMalwareCWE
 }

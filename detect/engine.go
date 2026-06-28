@@ -84,6 +84,9 @@ func Detect(ctx *PackageContext) []Finding {
 	if ctx.capEnabled(CapRegistryComments) {
 		f = append(f, analyzeAurComments(ctx)...)
 	}
+	if ctx.capEnabled(CapBadActorBehaviors) {
+		f = append(f, analyzeBadActorBehaviors(ctx)...)
+	}
 
 	return f
 }

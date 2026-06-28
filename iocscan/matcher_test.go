@@ -7,15 +7,15 @@ import (
 
 func testMatcher() *Matcher {
 	set := NewIndicatorSet()
-	set.Add(&Indicator{Type: TypeDomain, Value: "evil-malware.example", Name: "Malicious domain", Severity: "critical"})
+	set.Add(&Indicator{Type: TypeDomain, Value: "evil-malware.io", Name: "Malicious domain", Severity: "critical"})
 	set.Add(&Indicator{Type: TypeIPv4, Value: "185.100.157.127"})
-	set.Add(&Indicator{Type: TypeURL, Value: "http://evil-malware.example/payload"})
+	set.Add(&Indicator{Type: TypeURL, Value: "http://evil-malware.io/payload"})
 	return NewMatcher(set, 1)
 }
 
 func TestMatcherMatchText(t *testing.T) {
 	m := testMatcher()
-	content := "line one\nconst u = 'http://evil-malware.example/payload'\nline three\n"
+	content := "line one\nconst u = 'http://evil-malware.io/payload'\nline three\n"
 
 	ev := m.MatchText("src/app.js", content)
 
@@ -63,7 +63,7 @@ func TestMatcherMatchBytesBinary(t *testing.T) {
 	m := testMatcher()
 	// ELF magic + NUL padding + an embedded known-bad domain.
 	blob := append([]byte{0x7f, 'E', 'L', 'F'}, make([]byte, 8)...)
-	blob = append(blob, []byte("cfg evil-malware.example end")...)
+	blob = append(blob, []byte("cfg evil-malware.io end")...)
 	blob = append(blob, 0x00)
 
 	ev := m.MatchBytes("bin/agent", blob)
@@ -99,10 +99,10 @@ func TestMatcherMatchBytesText(t *testing.T) {
 func TestScanWithPreloadedSet(t *testing.T) {
 	// Options.Set bypasses the FeedLoader entirely (no network, no cache).
 	set := NewIndicatorSet()
-	set.Add(&Indicator{Type: TypeDomain, Value: "evil-malware.example"})
+	set.Add(&Indicator{Type: TypeDomain, Value: "evil-malware.io"})
 
 	root := t.TempDir()
-	writeFile(t, root, "pkg/index.js", "fetch('https://evil-malware.example/x')\n")
+	writeFile(t, root, "pkg/index.js", "fetch('https://evil-malware.io/x')\n")
 
 	rep, err := Scan(Options{Root: root, Set: set})
 	if err != nil {
@@ -111,7 +111,7 @@ func TestScanWithPreloadedSet(t *testing.T) {
 	if rep.IndicatorCount != 1 {
 		t.Errorf("IndicatorCount = %d, want 1", rep.IndicatorCount)
 	}
-	if findEvidence(rep, "pkg/index.js", TypeDomain, "evil-malware.example") == nil {
+	if findEvidence(rep, "pkg/index.js", TypeDomain, "evil-malware.io") == nil {
 		t.Fatalf("preloaded-set scan found nothing: %s", evidenceSummary(rep))
 	}
 	if len(rep.Warnings) != 0 {
