@@ -122,6 +122,43 @@ func parseBundle(data []byte) ([]*Indicator, error) {
 	return out, nil
 }
 
+// hashPatternRe extracts a file-hash hex value from a STIX `file:hashes`
+// comparison such as `[file:hashes.'SHA-256' = '…']` or `[file:hashes.MD5 = '…']`
+// — the forms TweetFeed emits. The algorithm token may be quoted or bare.
+var hashPatternRe = regexp.MustCompile(`\[file:hashes\.(?:'[^']*'|[A-Za-z0-9._-]+)\s*=\s*'([0-9a-fA-F]+)'\]`)
+
+// parseTweetFeed unmarshals a TweetFeed STIX 2.1 bundle, returning its domain/
+// url/ipv4 indicators (for the IndicatorSet) AND its file-hash values
+// (SHA-256/MD5, for a badhash set). It reuses the same single-comparison parsing
+// as parseBundle; unrecognised patterns are skipped without error.
+func parseTweetFeed(data []byte) (inds []*Indicator, hashes []string, err error) {
+	var b stixBundle
+	if err := json.Unmarshal(data, &b); err != nil {
+		return nil, nil, fmt.Errorf("parse tweetfeed bundle: %w", err)
+	}
+	inds = make([]*Indicator, 0, len(b.Objects))
+	for _, o := range b.Objects {
+		if o.Type != "indicator" {
+			continue
+		}
+		if ind := indicatorFromPattern(o.Pattern); ind != nil {
+			ind.Name = o.Name
+			ind.Description = o.Description
+			ind.Labels = o.Labels
+			ind.ExternalRefs = o.ExternalReferences
+			ind.ValidFrom = o.ValidFrom
+			ind.Severity = labelValue(o.Labels, "severity")
+			ind.Ecosystem = labelValue(o.Labels, "ecosystem")
+			inds = append(inds, ind)
+			continue
+		}
+		if m := hashPatternRe.FindStringSubmatch(o.Pattern); m != nil {
+			hashes = append(hashes, m[1])
+		}
+	}
+	return inds, hashes, nil
+}
+
 // indicatorFromPattern parses a STIX comparison pattern into an Indicator with
 // only Type and Value set, or nil if the pattern is not a recognised
 // single-value domain/ip/url comparison.

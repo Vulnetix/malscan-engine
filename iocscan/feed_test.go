@@ -141,11 +141,12 @@ func TestFeedLoaderOfflineNoCacheErrors(t *testing.T) {
 	feeds := []Feed{s.feedEntry("generic", "dns", makeBundle(tind{pattern: "[domain-name:value = 'xbad.io']"}))}
 	s.setIndex(buildIndex(s.URL, feeds))
 	loader := &FeedLoader{
-		IndexURL:   s.indexURL(),
-		CacheDir:   t.TempDir(),
-		TTL:        time.Hour,
-		HTTPClient: s.Client(),
-		now:        newClock().now,
+		IndexURL:         s.indexURL(),
+		CacheDir:         t.TempDir(),
+		TTL:              time.Hour,
+		HTTPClient:       s.Client(),
+		DisableTweetFeed: true,
+		now:              newClock().now,
 	}
 	s.Close()
 
