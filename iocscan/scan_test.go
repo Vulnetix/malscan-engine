@@ -12,7 +12,7 @@ func fixtureTree(t *testing.T) string {
 	root := t.TempDir()
 	// app.js: a known-bad URL on line 2 (context lines 1 & 3 around it).
 	writeFile(t, root, "src/app.js",
-		"const a = 1\nfetch('http://evil-malware.example/payload')\nconsole.log(a)\n")
+		"const a = 1\nfetch('http://evil-malware.io/payload')\nconsole.log(a)\n")
 	// service.env: a known-bad IPv4.
 	writeFile(t, root, "config/service.env",
 		"NAME=svc\nENDPOINT=185.100.157.127:8080\n")
@@ -20,9 +20,9 @@ func fixtureTree(t *testing.T) string {
 	writeFile(t, root, "README.md",
 		"Docs live at github.com and example.org\n")
 	// too-deep file (excluded at Depth=2): dir 'a' is depth 2.
-	writeFile(t, root, "deep/a/secret.txt", "evil-malware.example\n")
+	writeFile(t, root, "deep/a/secret.txt", "evil-malware.io\n")
 	// excluded extension.
-	writeFile(t, root, "logs/debug.log", "evil-malware.example\n")
+	writeFile(t, root, "logs/debug.log", "evil-malware.io\n")
 	return root
 }
 
@@ -46,7 +46,7 @@ func TestScanFindsTextIOCs(t *testing.T) {
 	}
 
 	// URL hit in app.js, line 2, with one context line above and below.
-	urlEv := findEvidence(report, "src/app.js", TypeURL, "http://evil-malware.example/payload")
+	urlEv := findEvidence(report, "src/app.js", TypeURL, "http://evil-malware.io/payload")
 	if urlEv == nil {
 		t.Fatalf("missing URL evidence; got %s", evidenceSummary(report))
 	}
@@ -64,7 +64,7 @@ func TestScanFindsTextIOCs(t *testing.T) {
 	}
 
 	// The same line also yields a bare-domain hit (provenance kept).
-	if findEvidence(report, "src/app.js", TypeDomain, "evil-malware.example") == nil {
+	if findEvidence(report, "src/app.js", TypeDomain, "evil-malware.io") == nil {
 		t.Errorf("expected domain evidence from the URL line; got %s", evidenceSummary(report))
 	}
 
@@ -101,7 +101,7 @@ func TestScanDepthLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
-	if findEvidence(report, "deep/a/secret.txt", TypeDomain, "evil-malware.example") != nil {
+	if findEvidence(report, "deep/a/secret.txt", TypeDomain, "evil-malware.io") != nil {
 		t.Errorf("deep file scanned despite Depth=2; got %s", evidenceSummary(report))
 	}
 
@@ -110,7 +110,7 @@ func TestScanDepthLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
-	if findEvidence(report2, "deep/a/secret.txt", TypeDomain, "evil-malware.example") == nil {
+	if findEvidence(report2, "deep/a/secret.txt", TypeDomain, "evil-malware.io") == nil {
 		t.Errorf("deep file not scanned at unlimited depth; got %s", evidenceSummary(report2))
 	}
 }
@@ -125,7 +125,7 @@ func TestScanExtensionFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
-	if findEvidence(rep, "logs/debug.log", TypeDomain, "evil-malware.example") != nil {
+	if findEvidence(rep, "logs/debug.log", TypeDomain, "evil-malware.io") != nil {
 		t.Error("excluded .log file was scanned")
 	}
 
@@ -137,7 +137,7 @@ func TestScanExtensionFilters(t *testing.T) {
 	if findEvidence(rep2, "config/service.env", TypeIPv4, "185.100.157.127") == nil {
 		t.Error("included .env file was not scanned")
 	}
-	if findEvidence(rep2, "src/app.js", TypeURL, "http://evil-malware.example/payload") != nil {
+	if findEvidence(rep2, "src/app.js", TypeURL, "http://evil-malware.io/payload") != nil {
 		t.Error("non-included .js file was scanned")
 	}
 }
@@ -149,7 +149,7 @@ func TestScanBinaryAnalysis(t *testing.T) {
 
 	// A fake ELF binary: magic + NUL padding + an embedded known-bad domain.
 	blob := append([]byte{0x7f, 'E', 'L', 'F'}, make([]byte, 16)...)
-	blob = append(blob, []byte("config: evil-malware.example endpoint")...)
+	blob = append(blob, []byte("config: evil-malware.io endpoint")...)
 	blob = append(blob, 0x00)
 	writeBytes(t, root, "bin/agent", blob)
 
@@ -167,7 +167,7 @@ func TestScanBinaryAnalysis(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
-	ev := findEvidence(rep2, "bin/agent", TypeDomain, "evil-malware.example")
+	ev := findEvidence(rep2, "bin/agent", TypeDomain, "evil-malware.io")
 	if ev == nil {
 		t.Fatalf("binary domain not found; got %s", evidenceSummary(rep2))
 	}
@@ -181,9 +181,9 @@ func TestScanBinaryAnalysis(t *testing.T) {
 
 func TestMatchLine(t *testing.T) {
 	set := NewIndicatorSet()
-	set.Add(&Indicator{Type: TypeDomain, Value: "evil-malware.example"})
+	set.Add(&Indicator{Type: TypeDomain, Value: "evil-malware.io"})
 	set.Add(&Indicator{Type: TypeIPv4, Value: "185.100.157.127"})
-	set.Add(&Indicator{Type: TypeURL, Value: "http://evil-malware.example/payload"})
+	set.Add(&Indicator{Type: TypeURL, Value: "http://evil-malware.io/payload"})
 	m := NewMatcher(set, 0)
 
 	cases := []struct {
@@ -191,12 +191,12 @@ func TestMatchLine(t *testing.T) {
 		line string
 		want map[IndicatorType]string // type -> value expected present
 	}{
-		{"bare domain", "see evil-malware.example today", map[IndicatorType]string{TypeDomain: "evil-malware.example"}},
-		{"url and host", "x=http://evil-malware.example/payload", map[IndicatorType]string{TypeURL: "http://evil-malware.example/payload", TypeDomain: "evil-malware.example"}},
+		{"bare domain", "see evil-malware.io today", map[IndicatorType]string{TypeDomain: "evil-malware.io"}},
+		{"url and host", "x=http://evil-malware.io/payload", map[IndicatorType]string{TypeURL: "http://evil-malware.io/payload", TypeDomain: "evil-malware.io"}},
 		{"ipv4", "host 185.100.157.127 here", map[IndicatorType]string{TypeIPv4: "185.100.157.127"}},
 		{"benign domain", "github.com is fine", nil},
 		{"benign ip", "127.0.0.1 is fine", nil},
-		{"substring guard", "notevil-malware.example.org", nil}, // different FQDN, no exact hit
+		{"substring guard", "notevil-malware.io.org", nil}, // different FQDN, no exact hit
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

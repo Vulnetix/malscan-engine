@@ -90,30 +90,32 @@ func TestParseBundleSkipsMalformedPatterns(t *testing.T) {
 
 func TestIndicatorSetLookups(t *testing.T) {
 	set := NewIndicatorSet()
-	set.Add(&Indicator{Type: TypeDomain, Value: "Evil-Malware.Example"})
+	// Realistic (non-reserved) indicators: the allowlist now drops RFC-2606
+	// .example domains and the 2001:db8::/32 documentation IPv6 range at Add time.
+	set.Add(&Indicator{Type: TypeDomain, Value: "Evil-Malware.io"})
 	set.Add(&Indicator{Type: TypeIPv4, Value: "185.100.157.127"})
-	set.Add(&Indicator{Type: TypeIPv6, Value: "2001:db8::1"})
-	set.Add(&Indicator{Type: TypeURL, Value: "http://evil.example/p"})
+	set.Add(&Indicator{Type: TypeIPv6, Value: "2606:4700::1111"})
+	set.Add(&Indicator{Type: TypeURL, Value: "http://evil.io/p"})
 
 	if set.Len() != 4 {
 		t.Fatalf("Len = %d, want 4", set.Len())
 	}
 	// Domain match is case-insensitive.
-	if set.LookupDomain("evil-malware.example") == nil {
+	if set.LookupDomain("evil-malware.io") == nil {
 		t.Error("domain lookup should be case-insensitive")
 	}
 	// IP match is format-insensitive (zero-padding / compression).
-	if set.LookupIP("2001:0db8:0000:0000:0000:0000:0000:0001") == nil {
+	if set.LookupIP("2606:4700:0000:0000:0000:0000:0000:1111") == nil {
 		t.Error("ipv6 lookup should be canonicalised")
 	}
 	if set.LookupIP("185.100.157.127") == nil {
 		t.Error("ipv4 lookup failed")
 	}
-	if set.LookupURL("http://evil.example/p") == nil {
+	if set.LookupURL("http://evil.io/p") == nil {
 		t.Error("url lookup failed")
 	}
 	// Negatives.
-	if set.LookupDomain("good.example") != nil {
+	if set.LookupDomain("not-added.io") != nil {
 		t.Error("unexpected domain hit")
 	}
 }

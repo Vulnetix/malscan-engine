@@ -24,6 +24,8 @@ import (
 	"net"
 	"regexp"
 	"strings"
+
+	"github.com/vulnetix/malscan-engine/allow"
 )
 
 // IndicatorType is the kind of observable a STIX indicator describes. Only the
@@ -172,8 +174,16 @@ func NewIndicatorSet() *IndicatorSet {
 
 // Add inserts one indicator, keyed by its lowercased value. A duplicate value of
 // the same kind keeps the first occurrence (feeds may repeat across ecosystems).
+//
+// Benign indicators (reserved/placeholder IPs, package-registry/CDN/standards/docs
+// domains — see the allow package) are dropped here so they never enter the match
+// set: a still-polluted feed cannot produce IOC-STIX-MATCH false positives at scan
+// time, and lookups stay fast.
 func (s *IndicatorSet) Add(ind *Indicator) {
 	if ind == nil || ind.Value == "" {
+		return
+	}
+	if allow.Benign(string(ind.Type), ind.Value) {
 		return
 	}
 	switch ind.Type {

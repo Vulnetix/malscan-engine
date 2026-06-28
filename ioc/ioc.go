@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/vulnetix/malscan-engine/allow"
 	"github.com/vulnetix/malscan-engine/detect"
 )
 
@@ -66,6 +67,14 @@ func ExtractIOCs(repo *RepoData) []IOC {
 	emit := func(typ, val, eco string) {
 		val = strings.TrimSpace(strings.Trim(val, `"'<>`))
 		if val == "" {
+			return
+		}
+		// Drop benign indicators (reserved/placeholder IPs, registry/CDN/standards/
+		// docs domains) so they never become IOCs — this is what stops legit spec
+		// links and funding URLs in package source from polluting the STIX feed.
+		// Wallet / file-hash / install-command types are unknown to allow.Benign and
+		// are always kept.
+		if allow.Benign(typ, val) {
 			return
 		}
 		key := typ + "|" + strings.ToLower(val)

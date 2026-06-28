@@ -25,6 +25,15 @@ const (
 	CapGithubStars        = "github-stars"
 	CapRegistryComments   = "registry-comments"
 
+	// CapBadActorBehaviors gates the multi-line, registry-native supply-chain
+	// TTP detector (behaviors.go): global install-hook persistence, .pth
+	// auto-import, lifecycle decode+egress sequences, credential-file exfil,
+	// and cargo-config persistence. These are sequence/behaviour signals the
+	// single-line pattern DB cannot capture; each carries an intent
+	// qualification. nil map (default) enables it, so existing callers are
+	// unaffected.
+	CapBadActorBehaviors = "bad-actor-behaviors"
+
 	// Invoked outside Detect (gate via config.EcosystemConfig.Enabled):
 	CapOwnershipHijack = "ownership-hijack"
 	CapBadHash         = "badhash"

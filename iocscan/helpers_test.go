@@ -157,8 +157,8 @@ func standardLoader(t *testing.T, cacheDir string, clk *clock) (*stixTestServer,
 	s := newStixTestServer(t)
 	genericDNS := makeBundle(
 		tind{
-			pattern: "[domain-name:value = 'evil-malware.example']",
-			name:    "Malicious domain evil-malware.example",
+			pattern: "[domain-name:value = 'evil-malware.io']",
+			name:    "Malicious domain evil-malware.io",
 			labels:  []string{"malicious-activity", "source:osm", "severity:critical", "ecosystem:generic"},
 			extID:   "OSM-2026-001",
 		},
@@ -170,19 +170,19 @@ func standardLoader(t *testing.T, cacheDir string, clk *clock) (*stixTestServer,
 		},
 	)
 	genericURLs := makeBundle(tind{
-		pattern: "[url:value = 'http://evil-malware.example/payload']",
+		pattern: "[url:value = 'http://evil-malware.io/payload']",
 		name:    "Malicious URL",
 		labels:  []string{"severity:critical"},
 		extID:   "OSM-2026-003",
 	})
 	npmDNS := makeBundle(tind{
-		pattern: "[domain-name:value = 'npm-bad.example']",
+		pattern: "[domain-name:value = 'npm-bad.io']",
 		name:    "Malicious npm domain",
 		labels:  []string{"ecosystem:npm", "severity:high"},
 		extID:   "OSM-2026-004",
 	})
 	npmURLs := makeBundle(tind{
-		pattern: "[url:value = 'http://npm-bad.example/x']",
+		pattern: "[url:value = 'http://npm-bad.io/x']",
 		name:    "Malicious npm URL",
 		labels:  []string{"ecosystem:npm"},
 		extID:   "OSM-2026-005",
