@@ -66,6 +66,24 @@ struct EcosystemFile {
     capabilities: BTreeMap<String, bool>,
 }
 
+/// On-disk shape of `badnet/data/feeds.json`. This is consumed by the Go
+/// `badnet` package at runtime to map each source URL to its parser.
+#[derive(Serialize)]
+struct FeedSourcesFile {
+    schema_version: String,
+    feeds: Vec<FeedSourceFile>,
+}
+
+#[derive(Serialize)]
+struct FeedSourceFile {
+    key: String,
+    name: String,
+    url: String,
+    parser: String,
+    detail: String,
+    enabled: bool,
+}
+
 /// The whole app's settings: one entry per ecosystem, keyed by slug.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AppConfig {
@@ -163,6 +181,20 @@ pub fn ecosystem_path(slug: &str) -> PathBuf {
     ecosystem_path_in(&defaults_dir(), slug)
 }
 
+/// Path of the generated badnet feed/parser mapping embedded by the Go module.
+pub fn feed_sources_path() -> PathBuf {
+    if let Ok(p) = std::env::var("MALSCAN_FEED_SOURCES_PATH") {
+        if !p.is_empty() {
+            return PathBuf::from(p);
+        }
+    }
+    let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    match crate_dir.parent() {
+        Some(repo) => repo.join("badnet").join("data").join("feeds.json"),
+        None => PathBuf::from("badnet/data/feeds.json"),
+    }
+}
+
 /// The pretty JSON that would be persisted for an ecosystem (used by the preview
 /// tab and the on-disk write).
 pub fn file_json(slug: &str, cfg: &EcosystemConfig) -> String {
@@ -170,6 +202,25 @@ pub fn file_json(slug: &str, cfg: &EcosystemConfig) -> String {
         ecosystem: slug.to_string(),
         registry_endpoint: cfg.registry_endpoint.clone(),
         capabilities: cfg.capabilities.clone(),
+    };
+    serde_json::to_string_pretty(&file).unwrap_or_else(|e| format!("// serialise error: {e}"))
+}
+
+/// Pretty JSON for the badnet feed/parser mapping.
+pub fn feed_sources_json() -> String {
+    let file = FeedSourcesFile {
+        schema_version: "badnet-feeds/v1".to_string(),
+        feeds: model::FEED_SOURCES
+            .iter()
+            .map(|f| FeedSourceFile {
+                key: f.key.to_string(),
+                name: f.name.to_string(),
+                url: f.url.to_string(),
+                parser: f.parser.to_string(),
+                detail: f.detail.to_string(),
+                enabled: true,
+            })
+            .collect(),
     };
     serde_json::to_string_pretty(&file).unwrap_or_else(|e| format!("// serialise error: {e}"))
 }
@@ -193,15 +244,28 @@ pub fn write_ecosystem(slug: &str, cfg: &EcosystemConfig) -> std::io::Result<(Pa
     write_ecosystem_in(&defaults_dir(), slug, cfg)
 }
 
+/// Write the badnet feed/parser mapping, creating the parent dir if needed.
+pub fn write_feed_sources(path: &Path) -> std::io::Result<(PathBuf, usize)> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let json = format!("{}\n", feed_sources_json());
+    std::fs::write(path, json.as_bytes())?;
+    Ok((path.to_path_buf(), json.len()))
+}
+
 /// Write the catalog-default config file for every ecosystem into `dir`. Used by
-/// the `--write-defaults` CLI to (re)generate the committed `config/defaults`.
+/// the `--write-defaults` CLI to (re)generate the committed `config/defaults`
+/// plus the badnet feed/parser mapping embedded by the Go module.
 pub fn write_all_defaults(dir: &Path) -> std::io::Result<Vec<PathBuf>> {
     let cfg = AppConfig::default();
-    let mut written = Vec::with_capacity(model::ECOSYSTEMS.len());
+    let mut written = Vec::with_capacity(model::ECOSYSTEMS.len() + 1);
     for eco in model::ECOSYSTEMS {
         let (path, _) = write_ecosystem_in(dir, eco.slug, &cfg.ecosystems[eco.slug])?;
         written.push(path);
     }
+    let (path, _) = write_feed_sources(&feed_sources_path())?;
+    written.push(path);
     Ok(written)
 }
 
@@ -283,5 +347,15 @@ mod tests {
         assert!(json.contains("\"ecosystem\": \"npm\""));
         assert!(json.contains("\"registry_endpoint\""));
         assert!(json.contains("\"capabilities\""));
+    }
+
+    #[test]
+    fn feed_sources_json_maps_sources_to_parsers() {
+        let json = feed_sources_json();
+        assert!(json.contains("\"schema_version\": \"badnet-feeds/v1\""));
+        assert!(json.contains("\"key\": \"crowdsec-intelligence\""));
+        assert!(json.contains("\"parser\": \"misp\""));
+        assert!(json.contains("\"key\": \"urlhaus-hosts\""));
+        assert!(json.contains("\"parser\": \"hosts\""));
     }
 }

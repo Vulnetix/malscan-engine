@@ -133,3 +133,71 @@ func TestParseMixed(t *testing.T) {
 		t.Errorf("mixed: benign values must be dropped (domains=%v ipv4=%v)", ex.domains, ex.ipv4)
 	}
 }
+
+func TestParseMISP(t *testing.T) {
+	body := `{
+		"Event": {
+			"Attribute": [
+				{
+					"type": "ip-src",
+					"value": "186.7.19.21",
+					"to_ids": true,
+					"comment": "Reputation: malicious, Confidence: low",
+					"Tag": [{"name": "reputation:malicious"}]
+				},
+				{
+					"type": "domain",
+					"value": "dropper.badactor.ru",
+					"to_ids": true
+				},
+				{
+					"type": "domain|ip",
+					"value": "c2.badactor.net|45.137.21.9",
+					"to_ids": true
+				},
+				{
+					"type": "url",
+					"value": "https://payload.badactor.net/a/b",
+					"to_ids": true
+				},
+				{
+					"type": "email-src",
+					"value": "operator@badactor.net",
+					"to_ids": true
+				},
+				{
+					"type": "ip-src",
+					"value": "135.237.126.204",
+					"to_ids": true,
+					"comment": "Reputation: benign, Confidence: high",
+					"Tag": [{"name": "reputation:benign"}]
+				},
+				{
+					"type": "ip-src",
+					"value": "198.51.100.20",
+					"to_ids": false
+				}
+			]
+		}
+	}`
+
+	ex := parseFeed(fmtMISP, body)
+	for _, want := range []string{"186.7.19.21", "45.137.21.9"} {
+		if !hasStr(ex.ipv4, want) {
+			t.Errorf("misp: expected IPv4 %s, got %v", want, ex.ipv4)
+		}
+	}
+	for _, want := range []string{"dropper.badactor.ru", "c2.badactor.net", "payload.badactor.net"} {
+		if !hasStr(ex.domains, want) {
+			t.Errorf("misp: expected domain %s, got %v", want, ex.domains)
+		}
+	}
+	if !hasStr(ex.emails, "operator@badactor.net") {
+		t.Errorf("misp: expected email, got %v", ex.emails)
+	}
+	for _, bad := range []string{"135.237.126.204", "198.51.100.20"} {
+		if hasStr(ex.ipv4, bad) {
+			t.Errorf("misp: %s should be excluded, got %v", bad, ex.ipv4)
+		}
+	}
+}
