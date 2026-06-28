@@ -2,6 +2,7 @@
   "ecosystem": "pypi",
   "registry_endpoint": "https://pypi.org/pypi",
   "capabilities": {
+    "bad-actor-behaviors": true,
     "badhash": true,
     "github-stars": true,
     "goodkeys": true,

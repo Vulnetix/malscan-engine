@@ -229,6 +229,14 @@ pub const CAPABILITIES: &[Capability] = &[
         support: Support::Only(&["aur", "homebrew", "npm", "pypi", "rubygems", "nuget"]),
     },
     Capability {
+        key: "bad-actor-behaviors",
+        name: "Registry-native bad-actor behaviours",
+        detail: "Multi-line supply-chain TTPs the single-line pattern DB can't capture: global install-hook persistence, .pth auto-import, npm decode+egress hooks, setup.py credential exfil, build.rs cargo-config persistence, NuGet reflective-load egress — each carrying an intent qualification (the benign-vs-malicious differentiator).",
+        class: Class::Evidence,
+        engine_ref: "detect.analyzeBadActorBehaviors (behaviors.go)",
+        support: Support::Only(&["npm", "pypi", "rubygems", "cargo", "nuget"]),
+    },
+    Capability {
         key: "onion-c2",
         name: "Tor .onion C2 / exfil source",
         detail: "A .onion address in the manifest, install scripts or latest diff — a common C2/exfil channel.",
@@ -399,24 +407,36 @@ mod tests {
     }
 
     #[test]
-    fn aur_supports_every_capability() {
-        // AUR is the engine's reference ecosystem (the traur origin); every
-        // detector applies to it.
-        assert_eq!(count("aur"), CAPABILITIES.len());
+    fn aur_supports_all_but_registry_native() {
+        // AUR is the engine's reference ecosystem (the traur origin): it supports
+        // every capability EXCEPT `bad-actor-behaviors`, whose npm/PyPI/RubyGems/
+        // Cargo/NuGet lifecycle TTPs (behaviors.go) have no equivalent in AUR's
+        // PKGBUILD/makepkg model.
+        let aur: std::collections::HashSet<&str> =
+            capabilities_for("aur").iter().map(|c| c.key).collect();
+        for cap in CAPABILITIES {
+            let want = cap.key != "bad-actor-behaviors";
+            assert_eq!(
+                aur.contains(cap.key),
+                want,
+                "aur support mismatch for {}",
+                cap.key
+            );
+        }
     }
 
     #[test]
     fn support_matrix_matches_engine() {
         // Counts derived from the per-capability support sets — a guard against
         // accidental matrix edits.
-        assert_eq!(count("aur"), 22);
-        assert_eq!(count("homebrew"), 20); // no -bin, no registry-comments
-        assert_eq!(count("npm"), 17); // +install-script over the 16 universal
-        assert_eq!(count("pypi"), 17);
-        assert_eq!(count("rubygems"), 17);
-        assert_eq!(count("nuget"), 17);
+        assert_eq!(count("aur"), 22); // no bad-actor-behaviors (PKGBUILD model)
+        assert_eq!(count("homebrew"), 20); // no -bin, no registry-comments, no bad-actor-behaviors
+        assert_eq!(count("npm"), 18); // +install-script +bad-actor-behaviors over the 16 universal
+        assert_eq!(count("pypi"), 18);
+        assert_eq!(count("rubygems"), 18);
+        assert_eq!(count("nuget"), 18);
         assert_eq!(count("go"), 16); // universal only — no install hooks
-        assert_eq!(count("cargo"), 16);
+        assert_eq!(count("cargo"), 17); // +bad-actor-behaviors (build.rs TTPs)
     }
 
     #[test]
