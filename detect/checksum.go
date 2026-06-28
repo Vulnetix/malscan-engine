@@ -26,6 +26,12 @@ func analyzeChecksum(ctx *PackageContext) []Finding {
 	if content == "" {
 		return nil
 	}
+	// `*sums=()` integrity arrays are an Arch-PKGBUILD concept. Running this over a
+	// declarative manifest (npm package.json, setup.py, composer.json, …) only
+	// ever yields P-NO-CHECKSUMS noise, so gate it to actual PKGBUILD content.
+	if !looksLikePkgbuild(content) {
+		return nil
+	}
 	var out []Finding
 	name := ctx.Name
 	isVCS := strings.HasSuffix(name, "-git") || strings.HasSuffix(name, "-svn") ||

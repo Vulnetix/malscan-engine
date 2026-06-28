@@ -28,6 +28,12 @@ type patternRule struct {
 	// set on override_gate rules (reverse/bind shells, curl|sh) — those are proof
 	// regardless of context.
 	HookOnly bool `toml:"hook_only"`
+	// PkgbuildOnly marks a rule that is only meaningful for Arch-PKGBUILD source
+	// hygiene (plain-HTTP source, raw-IP source URL). It is skipped entirely when
+	// the matched content is neither a PKGBUILD nor an auto-execution surface, so
+	// it stops firing on npm/pypi/etc. declarative manifests (the P-HTTP-SOURCE /
+	// P-RAW-IP-URL false positives).
+	PkgbuildOnly bool `toml:"pkgbuild_only"`
 }
 
 // compiledPattern is a runtime-ready rule.
@@ -38,6 +44,7 @@ type compiledPattern struct {
 	description  string
 	overrideGate bool
 	hookOnly     bool
+	pkgbuildOnly bool
 }
 
 var (
@@ -66,7 +73,7 @@ func loadPatterns() {
 				patternsBySection[section] = append(patternsBySection[section], compiledPattern{
 					id: r.ID, re: re, points: r.Points,
 					description: r.Description, overrideGate: r.OverrideGate,
-					hookOnly: r.HookOnly,
+					hookOnly: r.HookOnly, pkgbuildOnly: r.PkgbuildOnly,
 				})
 			}
 		}
@@ -110,13 +117,25 @@ const evidenceThreshold = 40
 // outside such a surface are demoted to ClassContext corroboration.
 func matchSection(content, section, category, idPrefix string, inHookSurface bool, findings []Finding) []Finding {
 	loadPatterns()
+	pkgbuildLike := inHookSurface || looksLikePkgbuild(content)
 	for _, p := range patternsBySection[section] {
 		if p.re.MatchString(content) {
+			// PKGBUILD-source-hygiene rules carry no signal on a declarative
+			// (non-PKGBUILD, non-hook) manifest — skip them entirely there.
+			if p.pkgbuildOnly && !pkgbuildLike {
+				continue
+			}
 			class := ClassEvidence
 			if !p.overrideGate && p.points < evidenceThreshold {
 				class = ClassContext
 			}
-			if p.hookOnly && !inHookSurface { // dual-use command outside an auto-exec surface → corroboration only
+			if p.hookOnly && !inHookSurface {
+				// Dual-use command outside an auto-exec surface. A low-weight
+				// (sub-evidence) signal there is pure corroboration noise — drop it;
+				// a higher-weight one is still recorded as ClassContext.
+				if p.points < evidenceThreshold {
+					continue
+				}
 				class = ClassContext
 			}
 			findings = append(findings, Finding{
