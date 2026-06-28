@@ -188,16 +188,29 @@ func (s *IndicatorSet) Add(ind *Indicator) {
 	}
 	switch ind.Type {
 	case TypeDomain:
+		// Drop code-token-collision domains (a.top, this.global, …) so the feed
+		// can't flag JS property access as a hostname.
+		if allow.CodeTokenDomain(ind.Value) {
+			return
+		}
 		key := domainKey(ind.Value)
 		if _, ok := s.domains[key]; !ok {
 			s.domains[key] = ind
 		}
 	case TypeIPv4, TypeIPv6:
+		// Drop version/coordinate-shaped IPv4 (all octets <=31).
+		if allow.VersionLikeIP(ind.Value) {
+			return
+		}
 		key := ipKey(ind.Value)
 		if _, ok := s.ips[key]; !ok {
 			s.ips[key] = ind
 		}
 	case TypeURL:
+		// Drop benign docs/homepage URLs on non-payload-capable hosts.
+		if allow.BenignDocURL(ind.Value) {
+			return
+		}
 		key := strings.ToLower(ind.Value)
 		if _, ok := s.urls[key]; !ok {
 			s.urls[key] = ind

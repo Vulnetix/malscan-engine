@@ -110,10 +110,10 @@ var genericServiceHosts = map[string]bool{
 	// ── Package registries ───────────────────────────────────────────────────
 	"registry.npmjs.org": true, "npmjs.com": true, "www.npmjs.com": true,
 	"npmjs.org": true, "registry.yarnpkg.com": true, "yarnpkg.com": true,
-	"pnpm.io": true,
+	"pnpm.io":  true,
 	"pypi.org": true, "test.pypi.org": true, "files.pythonhosted.org": true,
 	"crates.io": true, "static.crates.io": true,
-	"rubygems.org": true,
+	"rubygems.org":  true,
 	"packagist.org": true, "repo.packagist.org": true,
 	"golang.org": true, "pkg.go.dev": true, "proxy.golang.org": true, "sum.golang.org": true,
 	"go.dev": true, "gopkg.in": true, "goproxy.io": true,
@@ -155,12 +155,18 @@ var genericServiceHosts = map[string]bool{
 	"webpack.js.org": true, "feross.org": true, "eslint.org": true, "prettier.io": true,
 	"reactjs.org": true, "react.dev": true, "vuejs.org": true, "rollupjs.org": true,
 	"vitejs.dev": true, "tailwindcss.com": true, "www.tailwindcss.com": true,
-	"daisyui.com": true,
+	"daisyui.com":    true,
 	"readthedocs.io": true, "readthedocs.org": true,
 	"docs.rs": true, "js.org": true, "deno.land": true, "nuxt.com": true,
 	"vueuse.org": true, "vueuse.com": true,
 	"docs.python.org": true, "python.org": true, "nodejs.org": true,
 	"docs.npmjs.com": true, "rust-lang.org": true, "www.rust-lang.org": true,
+	"nextjs.org": true, "angular.dev": true, "nx.dev": true, "swagger.io": true,
+	"nvm.sh": true, "unlicense.org": true, "bundlephobia.com": true,
+	"webkit.org": true, "bugs.webkit.org": true, "chaijs.com": true,
+	// npm-ecosystem author homepages referenced from package metadata / source
+	"lukeed.com": true, "jongleberry.com": true, "somethingdoug.com": true,
+	"alogicalparadox.com": true, "keithcirkel.co.uk": true, "matteocollina.com": true,
 
 	// ── Funding / sponsorship platforms ──────────────────────────────────────
 	"opencollective.com": true, "thanks.dev": true,
@@ -244,6 +250,108 @@ func IP(ip string) bool {
 // or telegram.org documentation/announcements.
 func URL(u string) bool {
 	return Domain(hostOf(u))
+}
+
+// payloadCapableHosts are otherwise-reputable hosts that can serve arbitrary
+// user-controlled content (raw repo files, gists, package CDNs, pastes, chat
+// webhooks). A full URL on these can be a real IOC, so url indicators pointing at
+// them are NOT treated as benign docs links.
+var payloadCapableHosts = map[string]bool{
+	"github.com": true, "raw.githubusercontent.com": true, "gist.github.com": true,
+	"codeload.github.com": true, "objects.githubusercontent.com": true,
+	"gitlab.com": true, "bitbucket.org": true, "sourceforge.net": true,
+	"cdn.jsdelivr.net": true, "jsdelivr.net": true, "fastly.jsdelivr.net": true,
+	"cdnjs.cloudflare.com": true, "unpkg.com": true, "esm.sh": true,
+	"skypack.dev": true, "ga.jspm.io": true, "rawgit.com": true, "gitcdn.xyz": true,
+	"discord.com": true, "discordapp.com": true, "telegram.org": true,
+	"core.telegram.org": true, "api.telegram.org": true,
+}
+
+// BenignDocURL reports whether u is a documentation / homepage / funding URL on a
+// benign host that CANNOT serve arbitrary payloads — a url indicator that is pure
+// noise (a package linking to tidelift.com/security or floating-ui.com/docs). It
+// deliberately returns false for payload-capable hosts (github raw, gists, CDNs,
+// pastebins, chat webhooks) so a genuine hosted-payload URL still matches.
+func BenignDocURL(u string) bool {
+	h := hostOf(u)
+	if h == "" || payloadCapableHosts[h] {
+		return false
+	}
+	return Domain(h)
+}
+
+// codeCollidingGTLDs are generic word-gTLDs whose names double as common code
+// identifiers/properties, so a bare `<ident>.<gtld>` token in source (e.g.
+// `a.top`, `re.global`, `address.group`, `rgb.xyz`) matches the domain regex even
+// though it is property access, not a hostname.
+var codeCollidingGTLDs = map[string]bool{
+	"top": true, "global": true, "group": true, "xyz": true,
+}
+
+// codeIdentSLDs are common source identifiers that appear as the label before a
+// code-colliding gTLD in property-access expressions.
+var codeIdentSLDs = map[string]bool{
+	"this": true, "self": true, "that": true, "window": true, "document": true,
+	"address": true, "object": true, "array": true, "string": true, "number": true,
+	"target": true, "event": true, "error": true, "result": true, "config": true,
+	"options": true, "context": true, "element": true, "props": true, "state": true,
+	"data": true, "rgb": true, "rgba": true, "hsl": true, "hsla": true,
+}
+
+// CodeTokenDomain reports whether host is almost certainly a code-token access
+// (property chain) rather than a real hostname: its TLD is a code-colliding
+// word-gTLD AND the label immediately before it is short (<=3 chars) or a
+// well-known source identifier. Real domains on these gTLDs (`evilc2.top`,
+// `mybrand.xyz`) have a distinctive SLD and are NOT matched here.
+func CodeTokenDomain(host string) bool {
+	h := normHost(host)
+	parts := strings.Split(h, ".")
+	if len(parts) < 2 {
+		return false
+	}
+	tld := parts[len(parts)-1]
+	if !codeCollidingGTLDs[tld] {
+		return false
+	}
+	sld := parts[len(parts)-2]
+	if sld == "" {
+		return false
+	}
+	return len(sld) <= 3 || codeIdentSLDs[sld]
+}
+
+// VersionLikeIP reports whether an IPv4 string looks like a dotted version /
+// coordinate rather than an address: a valid dotted-quad whose four octets are all
+// small (<=31). Such values (`7.3.1.1`, `21.2.5.3`) pervade version tables and
+// fixtures in package source and are not useful indicators. Larger-octet
+// look-alikes (e.g. `129.144.52.38`) are left to feed curation since they are
+// indistinguishable from real addresses by shape alone.
+func VersionLikeIP(ip string) bool {
+	v := strings.TrimSpace(ip)
+	p := net.ParseIP(v)
+	if p == nil || p.To4() == nil {
+		return false
+	}
+	octets := strings.Split(v, ".")
+	if len(octets) != 4 {
+		return false
+	}
+	for _, o := range octets {
+		if o == "" || len(o) > 2 { // >2 digits => octet >= 100 > 31
+			return false
+		}
+		n := 0
+		for i := 0; i < len(o); i++ {
+			if o[i] < '0' || o[i] > '9' {
+				return false
+			}
+			n = n*10 + int(o[i]-'0')
+		}
+		if n > 31 {
+			return false
+		}
+	}
+	return true
 }
 
 // Benign reports whether a (kind, value) indicator is benign and should be
