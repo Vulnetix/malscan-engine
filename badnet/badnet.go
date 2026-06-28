@@ -47,6 +47,7 @@ type Set struct {
 	ipv6    map[string]struct{}
 	domains map[string]struct{}
 	emails  map[string]struct{}
+	sources []string
 }
 
 // NewEmpty returns an empty Set ready to Add into.

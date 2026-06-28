@@ -1,0 +1,141 @@
+{
+  "schema_version": "badnet-feeds/v1",
+  "feeds": [
+    {
+      "key": "dshield-block",
+      "name": "DShield block list",
+      "url": "https://www.dshield.org/block.txt",
+      "parser": "iplist",
+      "detail": "DShield suspicious source IP blocklist.",
+      "enabled": true
+    },
+    {
+      "key": "dshield-ipsascii",
+      "name": "DShield IPs ASCII",
+      "url": "https://www.dshield.org/ipsascii.html",
+      "parser": "iplist",
+      "detail": "DShield top attacking IPs in plain text.",
+      "enabled": true
+    },
+    {
+      "key": "crowdsec-intelligence",
+      "name": "CrowdSec Intelligence Feed",
+      "url": "https://feeds.crowdsec.net/free/2be9a716-39b8-5c18-bc9e-4ba7aefd8831.json",
+      "parser": "misp",
+      "detail": "CrowdSec malicious intelligence feed in MISP JSON form.",
+      "enabled": true
+    },
+    {
+      "key": "dandelionsprout-antimalware",
+      "name": "DandelionSprout Anti-Malware Hosts",
+      "url": "https://raw.githubusercontent.com/DandelionSprout/adfilt/master/Alternate%20versions%20Anti-Malware%20List/AntiMalwareHosts.txt",
+      "parser": "hosts",
+      "detail": "Anti-malware hosts-file blocklist.",
+      "enabled": true
+    },
+    {
+      "key": "feodotracker-recommended",
+      "name": "Feodo Tracker recommended C2 IPs",
+      "url": "https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.txt",
+      "parser": "iplist",
+      "detail": "Low-false-positive active botnet C2 IP list.",
+      "enabled": true
+    },
+    {
+      "key": "urlhaus-hosts",
+      "name": "URLhaus malware hosts",
+      "url": "https://urlhaus.abuse.ch/downloads/hostfile/",
+      "parser": "hosts",
+      "detail": "Active malware-delivery hostnames in hosts-file format.",
+      "enabled": true
+    },
+    {
+      "key": "isc-intelfeed",
+      "name": "SANS ISC Intel Feed",
+      "url": "https://isc.sans.edu/api/intelfeed",
+      "parser": "mixed",
+      "detail": "SANS ISC mixed IOC feed.",
+      "enabled": true
+    },
+    {
+      "key": "isc-cloudips",
+      "name": "SANS ISC cloud IPs",
+      "url": "https://isc.sans.edu/api/cloudips",
+      "parser": "iplist",
+      "detail": "SANS ISC cloud IP threat feed.",
+      "enabled": true
+    },
+    {
+      "key": "firehol-level3",
+      "name": "FireHOL level 3",
+      "url": "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level3.netset",
+      "parser": "netset",
+      "detail": "FireHOL level 3 netset, reduced to individual IPs.",
+      "enabled": true
+    },
+    {
+      "key": "binarydefense-banlist",
+      "name": "Binary Defense banlist",
+      "url": "https://binarydefense.com/banlist.txt",
+      "parser": "iplist",
+      "detail": "Binary Defense observed attacker IPs.",
+      "enabled": true
+    },
+    {
+      "key": "aper-phishing-reply",
+      "name": "APER phishing reply addresses",
+      "url": "https://svn.code.sf.net/p/aper/code/phishing_reply_addresses",
+      "parser": "emails",
+      "detail": "Threat-actor email addresses observed in phishing replies.",
+      "enabled": true
+    },
+    {
+      "key": "projecthoneypot-p-rss",
+      "name": "Project Honey Pot phishing RSS",
+      "url": "https://www.projecthoneypot.org/list_of_ips.php?t=p&rss=1",
+      "parser": "rss",
+      "detail": "Project Honey Pot phishing IP RSS feed.",
+      "enabled": true
+    },
+    {
+      "key": "projecthoneypot-rss",
+      "name": "Project Honey Pot RSS",
+      "url": "https://www.projecthoneypot.org/list_of_ips.php?rss=1",
+      "parser": "rss",
+      "detail": "Project Honey Pot IP RSS feed.",
+      "enabled": true
+    },
+    {
+      "key": "cinsscore-badguys",
+      "name": "CINS Score badguys",
+      "url": "http://cinsscore.com/list/ci-badguys.txt",
+      "parser": "iplist",
+      "detail": "CINS Score suspicious IP list.",
+      "enabled": true
+    },
+    {
+      "key": "alienvault-generic",
+      "name": "AlienVault generic reputation",
+      "url": "https://reputation.alienvault.com/reputation.generic",
+      "parser": "iplist",
+      "detail": "AlienVault reputation generic IP feed.",
+      "enabled": true
+    },
+    {
+      "key": "alienvault-data",
+      "name": "AlienVault reputation data",
+      "url": "https://reputation.alienvault.com/reputation.data",
+      "parser": "iplist",
+      "detail": "AlienVault reputation data IP feed.",
+      "enabled": true
+    },
+    {
+      "key": "bruteforceblocker",
+      "name": "BruteforceBlocker",
+      "url": "https://danger.rulez.sk/projects/bruteforceblocker/blist.php",
+      "parser": "iplist",
+      "detail": "BruteforceBlocker IP list.",
+      "enabled": true
+    }
+  ]
+}

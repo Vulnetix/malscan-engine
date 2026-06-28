@@ -1,6 +1,7 @@
 package badnet
 
 import (
+	"encoding/json"
 	"net"
 	"regexp"
 	"strings"
@@ -26,6 +27,9 @@ const (
 	fmtEmails format = "emails"
 	// fmtMixed: free-form text that may contain IPs and/or domains (isc intelfeed).
 	fmtMixed format = "mixed"
+	// fmtMISP: MISP-style JSON event ({"Event":{"Attribute":[{type,value}]}}),
+	// e.g. the CrowdSec free feed — IP/domain indicators keyed by attribute type.
+	fmtMISP format = "misp"
 )
 
 // extracted is the per-kind result of parsing one feed body.
@@ -61,6 +65,10 @@ func parseFeed(f format, body string) extracted {
 	}
 
 	switch f {
+	case fmtMISP:
+		parseMISP(body, &out, add)
+		return out
+
 	case fmtEmails:
 		for _, line := range lines(body) {
 			for _, e := range emailTokRe.FindAllString(line, -1) {
@@ -112,6 +120,84 @@ func parseFeed(f format, body string) extracted {
 			collectIPs(tok, &out, add)
 		}
 		return out
+	}
+}
+
+// mispDoc is the subset of a MISP event JSON we read: the attribute type/value
+// pairs. Unknown keys are ignored by encoding/json.
+type mispDoc struct {
+	Event struct {
+		Attribute []mispAttribute `json:"Attribute"`
+	} `json:"Event"`
+}
+
+type mispAttribute struct {
+	Type    string    `json:"type"`
+	Value   string    `json:"value"`
+	ToIDS   *bool     `json:"to_ids"`
+	Comment string    `json:"comment"`
+	Tag     []mispTag `json:"Tag"`
+}
+
+type mispTag struct {
+	Name string `json:"name"`
+}
+
+// parseMISP extracts indicators from a MISP-style JSON event. It accepts common
+// network attribute types, skips non-IDS attributes, and drops CrowdSec-style
+// benign scanner reputation before the shared allow/CIDR filters run.
+func parseMISP(body string, out *extracted, add func(*[]string, string, string)) {
+	var doc mispDoc
+	if err := json.Unmarshal([]byte(body), &doc); err != nil {
+		return
+	}
+	for _, attr := range doc.Event.Attribute {
+		if attr.ToIDS != nil && !*attr.ToIDS {
+			continue
+		}
+		if attr.benignReputation() {
+			continue
+		}
+		collectMISPValue(attr.Type, attr.Value, out, add)
+	}
+}
+
+func (a mispAttribute) benignReputation() bool {
+	if strings.Contains(strings.ToLower(a.Comment), "reputation: benign") {
+		return true
+	}
+	for _, tag := range a.Tag {
+		if strings.EqualFold(tag.Name, "reputation:benign") {
+			return true
+		}
+	}
+	return false
+}
+
+func collectMISPValue(typ, val string, out *extracted, add func(*[]string, string, string)) {
+	typ = strings.ToLower(strings.TrimSpace(typ))
+	val = strings.TrimSpace(val)
+	if val == "" {
+		return
+	}
+	switch typ {
+	case "ip-src", "ip-dst", "ip-src|port", "ip-dst|port", "domain|ip":
+		collectIPs(val, out, add)
+		if typ != "domain|ip" {
+			return
+		}
+	case "email-src", "email-dst", "target-email", "whois-registrant-email":
+		for _, e := range emailTokRe.FindAllString(val, -1) {
+			if v := classifyEmail(e); v != "" {
+				add(&out.emails, "e:"+v, v)
+			}
+		}
+		return
+	}
+	for _, d := range domainTokRe.FindAllString(val, -1) {
+		if v := classifyDomain(d); v != "" {
+			add(&out.domains, "d:"+v, v)
+		}
 	}
 }
 
