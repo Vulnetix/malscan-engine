@@ -29,6 +29,23 @@ const cachePrefix = "malscan-stix-"
 
 const defaultUserAgent = "malscan-engine"
 
+// DefaultTweetFeedURL is the TweetFeed (0xDanielLopez) rolling 30-day STIX 2.1
+// bundle — a base IOC feed (domain/url/ipv4 indicators + file hashes) merged
+// into every load alongside the vulnetix.com index. It has no published checksum
+// (a moving file), so it is fetched without sha verification.
+const DefaultTweetFeedURL = "https://raw.githubusercontent.com/0xDanielLopez/TweetFeed/master/stix/month.json"
+
+// DefaultTweetFeedTTL is how long a cached TweetFeed copy is considered fresh.
+const DefaultTweetFeedTTL = 24 * time.Hour
+
+// defaultTweetFeedTimeout bounds the automatic (non-forced) TweetFeed fetch so a
+// scan is never blocked: on connect/fetch timeout or offline the stale cache is
+// used with a Warning, and a missing cache is skipped (also a Warning).
+const defaultTweetFeedTimeout = 3 * time.Second
+
+// tweetFeedSlug is the on-disk cache slug for the TweetFeed bundle.
+const tweetFeedSlug = "tweetfeed"
+
 // Feed is one entry in the index: a single ecosystem's DNS or URL bundle.
 type Feed struct {
 	Ecosystem string `json:"ecosystem"`
@@ -57,6 +74,14 @@ type FeedLoader struct {
 	TTL        time.Duration // default DefaultTTL (1h)
 	HTTPClient *http.Client  // default 30s-timeout client
 	UserAgent  string        // default "malscan-engine"
+
+	// TweetFeed base feed, overridable by a consuming project WITHOUT recompiling
+	// the module. TweetFeedURL "" uses DefaultTweetFeedURL; TweetFeedTTL/Timeout 0
+	// use the defaults (24h / 3s); DisableTweetFeed skips the base feed entirely.
+	TweetFeedURL     string
+	TweetFeedTTL     time.Duration
+	TweetFeedTimeout time.Duration
+	DisableTweetFeed bool
 
 	// now is a test seam for the clock; nil means time.Now. It governs both the
 	// timestamp encoded into a new cache filename and the freshness comparison.
@@ -105,15 +130,66 @@ func (l *FeedLoader) httpClient() *http.Client {
 	return &http.Client{Timeout: 30 * time.Second}
 }
 
+func (l *FeedLoader) tweetFeedURL() string {
+	if l.TweetFeedURL != "" {
+		return l.TweetFeedURL
+	}
+	return DefaultTweetFeedURL
+}
+
+func (l *FeedLoader) tweetFeedTTL() time.Duration {
+	if l.TweetFeedTTL > 0 {
+		return l.TweetFeedTTL
+	}
+	return DefaultTweetFeedTTL
+}
+
+func (l *FeedLoader) tweetFeedTimeout() time.Duration {
+	if l.TweetFeedTimeout > 0 {
+		return l.TweetFeedTimeout
+	}
+	return defaultTweetFeedTimeout
+}
+
+// tweetFeedClient bounds the TweetFeed fetch. The automatic path uses the short
+// (3s) timeout so a scan is never blocked; an explicit force-fresh refresh uses
+// the generous client since the caller is deliberately waiting for fresh data.
+func (l *FeedLoader) tweetFeedClient(forceFresh bool) *http.Client {
+	if forceFresh {
+		return l.httpClient()
+	}
+	return &http.Client{Timeout: l.tweetFeedTimeout()}
+}
+
 // Load resolves the index, then fetches the `dns` and `urls` feeds for each
 // requested ecosystem plus the always-included "generic" ecosystem, and merges
 // them into one IndicatorSet. Every fresh/stale/checksum/feed condition is
 // reported as a Warning (never logged). It returns an error only when the index
 // itself cannot be obtained, or when no requested feed could be loaded at all.
 func (l *FeedLoader) Load(ecosystems ...string) (*IndicatorSet, []Warning, error) {
+	return l.load(false, false, ecosystems...)
+}
+
+// Refresh force-fetches every feed (the vulnetix index + its per-ecosystem feeds
+// + the TweetFeed base) from remote, bypassing cache TTLs and rewriting the
+// on-disk cache, so subsequent TTL-cached Load/Scan calls read the fresh data.
+// With no ecosystems it refreshes every feed listed in the index; otherwise just
+// the requested ecosystems (+ generic). It is the STIX half of a consuming
+// project's "fetch fresh definitions" flow. Offline/timeout falls back to the
+// stale cache with a Warning (non-blocking); the returned warnings explain each
+// feed's outcome.
+func (l *FeedLoader) Refresh(ecosystems ...string) ([]Warning, error) {
+	_, warnings, err := l.load(true, len(ecosystems) == 0, ecosystems...)
+	return warnings, err
+}
+
+// load is the shared implementation behind Load and Refresh. forceFresh bypasses
+// every cache TTL (and rewrites the cache); wantAll fetches every feed in the
+// index regardless of the requested ecosystems.
+func (l *FeedLoader) load(forceFresh, wantAll bool, ecosystems ...string) (*IndicatorSet, []Warning, error) {
 	var warnings []Warning
 
-	idxData, w, err := l.acquire("index", l.indexURL(), "")
+	idxData, w, err := l.acquire("index", l.indexURL(), "", l.ttl(), l.httpClient(), forceFresh)
 	if err != nil {
 		return nil, warnings, fmt.Errorf("load stix index: %w", err)
 	}
@@ -131,7 +207,7 @@ func (l *FeedLoader) Load(ecosystems ...string) (*IndicatorSet, []Warning, error
 	feedFailures := 0
 
 	for _, feed := range idx.Feeds {
-		if !wanted[feed.Ecosystem] {
+		if !wantAll && !wanted[feed.Ecosystem] {
 			continue
 		}
 		slug := feed.Ecosystem + "-" + feed.Kind
@@ -140,7 +216,7 @@ func (l *FeedLoader) Load(ecosystems ...string) (*IndicatorSet, []Warning, error
 			url = strings.TrimRight(idx.BaseURL, "/") + "/" + feed.Ecosystem + "/" + feed.Kind + ".stix.json"
 		}
 
-		data, w, err := l.acquire(slug, url, feed.SHA256)
+		data, w, err := l.acquire(slug, url, feed.SHA256, l.ttl(), l.httpClient(), forceFresh)
 		if err != nil {
 			feedFailures++
 			warnings = append(warnings, Warning{Code: "feed-error", Feed: slug, Message: err.Error()})
@@ -158,13 +234,54 @@ func (l *FeedLoader) Load(ecosystems ...string) (*IndicatorSet, []Warning, error
 		set.AddAll(inds)
 	}
 
-	// If nothing loaded and at least one feed failed, surface a hard error — the
-	// caller asked for indicators and got none because acquisition failed.
+	// TweetFeed base feed — always merged unless disabled. NON-FATAL: a failure is
+	// only a Warning (a base feed must never fail the load); offline/timeout uses
+	// the stale cache via acquire, and a missing cache is skipped with a Warning.
+	if inds, _, tw, terr := l.loadTweetFeed(forceFresh); terr != nil {
+		warnings = append(warnings, Warning{Code: "feed-error", Feed: tweetFeedSlug, Message: terr.Error()})
+	} else {
+		if tw != nil {
+			warnings = append(warnings, *tw)
+		}
+		set.AddAll(inds)
+	}
+
+	// If nothing loaded and at least one index feed failed, surface a hard error —
+	// the caller asked for indicators and got none because acquisition failed.
 	if set.Empty() && feedFailures > 0 {
 		return set, warnings, fmt.Errorf("no stix feeds could be loaded (%d failed)", feedFailures)
 	}
 
 	return set, warnings, nil
+}
+
+// loadTweetFeed fetches + parses the TweetFeed base bundle (cached per
+// tweetFeedTTL with the short timeout, or force-fresh with the generous client),
+// returning its domain/url/ipv4 indicators and its file-hash strings. A disabled
+// feed yields nothing; a fetch/parse failure is returned for the caller to
+// downgrade to a Warning.
+func (l *FeedLoader) loadTweetFeed(forceFresh bool) (inds []*Indicator, hashes []string, w *Warning, err error) {
+	if l.DisableTweetFeed {
+		return nil, nil, nil, nil
+	}
+	data, w, err := l.acquire(tweetFeedSlug, l.tweetFeedURL(), "", l.tweetFeedTTL(), l.tweetFeedClient(forceFresh), forceFresh)
+	if err != nil {
+		return nil, nil, w, err
+	}
+	inds, hashes, perr := parseTweetFeed(data)
+	if perr != nil {
+		return nil, nil, w, perr
+	}
+	return inds, hashes, w, nil
+}
+
+// TweetFeedHashes returns the file-hash (SHA-256/MD5) values from the TweetFeed
+// base feed, for a consuming project to merge into its badhash set. forceFresh
+// bypasses the cache TTL. Cache-backed, so calling it alongside Load/Scan does
+// not trigger a second remote fetch within the TTL window.
+func (l *FeedLoader) TweetFeedHashes(forceFresh bool) ([]string, *Warning, error) {
+	_, hashes, w, err := l.loadTweetFeed(forceFresh)
+	return hashes, w, err
 }
 
 // wantedEcosystems returns the set of ecosystems to load: every requested slug
@@ -186,12 +303,12 @@ func wantedEcosystems(ecosystems []string) map[string]bool {
 //
 // expectedSHA, when non-empty, must match the sha256 of freshly fetched bytes;
 // a mismatch is treated as a fetch failure (we fall back to cache if present).
-func (l *FeedLoader) acquire(slug, url, expectedSHA string) ([]byte, *Warning, error) {
+func (l *FeedLoader) acquire(slug, url, expectedSHA string, ttl time.Duration, client *http.Client, forceFresh bool) ([]byte, *Warning, error) {
 	newestPath, ts, found := l.cachedNewest(slug)
 
-	// Fresh cache hit — use it silently.
-	if found {
-		if age := l.nowFn().Sub(ts); age < l.ttl() {
+	// Fresh cache hit — use it silently. Skipped when forceFresh demands a refetch.
+	if found && !forceFresh {
+		if age := l.nowFn().Sub(ts); age < ttl {
 			if data, err := os.ReadFile(newestPath); err == nil {
 				return data, nil, nil
 			}
@@ -200,7 +317,7 @@ func (l *FeedLoader) acquire(slug, url, expectedSHA string) ([]byte, *Warning, e
 	}
 
 	// Need a fresh copy.
-	data, ferr := l.fetch(url)
+	data, ferr := l.fetch(url, client)
 	if ferr == nil && expectedSHA != "" {
 		if sum := sha256Hex(data); !strings.EqualFold(sum, expectedSHA) {
 			ferr = &checksumError{url: url, want: expectedSHA, got: sum}
@@ -236,7 +353,7 @@ func (l *FeedLoader) acquire(slug, url, expectedSHA string) ([]byte, *Warning, e
 
 // fetch performs a single GET and returns the body, or an error for any non-200
 // status or transport failure.
-func (l *FeedLoader) fetch(url string) ([]byte, error) {
+func (l *FeedLoader) fetch(url string, client *http.Client) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -244,7 +361,7 @@ func (l *FeedLoader) fetch(url string) ([]byte, error) {
 	req.Header.Set("User-Agent", l.userAgent())
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := l.httpClient().Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
