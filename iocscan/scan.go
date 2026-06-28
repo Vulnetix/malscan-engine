@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/vulnetix/malscan-engine/badnet"
 )
 
 // Defaults for a Scan.
@@ -52,6 +54,13 @@ type Options struct {
 	// threat-intel IPs/domains) into the internally-loaded indicator set. It has
 	// no effect when Set is provided (the caller controls that set's contents).
 	NoBadnet bool
+
+	// BadnetDir is an optional runtime definitions directory (bad-*.txt, as written
+	// by badnet.Fetch/WriteFiles) merged on top of the embedded badnet set. It lets
+	// a customer refresh threat-intel definitions at runtime — e.g. via the CLI's
+	// `malscan --fetch-definitions` — without recompiling the engine. Ignored when
+	// Set is provided or NoBadnet is set.
+	BadnetDir string
 
 	// Feed controls (all optional, ignored when Set is non-nil). Loader, when
 	// set, is used as-is and the rest are ignored.
@@ -111,6 +120,14 @@ func Scan(opts Options) (*Report, error) {
 		set = loaded
 		if !opts.NoBadnet {
 			set.addEmbeddedBadnet()
+			if opts.BadnetDir != "" {
+				if overlay, lerr := badnet.LoadDir(opts.BadnetDir); lerr == nil {
+					set.AddBadnetSet(overlay)
+				} else {
+					report.Warnings = append(report.Warnings, Warning{
+						Code: "badnet-overlay", Message: "runtime badnet definitions: " + lerr.Error()})
+				}
+			}
 		}
 	}
 	report.IndicatorCount = set.Len()
