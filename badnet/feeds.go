@@ -1,4 +1,4 @@
-package main
+package badnet
 
 // feed is one upstream threat-intel source.
 type feed struct {
@@ -7,9 +7,12 @@ type feed struct {
 	format format
 }
 
-// feeds is the curated set of public blocklists aggregated into badnet/data.
-// Each entry's format selects the parser; the classifier then keeps only
-// individual (non-CIDR) IPs, valid domains, and emails, minus allow-listed values.
+// Feeds is the curated set of public blocklists aggregated into the badnet
+// definitions. Each entry's format selects the parser; the classifier then keeps
+// only individual (non-CIDR) IPs, valid domains, and emails, minus allow-listed
+// values. It is the single source of truth shared by the embedded-data generator
+// (cmd/genblocklist, the pre-commit/release path) and the runtime Fetch used by
+// the CLI's `malscan --fetch-definitions`.
 var feeds = []feed{
 	{"dshield-block", "https://www.dshield.org/block.txt", fmtIPList},
 	{"dshield-ipsascii", "https://www.dshield.org/ipsascii.html", fmtIPList},
@@ -25,4 +28,13 @@ var feeds = []feed{
 	{"alienvault-generic", "https://reputation.alienvault.com/reputation.generic", fmtIPList},
 	{"alienvault-data", "https://reputation.alienvault.com/reputation.data", fmtIPList},
 	{"bruteforceblocker", "https://danger.rulez.sk/projects/bruteforceblocker/blist.php", fmtIPList},
+}
+
+// FeedURLs returns the source feed URLs (for diagnostics / docs).
+func FeedURLs() []string {
+	out := make([]string, len(feeds))
+	for i, f := range feeds {
+		out[i] = f.url
+	}
+	return out
 }

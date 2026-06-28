@@ -182,6 +182,12 @@ func (s *Set) IPs() []string {
 	return out
 }
 
+// IPv4s returns every known-bad IPv4 address, sorted.
+func (s *Set) IPv4s() []string { return sortedKeys(s.ipv4) }
+
+// IPv6s returns every known-bad IPv6 address, sorted.
+func (s *Set) IPv6s() []string { return sortedKeys(s.ipv6) }
+
 // Domains returns every known-bad domain, sorted.
 func (s *Set) Domains() []string { return sortedKeys(s.domains) }
 
