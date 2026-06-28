@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Pre-commit hook: refresh the embedded threat-intel blocklists (badnet/data) from
+# the public feeds, then stage any changes. It is stale-guarded (the generator
+# skips when the data is newer than its --max-age unless BLOCKLIST_REFRESH=1) and
+# resilient — a feed that fails to fetch is skipped and never blocks the commit.
+#
+# Install with: just install-hooks  (sets core.hooksPath to .githooks)
+# Skip once with: BLOCKLIST_SKIP=1 git commit ...
+set -u
+
+[ "${BLOCKLIST_SKIP:-0}" = "1" ] && exit 0
+
+# Locate the repo root and run from there.
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$root" || exit 0
+
+gen_args=()
+[ "${BLOCKLIST_REFRESH:-0}" = "1" ] && gen_args+=(--force)
+
+# Prefer the just recipe; fall back to `go run` if just is unavailable.
+if command -v just >/dev/null 2>&1; then
+    if [ "${#gen_args[@]}" -gt 0 ]; then
+        just gen-blocklists-force || echo "pre-commit: blocklist refresh failed; keeping existing data" >&2
+    else
+        just gen-blocklists || echo "pre-commit: blocklist refresh failed; keeping existing data" >&2
+    fi
+elif command -v go >/dev/null 2>&1; then
+    go run ./cmd/genblocklist "${gen_args[@]}" || echo "pre-commit: blocklist refresh failed; keeping existing data" >&2
+else
+    echo "pre-commit: neither just nor go found; skipping blocklist refresh" >&2
+    exit 0
+fi
+
+# Stage refreshed data (no-op when unchanged). Never fail the commit on this.
+git add badnet/data/bad-ipv4.txt badnet/data/bad-ipv6.txt \
+        badnet/data/bad-domains.txt badnet/data/bad-emails.txt 2>/dev/null || true
+
+exit 0
