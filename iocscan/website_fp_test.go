@@ -3,16 +3,26 @@ package iocscan
 import (
 	"strings"
 	"testing"
+
+	"github.com/vulnetix/malscan-engine/detect"
 )
 
 // These regressions pin the false positives surfaced by the website repo's
-// malscan SARIF. The principle, per maintainer guidance: only drop a candidate
-// that was NEVER an IP address (SVG coordinate data spliced into a quad, a
-// slash-versioned product token) or that lives in inert documentation. Anything a
-// real C2 could inhabit — an IPv4-mapped IPv6 literal, a minified bundle, a source
-// map, a test fixture — stays matchable. The offending indicator VALUES are kept
-// in the feed (allow.TestVersionLikeIP), so every fix is proven against a set
-// seeded with those exact values.
+// malscan SARIF. The offending indicator VALUES are kept in the feed, so every
+// fix is proven against a set seeded with those exact values — the point is that
+// the SAME known-bad value is scored by WHERE it sits, never dropped from the feed.
+//
+// The tiers, per maintainer guidance:
+//   - Dropped outright: a candidate that was NEVER an address (SVG coordinate
+//     data spliced into a quad, a slash-versioned product token).
+//   - Suppressed (no evidence): never-executed artifacts — inert Markdown and
+//     source maps.
+//   - Demoted to ClassContext (still matched, low severity, kept for audit):
+//     content that executes but is overwhelmingly benign — a dependency's test
+//     fixtures and generated/minified bundles.
+//   - Kept as ClassEvidence (critical): ordinary executed source and install
+//     hooks. An IPv4-mapped IPv6 literal a real C2 could use stays matchable, at
+//     the tier its file earns.
 
 // fpMatcher seeds the set with the real-shaped IOC values the website scan tripped
 // on, plus a control known-bad IP that MUST still match.
@@ -168,4 +178,110 @@ func TestIPv4InSlashVersion(t *testing.T) {
 	if s := "host 1.2.3.4"; ipv4InSlashVersion(s, atQuad(t, s, "1.2.3.4")) {
 		t.Error("whitespace-delimited IP must not be treated as a version")
 	}
+}
+
+// evClass returns the Class of the (typ,value) hit in ev, or (_, false) if absent.
+func evClass(ev []Evidence, typ IndicatorType, value string) (detect.Class, bool) {
+	for _, e := range ev {
+		if e.IndicatorType == typ && e.IndicatorValue == value {
+			return e.Class, true
+		}
+	}
+	return "", false
+}
+
+// tierMatcher seeds a known-bad IP, URL and domain so the context-tier tests can
+// assert the SAME value is scored differently by the file it sits in.
+func tierMatcher() *Matcher {
+	set := NewIndicatorSet()
+	set.AddAll([]*Indicator{
+		{Type: TypeIPv4, Value: "129.144.52.38"},                // fast-uri ::ffff: fixture
+		{Type: TypeURL, Value: "https://pastebin.com/N21QzeQA"}, // vuedraggable bundle/map
+	})
+	return NewMatcher(set, 0)
+}
+
+// TestTestFixtureDemotesToContext — a known-bad IP sitting in a URI-parser test
+// fixture is still matched (a real C2 could be hidden in a "test" file) but
+// demoted to context so it does not headline as critical; the identical
+// reference in ordinary source stays evidence.
+func TestTestFixtureDemotesToContext(t *testing.T) {
+	m := tierMatcher()
+	const ip = "129.144.52.38"
+	fixtureLine := `    "//[::ffff:129.144.52.38]",`
+	ev := m.MatchText("node_modules/fast-uri/test/fixtures/uri-js-parse.json", fixtureLine)
+	cls, ok := evClass(ev, TypeIPv4, ip)
+	if !ok {
+		t.Fatalf("fixture IP must stay matched (demoted, not dropped); got %s", evSummary(ev))
+	}
+	if cls != detect.ClassContext {
+		t.Errorf("fixture IP class = %q, want ClassContext", cls)
+	}
+	ev = m.MatchText("src/agent.js", `connect("::ffff:129.144.52.38")`)
+	if cls, ok := evClass(ev, TypeIPv4, ip); !ok || cls != "" {
+		t.Errorf("source IP class = %q (ok=%v), want evidence (\"\")", cls, ok)
+	}
+}
+
+// TestSourceMapSuppressed — a source map is generated debug data, never executed;
+// no IOC type is raised from it, not even a payload-capable paste URL.
+func TestSourceMapSuppressed(t *testing.T) {
+	m := tierMatcher()
+	line := `{"version":3,"sources":["x"],"x":"https://pastebin.com/N21QzeQA"}`
+	if ev := m.MatchText("node_modules/vuedraggable/dist/vuedraggable.umd.js.map", line); len(ev) != 0 {
+		t.Errorf("source map must suppress all IOC types; got %s", evSummary(ev))
+	}
+}
+
+// TestGeneratedBundleDemotesURL — a paste URL spliced into a generated bundle
+// (a /dist/ file or a *.min.js) executes but is overwhelmingly bundled library
+// data, so it is demoted; the same URL in ordinary source is evidence.
+func TestGeneratedBundleDemotesURL(t *testing.T) {
+	m := tierMatcher()
+	const u = "https://pastebin.com/N21QzeQA"
+	line := `var ref = "https://pastebin.com/N21QzeQA";`
+	for _, name := range []string{
+		"node_modules/vuedraggable/dist/vuedraggable.common.js",
+		"assets/vendor.min.js",
+	} {
+		cls, ok := evClass(m.MatchText(name, line), TypeURL, u)
+		if !ok || cls != detect.ClassContext {
+			t.Errorf("%s: URL class = %q (ok=%v), want ClassContext", name, cls, ok)
+		}
+	}
+	if cls, ok := evClass(m.MatchText("src/exfil.js", line), TypeURL, u); !ok || cls != "" {
+		t.Errorf("source URL class = %q (ok=%v), want evidence", cls, ok)
+	}
+}
+
+// TestReportMaliciousIgnoresDemoted — a scan whose only hits are demoted context
+// references is NOT malicious; one evidence-tier hit makes it malicious.
+func TestReportMaliciousIgnoresDemoted(t *testing.T) {
+	demoted := Report{Evidence: []Evidence{{IndicatorType: TypeURL, IndicatorValue: "x", Class: detect.ClassContext}}}
+	if demoted.Malicious() {
+		t.Error("a report with only demoted (context) hits must not be malicious")
+	}
+	evid := Report{Evidence: []Evidence{{IndicatorType: TypeURL, IndicatorValue: "x"}}}
+	if !evid.Malicious() {
+		t.Error("a report with an evidence-tier hit must be malicious")
+	}
+}
+
+// evSummary renders evidence for test failure messages.
+func evSummary(ev []Evidence) string {
+	var b strings.Builder
+	for i, e := range ev {
+		if i > 0 {
+			b.WriteString("; ")
+		}
+		cls := string(e.Class)
+		if cls == "" {
+			cls = "evidence"
+		}
+		b.WriteString(string(e.IndicatorType) + ":" + e.IndicatorValue + "[" + cls + "]")
+	}
+	if b.Len() == 0 {
+		return "(no evidence)"
+	}
+	return b.String()
 }
