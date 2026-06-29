@@ -270,6 +270,11 @@ pattern = 'chmod\s+(-\S+\s+)*\+x\s+\S+\s*[;&|]+\s*\./'
 points = 75
 description = "chmod +x followed by execution (download-chmod-execute chain)"
 override_gate = false
+# Dual-use build step: a package author's own bundler does this in a manually-run
+# script. Evidence only inside an auto-exec surface (install hook, PKGBUILD that
+# executes); demoted to context in a declarative/manually-run manifest such as an
+# npm package.json "scripts" entry.
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-WGET-CHMOD-EXEC"
@@ -277,6 +282,11 @@ pattern = '(curl|wget)\s[^;&|\n]*\S+\s*[;&|]+\s*chmod\s+(-\S+\s+)*\+x'
 points = 85
 description = "Download followed by chmod +x (download-and-execute preparation)"
 override_gate = false
+# Dual-use: evidence only in an auto-exec hook/PKGBUILD; context in a manually-run
+# manifest script (the package.json text read into PkgbuildContent). A real
+# lifecycle hook (postinstall) is scanned separately as InstallScriptContent and
+# still mints evidence there.
+hook_only = true
 
 # /tmp staging
 [[pkgbuild_analysis]]
@@ -285,6 +295,9 @@ pattern = '(chmod\s+(-\S+\s+)*\+x\s+/tmp/|>\s*/tmp/\S+\s*[;&|]+\s*(ba)?sh\s+/tmp
 points = 70
 description = "Writing or executing files in /tmp (common malware staging)"
 override_gate = false
+# Dual-use: evidence only in an auto-exec hook/PKGBUILD; context in a manually-run
+# manifest script. Lifecycle hooks are scanned separately as InstallScriptContent.
+hook_only = true
 
 # Process backgrounding/hiding
 [[pkgbuild_analysis]]
