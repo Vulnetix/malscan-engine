@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 12048
+# count: 12080
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -50,6 +50,7 @@
 1android.ru
 1b60887cd1.com
 1bestmatch.com
+1bmaiu5y.1xbetpartnersiran.com
 1e2sdyr4.honardartarikh.xyz
 1enzmx.com
 1hos.cf
@@ -60,6 +61,7 @@
 1st-classoffers.com
 1tag.ai
 1topnow.com
+1v6qcobc.betbuf.live
 1vqwf3.site
 1win-k.com
 1x-asiabet.mobi
@@ -89,6 +91,7 @@
 1xmyanmar.net
 1xsinga.com
 1xslot-ua.com
+202604157.xyz
 20f70ba20b.com
 213547.com
 21creativo.com
@@ -100,10 +103,13 @@
 24-7livenews.com
 247shopping.net
 24hdeepnude.com
+24vrv9o2.yekshart.app
 289537e8c0.com
 293751.com
 2c236979-b1bb-4c7a-915c-df74dbad0d8c.s3.ap-northeast-2.amazonaws.com
 2d-plus.com
+2ffuyto6.taktikbet.bio
+2lhhe5ae.1xfa.bio
 2linkfast.com
 2m5f.com
 2soft.com
@@ -205,6 +211,7 @@
 8mdphsb8fm.com
 8u88l13s3v3rywh3r3.xyz
 8ue9q7i.com
+8zdusrwn.xbetone.com
 91562f6de0.com
 925713.com
 939344.com
@@ -1520,6 +1527,7 @@ beverageprivacywhom.com
 beverleyprowlpreparing.com
 beyond.sale
 beyondimpulsiveless.com
+bf4nlm15.1xboropartners.com
 bgoboe.com
 bgrfmi.com
 bgs.net
@@ -1960,6 +1968,7 @@ byteinstitution.com
 bzbiz-crm.com
 bzp.net
 c0cd2idcl5.com
+c0yc77zn.blackjackonlineplay83.com
 c2d.tech
 c2uwzjf8.blackjackonlineplay83.com
 c4ase-verified9932.serveftp.com
@@ -2149,8 +2158,10 @@ ccczqxl6.blackjackonlineplay83.com
 ccleaner.gl
 cd-telegrcn.org
 cd.org
+cd5p7l7t.xbetone.com
 cdaonline.com.ar
 cdbjehadcd3.com
+cdn.cs-elect.ru
 cdr.life
 cdudeal.com
 ceasedthoughtful.com
@@ -3087,6 +3098,7 @@ d0ntb3c0nfu53d.xyz
 d13nu0oomnx5ti.cloudfront.net
 d1pplo45p828lj.cloudfront.net
 d25.net
+d30ld0sk.313betapk.com
 d373n2hi69hqg3.cloudfront.net
 d621b18hubcc73aav3e0.fusionchainedge.com
 d621b48hubcc73aav7l0.connectgates.co.in
@@ -3792,6 +3804,7 @@ downypiece.com
 downyrisenmonarchy.com
 dowonline.ru
 dowryenhancekill.com
+dows.sabad724.bio
 dpd-aco.icu
 dpd-cis.icu
 dpd-com.bond
@@ -4381,6 +4394,7 @@ explorads.com
 exploreannihilationquicker.com
 explorefreeresults.com
 exploreinquiry.com
+explorer.vg
 explorerfutile.com
 explorerpurity.com
 exploretank.com
@@ -4417,6 +4431,7 @@ eyebuidirect.com
 eyeshadowclayindulgence.com
 eyestore.tebex.io
 ezbiodiesel.com
+ezcheats-market.com
 ezdrivema-com-vip.bond
 ezdrivema-com.bond
 ezdrivemia-com.bond
@@ -4577,6 +4592,7 @@ fierysnap.com
 fifaspiele.de
 fightdudes.com
 fightmove.co.uk
+figural.pro
 figuratively.xyz
 figurechairmanarrive.com
 figuredenemy.com
@@ -4659,6 +4675,7 @@ fixedlyheedlesspolitician.com
 fixit-felix.com
 fjallravengreece.com
 fjecdjgfjh6.com
+fjy9zygx.1xsignupbet.com
 flagcrushedissues.com
 flagstarwholesale.com
 flakespokenpolitician.com
@@ -4769,6 +4786,7 @@ followthefoam.xyz
 followx.com
 follyfutilefirst.com
 follymutespout.com
+fom7mdmz.1x303.casino
 fondnessenslave.com
 food-stamps-apply.com
 foodin.site
@@ -5260,6 +5278,7 @@ gluttoneloisedeaf.com
 gmauo.com
 gmboree.com
 gmglobalconnec.com
+gmyaxgk8.yekshart.app
 gnctraining.com
 gnet7.com
 gnpschandigarh.com
@@ -5821,6 +5840,7 @@ hqjt.com
 hrun818.com
 hseda.com
 hsmdek.com
+htfll3q5.1x303.casino
 htmail.co.uk
 httpssecure.serveftp.com
 hu0.com
@@ -5882,6 +5902,7 @@ hustlebeyondthestruggle.com
 hustleintellect.com
 hustlemildness.com
 hutquicktheory.com
+huz6wkqi.mokatebatedari.xyz
 hvanah.com
 hxzf4er.com
 hybridkenya.com
@@ -7533,6 +7554,7 @@ mortgae.com
 mortimerplayfulsuede.com
 mortonkalgan.com
 moscowsuggestedinept.com
+moshatech.com
 mosqueprobably.com
 mosquesummaryscattered.com
 mossdistractionposture.com
@@ -7854,6 +7876,7 @@ nieceanyplace.com
 nieceslog.com
 nightclubcreating.com
 nightclubtoenaildodge.com
+nightmare-cheats.pw
 nightmaredoormantdoormantdepart.com
 nightmareirene.com
 nightmarepineacceleration.com
@@ -7935,6 +7958,7 @@ now-track-receivecom.com
 nowhaphopi.com
 nowscratchbranches.com
 npy34.com
+nqxr9m1i.iranfitness.top
 ns1.cameliait.com
 ns1.trafficclub.com
 nta1vb6cdlrl.com
@@ -7982,6 +8006,7 @@ nysrexweqqgo.shop
 o-shohousen.com
 o0o.one
 o24o.ru
+o2rfpbnw.vip1xbet.net
 o2tvseriea.com
 oaktrifling.com
 oarstravelled.com
@@ -8010,6 +8035,7 @@ obobettermann.de
 observefinalizeinvestment.com
 obsessfalse.com
 obstinatefreshmanmonitor.com
+obzs81jf.fagaheestedlali.xyz
 occasionallyreflectingconnect.com
 occasionalwallencroach.com
 occourtd.org
@@ -9296,6 +9322,7 @@ riverdancervresort.com
 riversiderestaurant.co
 rizew.com
 rj-c.com
+rjjgfvu6.vip1xbet.org
 rndigit.com
 roamingclicks.com
 roamthrivecaviar.com
@@ -9772,6 +9799,7 @@ shovelrecalled.com
 showerfixture.com
 showmelocal.com
 showyourevent.com
+shqdown.ggzuhao.com
 shrinklather.com
 shrubby.org
 shrugartisticelder.com
@@ -10076,6 +10104,7 @@ srvdowns.com
 srvqck.com
 srvqck1.com
 srvqck2.com
+ss70wuy0.jarayemaleyhamval.xyz
 ssdwellsgrpo.info
 sskhameln.de
 ssl.bblck.me
@@ -11568,6 +11597,7 @@ wcc-telegram.com
 wcce.net
 wcf.seven1029.com
 wcg-telegram.org
+wcg4ao7n.taktikbet.bio
 wcy-telegram.com
 wda-telegram.com
 wdy-telegram.com
@@ -11633,6 +11663,7 @@ wellwritten.net
 wer-telegram.org
 wereabonnementsupplied.com
 wererearedbreadth.com
+werknova.co
 westbuslaw.com
 westcodex.com
 westcouncilhometown.com
@@ -12049,5 +12080,6 @@ zutozone.com
 zweiradbackhaus.de
 zycdjz.com
 zymstr.com
+zyzghess.313betapk.com
 zz1200.com
 zzz-telegram.com

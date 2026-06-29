@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/vulnetix/malscan-engine/detect"
 )
 
 // Matcher matches text or binary content against a preloaded IndicatorSet,
@@ -51,17 +53,30 @@ func (m *Matcher) MatchBytes(name string, data []byte) []Evidence {
 // evidence (the filesystem walker passes an absolute path + repo-relative path;
 // the in-memory API passes the same logical name for both).
 func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
+	tier := iocFileTier(relPath)
+	if tier == tierSuppress {
+		return nil
+	}
 	lines := splitLinesString(content)
 	skipIPFile := suppressIPv4ForFile(relPath)
 	var ev []Evidence
 	for i, line := range lines {
-		for _, mm := range m.matchLine(line, skipIPFile || isMinifiedLine(line)) {
+		minified := isMinifiedLine(line)
+		// The file-level tier sets the floor; a minified line inside an otherwise
+		// kept file is generated-bundle noise, so its URL/domain hits demote to
+		// context too (its IPv4 is already suppressed via skipIPv4 below).
+		class := tierClass(tier)
+		if class == "" && minified {
+			class = detect.ClassContext
+		}
+		for _, mm := range m.matchLine(line, skipIPFile || minified) {
 			ev = append(ev, Evidence{
 				IndicatorType:  mm.typ,
 				IndicatorValue: mm.value,
 				Indicator:      mm.ind,
 				FilePath:       filePath,
 				RelPath:        relPath,
+				Class:          class,
 				LineNumber:     i + 1,
 				ColStart:       mm.col,
 				ColEnd:         mm.col + len(mm.value),
@@ -85,6 +100,11 @@ func (m *Matcher) matchBytes(filePath, relPath string, data []byte) []Evidence {
 // matchBinary extracts printable strings from a binary and matches IOCs in them,
 // deduplicating across the whole file.
 func (m *Matcher) matchBinary(filePath, relPath string, data []byte) []Evidence {
+	tier := iocFileTier(relPath)
+	if tier == tierSuppress {
+		return nil
+	}
+	class := tierClass(tier)
 	seen := map[string]bool{}
 	var ev []Evidence
 	for _, sh := range extractStrings(data, stringMinLen) {
@@ -103,6 +123,7 @@ func (m *Matcher) matchBinary(filePath, relPath string, data []byte) []Evidence 
 				FilePath:       filePath,
 				RelPath:        relPath,
 				IsBinary:       true,
+				Class:          class,
 				ByteOffset:     sh.offset + int64(mm.col),
 				MatchedLine:    truncate(sh.value, 200),
 			})
@@ -373,6 +394,110 @@ var inertDocSuffixes = []string{".md", ".markdown", ".mdx", ".mkd", ".mdown"}
 func isInertDoc(relPath string) bool {
 	p := strings.ToLower(relPath)
 	for _, suf := range inertDocSuffixes {
+		if strings.HasSuffix(p, suf) {
+			return true
+		}
+	}
+	return false
+}
+
+// ── IOC context tiering ──────────────────────────────────────────────────────
+//
+// The same known-bad IOC is benign or malicious depending on WHERE it sits: a
+// C2 IP wired into executed source/install hooks is critical, the identical
+// string sitting in a dependency's URI-parser test fixture or spliced out of a
+// minified bundle is a false positive. iocFileTier scores a hit by its file's
+// context so detection is preserved (real, executed references still mint) while
+// the dominant FP classes are demoted (kept low for audit) or suppressed.
+
+// iocTier is the severity tier a file's context assigns to IOC hits found in it.
+type iocTier int
+
+const (
+	tierKeep     iocTier = iota // executed content — hits stay ClassEvidence (critical)
+	tierDemote                  // benign-leaning content — hits demote to ClassContext (low)
+	tierSuppress                // never-executed artifact — no evidence is produced
+)
+
+// tierClass maps a tier to the Evidence.Class it stamps. tierKeep yields the
+// zero value (""), which ToFinding treats as ClassEvidence, so kept hits stay
+// JSON-clean and back-compatible.
+func tierClass(t iocTier) detect.Class {
+	if t == tierDemote {
+		return detect.ClassContext
+	}
+	return ""
+}
+
+// iocFileTier classifies a file by its repo-relative path. Source maps are
+// suppressed (generated debug data, never executed); test fixtures/files,
+// example/demo trees and generated bundles are demoted to context; everything
+// else (ordinary source, install hooks, binaries) is kept as evidence. Markdown
+// is handled separately and earlier (isInertDoc, in scanFile).
+func iocFileTier(relPath string) iocTier {
+	p := "/" + strings.ToLower(strings.ReplaceAll(relPath, `\`, "/"))
+	if strings.HasSuffix(p, ".map") {
+		return tierSuppress
+	}
+	if isTestArtifact(p) || isExampleArtifact(p) || isGeneratedBundle(p) {
+		return tierDemote
+	}
+	return tierKeep
+}
+
+// testPathSegments are directory names whose contents are a package's own test
+// inputs, not code the consumer executes. fixtures hold literal sample data
+// (URIs, payloads, hosts) that collides with known-bad IOC values.
+var testPathSegments = []string{
+	"/test/", "/tests/", "/__tests__/", "/__fixtures__/", "/fixtures/",
+	"/spec/", "/__mocks__/",
+}
+
+// isTestArtifact reports whether p (lowercased, slash-normalised, leading-slash
+// prefixed) is a test fixture directory or a test file.
+func isTestArtifact(p string) bool {
+	for _, seg := range testPathSegments {
+		if strings.Contains(p, seg) {
+			return true
+		}
+	}
+	base := p[strings.LastIndexByte(p, '/')+1:]
+	return strings.Contains(base, ".test.") ||
+		strings.Contains(base, ".spec.") ||
+		strings.HasSuffix(base, "_test.go") ||
+		strings.HasSuffix(base, ".snap") ||
+		base == "conftest.py"
+}
+
+// examplePathSegments are directories of runnable samples/demos shipped for
+// documentation — illustrative endpoints, not the package's own runtime.
+var examplePathSegments = []string{
+	"/example/", "/examples/", "/sample/", "/samples/", "/demo/", "/demos/",
+}
+
+func isExampleArtifact(p string) bool {
+	for _, seg := range examplePathSegments {
+		if strings.Contains(p, seg) {
+			return true
+		}
+	}
+	return false
+}
+
+// minifiedBundleSuffixes are minified-bundle extensions whose dense generated
+// content splices IOC values out of library data; isMinifiedLine catches
+// un-suffixed bundles line-by-line.
+var minifiedBundleSuffixes = []string{".min.js", ".min.mjs", ".min.cjs", ".min.css"}
+
+// isGeneratedBundle reports whether p is generated/bundled output: a /dist/
+// directory or a minified-bundle filename. Such files DO execute (so hits are
+// demoted, not suppressed), but a bare IOC string in them is overwhelmingly
+// bundled library data, not a live endpoint the bundle connects to.
+func isGeneratedBundle(p string) bool {
+	if strings.Contains(p, "/dist/") {
+		return true
+	}
+	for _, suf := range minifiedBundleSuffixes {
 		if strings.HasSuffix(p, suf) {
 			return true
 		}

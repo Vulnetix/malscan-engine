@@ -44,6 +44,15 @@ type Evidence struct {
 	RelPath  string `json:"relPath,omitempty"` // path relative to the scan root
 	IsBinary bool   `json:"isBinary,omitempty"`
 
+	// Class is the severity tier for this hit. The zero value ("") is treated as
+	// ClassEvidence — a critical known-bad reference in executed content. It is
+	// set to detect.ClassContext when the hit sits in a benign-leaning context (a
+	// dependency's test fixture, a generated/minified bundle), so the reference is
+	// recorded as low-severity corroboration rather than a standalone malicious
+	// verdict. Never-executed artifacts (source maps) are dropped before any
+	// evidence is produced. See iocFileTier.
+	Class detect.Class `json:"class,omitempty"`
+
 	// Text-file location. LineNumber is 1-indexed; ColStart/ColEnd are 0-indexed
 	// byte offsets into MatchedLine. Zero for binary matches.
 	LineNumber  int    `json:"lineNumber,omitempty"`
@@ -76,10 +85,14 @@ func (e Evidence) ToFinding() detect.Finding {
 	if matched == "" {
 		matched = e.IndicatorValue
 	}
+	class := e.Class
+	if class == "" {
+		class = detect.ClassEvidence
+	}
 	return detect.Finding{
 		ID:          "IOC-STIX-MATCH",
 		Category:    "ioc",
-		Class:       detect.ClassEvidence,
+		Class:       class,
 		CWE:         detect.DefaultMalwareCWE,
 		Description: desc,
 		MatchedLine: matched,
@@ -108,8 +121,18 @@ type Report struct {
 	Errors         []string   `json:"errors,omitempty"`
 }
 
-// Malicious reports whether the scan produced any IOC evidence.
-func (r *Report) Malicious() bool { return len(r.Evidence) > 0 }
+// Malicious reports whether the scan produced any ClassEvidence (critical) IOC
+// hit. Demoted ClassContext hits — references in a dependency's test fixtures or
+// generated bundles — are recorded for audit but do not by themselves mark the
+// scan malicious (a real, executed reference in the same package still does).
+func (r *Report) Malicious() bool {
+	for _, e := range r.Evidence {
+		if e.Class != detect.ClassContext {
+			return true
+		}
+	}
+	return false
+}
 
 // Findings adapts every Evidence into a detect.Finding for downstream
 // integration.

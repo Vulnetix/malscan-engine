@@ -33,6 +33,14 @@ var topPackages = []string{
 }
 
 func analyzeName(ctx *PackageContext) []Finding {
+	// The brand/top-package corpora below are AUR/desktop-app specific (yay,
+	// paru, google-chrome, …). Applying them to other registries mislabels
+	// legitimate packages — e.g. npm's popular `d3-zoom` "embeds" the AUR app
+	// `zoom`. Restrict name analysis to AUR (and unset-ecosystem callers, which
+	// are AUR by origin); other ecosystems need their own popular-name corpus.
+	if !aurStyleEcosystem(ctx.Ecosystem) {
+		return nil
+	}
 	// Established packages (>=10 votes) skip name checks — same as traur.
 	if ctx.Meta != nil && ctx.Meta.NumVotes >= 10 {
 		return nil
@@ -69,7 +77,11 @@ func analyzeName(ctx *PackageContext) []Finding {
 			continue
 		}
 		if strings.HasPrefix(name, top) || strings.HasSuffix(name, top) {
-			out = append(out, finding("B-TYPOSQUAT", "name", 55,
+			// Embedding a popular name as a prefix/suffix is far weaker than a
+			// 1-edit typo — a real package can legitimately contain a common word
+			// (an AUR "*-zoom"). Record it as corroborating context, not standalone
+			// evidence that on its own marks the package malicious.
+			out = append(out, contextFinding("B-TYPOSQUAT", "name", 55,
 				fmt.Sprintf("Name '%s' embeds popular package '%s'", name, top)))
 			break
 		}
@@ -78,12 +90,25 @@ func analyzeName(ctx *PackageContext) []Finding {
 	return out
 }
 
+// aurStyleEcosystem reports whether the brand/typosquat corpora apply: AUR, or
+// an unset ecosystem (AUR by origin — keeps existing callers/tests unaffected).
+func aurStyleEcosystem(eco string) bool {
+	return eco == "" || eco == "aur"
+}
+
 // finding builds an evidence Finding for behavioral/name detectors.
 func finding(id, category string, points int, desc string) Finding {
 	return Finding{
 		ID: id, Category: category, Class: ClassEvidence,
 		CWE: DefaultMalwareCWE, Points: points, Description: desc,
 	}
+}
+
+// contextFinding builds a ClassContext (corroboration-only) variant of finding.
+func contextFinding(id, category string, points int, desc string) Finding {
+	f := finding(id, category, points, desc)
+	f.Class = ClassContext
+	return f
 }
 
 // levenshtein computes the edit distance between a and b.
