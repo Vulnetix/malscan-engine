@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="pix-contemplative.svg" alt="Pix in analyst mode, the Vulnetix mascot" width="120">
+</p>
+
 # malscan-engine
 
 Shared Go module for Vulnetix malicious-package detection. Consumed by both the
