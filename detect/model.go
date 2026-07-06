@@ -74,14 +74,11 @@ const (
 )
 
 // identityFamily groups ownership/identity triggers into INDEPENDENT families so
-// the P3 (multi-signal) gate counts distinct *kinds* of signal, not redundant
-// facets of one event (ownership-transfer + orphan-adoption are both
-// "owner-change" → count once). Returns "" for non-identity triggers.
-//
-// Families are split into CHANGE signals (an EXISTING package was altered:
-// owner-change, email) and NEWNESS signals (new-maintainer/contributor/reporter
-// — which a brand-new LEGITIMATE package necessarily has, so they must never
-// mint on their own). See isChangeFamily and the P3 rule in CombinedVerdict.
+// the combination gate counts distinct *kinds* of signal, not redundant facets
+// of one event (ownership-transfer + orphan-adoption are both "owner-change" →
+// count once). Returns "" for non-identity triggers. These families corroborate
+// a payload in the P1/P2 path only — no combination of them mints without a
+// payload (see CombinedVerdict).
 func identityFamily(id string) string {
 	switch id {
 	case TriggerOwnershipTransfer, TriggerOrphanAdoption:
@@ -97,12 +94,6 @@ func identityFamily(id string) string {
 	}
 	return ""
 }
-
-// isChangeFamily reports whether a family represents an EXISTING package being
-// altered (a takeover signal) rather than mere newness. P3 requires at least one
-// change family, so that the new-submitter+new-maintainer signature of a brand-new
-// legitimate package never mints.
-func isChangeFamily(fam string) bool { return fam == "owner-change" || fam == "email" }
 
 // isPayloadTrigger reports whether a trigger is a payload/behaviour signal (the
 // high-entropy heredoc today) vs. an ownership/identity signal. A payload trigger

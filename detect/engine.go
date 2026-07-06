@@ -139,34 +139,34 @@ func IsMalicious(findings []Finding) bool {
 // compounding path corroborated it (it is correlation, never standalone proof).
 type Verdict struct {
 	Malicious bool
-	Path      string   // "" | "evidence" | "owner-known-bad" | "payload+identity" | "multi-identity"
+	Path      string   // "" | "evidence" | "payload+identity"
 	Reasons   []string // human-readable compounding indicators (trigger ids/descriptions)
 }
 
-// CombinedVerdict applies the combination gate and explains the result. The
-// permutations are deliberately distinct — a package/repo hijack is often JUST a
-// change in ownership, which is ONE correlatable indicator, not proof:
+// CombinedVerdict applies the combination gate and explains the result.
+//
+// CORE RULE: a malicious verdict REQUIRES content — a ClassEvidence finding or a
+// payload/behaviour trigger. Ownership / identity / reputation signals (a change
+// of owner, an email swap, an orphan/new maintainer, or even an owner that
+// matches a known-bad actor) are NEVER a standalone or metadata-only reason to
+// mint. They are reputation correlation that only strengthens a content finding.
+// This is deliberate: metadata-only verdicts are the dominant source of
+// whole-package false positives — one legitimate (often famous) maintainer gets
+// wrongly catalogued as bad and every package they publish is then tarred.
 //
 //	P0  any single ClassEvidence finding (download-and-execute, reverse shell,
-//	    exfil, .onion C2, known-bad hash).                         → malicious
-//	P4  the current owner matches a known-bad ThreatActor          → malicious
-//	    (TriggerOwnerKnownBad; the owner is a cataloged attacker).
+//	    exfil, .onion C2, known-bad hash).                            → malicious
 //	P1/P2  a payload/behaviour trigger (high-entropy heredoc) AND ≥1 ownership/
-//	    identity trigger — the takeover revision that also injects code.→ malicious
-//	P3  ≥2 INDEPENDENT identity families AND ≥1 is a CHANGE/takeover family
-//	    (owner-change or email-swap) — e.g. owner-transfer + email-swap, or an
-//	    orphan takeover by a new account — metadata correlation, no payload.
-//	                                                               → malicious
+//	    identity signal — a change of owner/email, an orphan/new maintainer, or an
+//	    owner matching a known-bad actor: the takeover revision that ALSO injects
+//	    or obfuscates code.                                           → malicious
 //
 // NOT malicious (recorded as correlation context for human/downstream review):
-//   - a SINGLE ownership/identity signal alone (an orphan adoption, a lone owner
-//     change, a lone email change). Legitimate hand-offs do this.
-//   - PURE-NEWNESS combinations: new-maintainer + new-reporter (+ new-contributor)
-//     are the signature of a brand-new LEGITIMATE package (its submitter and
-//     maintainer are both first-seen). No change family → never mints.
+//   - ANY ownership/identity/reputation signal, or any COMBINATION of them, with
+//     no corroborating payload/evidence — including an owner that matches a
+//     known-bad actor (MT-OWNER-KNOWN-BAD). On their own these are frequently
+//     legitimate hand-offs; they mint ONLY alongside a payload.
 //   - entropy alone (legit embedded base64/cert/font blobs).
-//   - redundant facets of ONE event: ownership-transfer + orphan-adoption are both
-//     the "owner-change" family → counts once.
 func CombinedVerdict(findings []Finding) Verdict {
 	// P0 — any factual evidence.
 	for _, f := range findings {
@@ -197,35 +197,23 @@ func CombinedVerdict(findings []Finding) Verdict {
 		}
 	}
 
-	// P4 — owner is a known-bad actor.
-	if ownerKnownBad != "" {
-		return Verdict{true, "owner-known-bad", []string{ownerKnownBad}}
-	}
-	// P1/P2 — payload/behaviour correlated with any ownership/identity change.
-	if hasPayload && len(families) >= 1 {
+	// P1/P2 — a payload/behaviour trigger corroborated by ANY ownership/identity
+	// signal (a change family, a newness family, or a known-bad owner). Without a
+	// payload, no combination of metadata signals mints: ownership/identity is
+	// correlation, never standalone proof. A known-bad owner is the strongest such
+	// corroborator but is itself only reputation, so it too requires the payload.
+	if hasPayload && (len(families) >= 1 || ownerKnownBad != "") {
 		reasons := []string{payloadReason}
+		if ownerKnownBad != "" {
+			reasons = append(reasons, ownerKnownBad)
+		}
 		for _, r := range families {
 			reasons = append(reasons, r)
 		}
 		return Verdict{true, "payload+identity", reasons}
 	}
-	// P3 — ≥2 INDEPENDENT identity families AND at least one is a CHANGE/takeover
-	// family (so a brand-new package's new-maintainer+new-reporter never mints).
-	hasChange := false
-	for fam := range families {
-		if isChangeFamily(fam) {
-			hasChange = true
-			break
-		}
-	}
-	if len(families) >= 2 && hasChange {
-		reasons := make([]string, 0, len(families))
-		for _, r := range families {
-			reasons = append(reasons, r)
-		}
-		return Verdict{true, "multi-identity", reasons}
-	}
-	// P-none — a single ownership signal / entropy alone: correlation only.
+	// P-none — evidence-free: a payload alone (legit embedded blob), or any
+	// ownership/identity/reputation signal(s) with no payload. Correlation only.
 	return Verdict{false, "", nil}
 }
 
