@@ -143,9 +143,9 @@ var qualRegistry = map[string]Qualification{
 	"B-KNOWN-BAD-HASH":     {Intent: IntentMalicious, Tactic: "TA0002 Execution", Behavior: "a declared/source artifact hash matches a known-bad hash", Differentiator: "an exact hash match to a catalogued malicious artifact is factual evidence"},
 	// ── Combination-gate triggers (corroboration, never mint alone) ──────────
 	"SA-HIGH-ENTROPY-HEREDOC": {Intent: IntentDualUse, Tactic: "TA0005 Defense Evasion", Behavior: "high-entropy heredoc payload (possible encoded blob)", Differentiator: "entropy alone is dual-use (legit base64 icons/certs/fonts); it mints only with a compounding ownership/identity trigger"},
-	"MT-OWNERSHIP-TRANSFER":  {Intent: IntentReputation, Tactic: "context", Behavior: "established owner replaced by a different current owner", Differentiator: "hand-offs happen legitimately; a takeover mints only with a payload or a second independent identity signal"},
-	"MT-ORPHAN-ADOPTION":     {Intent: IntentReputation, Tactic: "context", Behavior: "original submitter gone, a different account now maintains the package", Differentiator: "orphan adoptions are usually benign; mints only compounded"},
-	"MT-OWNER-KNOWN-BAD":     {Intent: IntentMalicious, Tactic: "TA0001 Initial Access", Behavior: "current owner matches a catalogued ThreatActor", Differentiator: "the owner IS a confirmed bad actor — strongest ownership signal, mints (P4)"},
+	"MT-OWNERSHIP-TRANSFER":  {Intent: IntentReputation, Tactic: "context", Behavior: "established owner replaced by a different current owner", Differentiator: "hand-offs happen legitimately; a takeover mints only alongside a corroborating payload/evidence finding"},
+	"MT-ORPHAN-ADOPTION":     {Intent: IntentReputation, Tactic: "context", Behavior: "original submitter gone, a different account now maintains the package", Differentiator: "orphan adoptions are usually benign; mints only with a corroborating payload/evidence finding"},
+	"MT-OWNER-KNOWN-BAD":     {Intent: IntentReputation, Tactic: "TA0001 Initial Access", Behavior: "current owner matches a catalogued ThreatActor", Differentiator: "strongest ownership signal, but still reputation, not code — mints ONLY with a corroborating payload/evidence finding, never alone"},
 
 	// ── Registry-native behaviour TTPs (behaviors.go) ───────────────────────
 	// Multi-line/sequence behaviours the single-line pattern DB cannot capture.

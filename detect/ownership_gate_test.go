@@ -17,25 +17,25 @@ func TestCombinedVerdictPermutations(t *testing.T) {
 	}{
 		// P0
 		{"evidence alone mints", []Finding{ev()}, true, "evidence"},
-		// P4
-		{"known-bad owner mints", []Finding{trig(TriggerOwnerKnownBad)}, true, "owner-known-bad"},
-		// P1/P2 — payload + identity
+		// P1/P2 — payload + identity (the ONLY mint path for ownership signals)
 		{"entropy + ownership transfer mints", []Finding{entropy(), trig(TriggerOwnershipTransfer)}, true, "payload+identity"},
 		{"entropy + orphan adoption mints", []Finding{entropy(), trig(TriggerOrphanAdoption)}, true, "payload+identity"},
-		// P3 — ≥2 families WITH a change/takeover family
-		{"owner-transfer + email-swap mints", []Finding{trig(TriggerOwnershipTransfer), trig(TriggerChangedEmail)}, true, "multi-identity"},
-		{"takeover by fresh account (transfer + new-maintainer) mints", []Finding{trig(TriggerOwnershipTransfer), trig(TriggerNewMaintainer)}, true, "multi-identity"},
-		{"orphan takeover by fresh account mints", []Finding{trig(TriggerOrphanAdoption), trig(TriggerNewMaintainer)}, true, "multi-identity"},
-		// P-none — single signals, pure newness, redundant facets
+		// owner-known-bad is corroboration, not proof: mints ONLY with a payload.
+		{"known-bad owner + payload mints", []Finding{entropy(), trig(TriggerOwnerKnownBad)}, true, "payload+identity"},
+		// P-none — ownership/identity/reputation signals never mint without a payload
+		{"known-bad owner ALONE does NOT mint", []Finding{trig(TriggerOwnerKnownBad)}, false, ""},
+		{"known-bad owner + email-swap (no payload) does NOT mint", []Finding{trig(TriggerOwnerKnownBad), trig(TriggerChangedEmail)}, false, ""},
+		{"owner-transfer + email-swap (metadata only) does NOT mint", []Finding{trig(TriggerOwnershipTransfer), trig(TriggerChangedEmail)}, false, ""},
+		{"transfer + new-maintainer (metadata only) does NOT mint", []Finding{trig(TriggerOwnershipTransfer), trig(TriggerNewMaintainer)}, false, ""},
+		{"orphan + new-maintainer (metadata only) does NOT mint", []Finding{trig(TriggerOrphanAdoption), trig(TriggerNewMaintainer)}, false, ""},
+		// single signals / pure newness / entropy alone
 		{"ownership transfer alone does NOT mint", []Finding{trig(TriggerOwnershipTransfer)}, false, ""},
 		{"orphan adoption alone does NOT mint", []Finding{trig(TriggerOrphanAdoption)}, false, ""},
 		{"new maintainer alone does NOT mint", []Finding{trig(TriggerNewMaintainer)}, false, ""},
 		{"entropy alone does NOT mint", []Finding{entropy()}, false, ""},
 		{"changed email alone does NOT mint", []Finding{trig(TriggerChangedEmail)}, false, ""},
-		// PURE NEWNESS = brand-new legit package signature → never mints
 		{"new-maintainer + new-reporter (new package) does NOT mint", []Finding{trig(TriggerNewMaintainer), trig(TriggerNewReporter)}, false, ""},
 		{"new-maintainer + new-contributor does NOT mint", []Finding{trig(TriggerNewMaintainer), trig(TriggerNewContributor)}, false, ""},
-		// redundant facets of ONE owner event (both owner-change family) → counts once → no mint
 		{"transfer + orphan (one owner-change family) does NOT mint", []Finding{
 			trig(TriggerOwnershipTransfer), trig(TriggerOrphanAdoption),
 		}, false, ""},
