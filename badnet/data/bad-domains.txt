@@ -2,19 +2,21 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 12598
+# count: 12672
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
 03122e72f0.com
 0551acf6ed.com
 0681dt20.bahisgame.com
+078ia1jh.ace90betyek.bet
 07vh2ie1.jozve.download
 0byv9mgbn0.com
 0c5351790d.com
 0cc3d4qkqm3c.com
 0f89c3c813.com
 0fwcbrw533rs.com
+0mx8cbge.fa1xbet.vip
 0network.com
 0pkit2tt.prozhedownload.net
 0qam1x6q.alobet.pro
@@ -137,6 +139,7 @@
 39ah3malvzd7.com
 39cif89o.rayegan.net
 3a6a721b13.com
+3b213f9c.lionsport.ir
 3e1b245c19.com
 3i1cx7b9nupt.com
 3mvs.com
@@ -161,6 +164,7 @@
 4hu59.com
 4k-hd.world
 4lbsgx9v.powershart.com
+4x9zxbge.ritzo1bet.com
 4z0tdlyo.calvaryhospice.org
 50bz.buzz
 50cd.buzz
@@ -182,6 +186,7 @@
 5k9iblva.ace90bet1.bet
 5pan15hf00d159r3at.xyz
 5rd5tgh.cfd
+5rtckgb9.powershart.com
 5sqsvhbrgnps.com
 5starhdporn.com
 5tr4n93r1nth3n19h7.xyz
@@ -211,6 +216,7 @@
 777surf.com
 7eo6l6dj.bet90forward.win
 7hkzkx6ypndn.com
+7j6ew89s.melbetir.casino
 7lm2xwqz.1x1bet.xyz
 7nalhxb28rmm.cfd
 7oy5are43v3ry0n3.xyz
@@ -284,6 +290,7 @@ aaa-telegram.com
 aafnojwq.megashart.blog
 aahdxn.com
 aair.org.ro
+aapt.betsher.casino
 aaronart.com
 aasjewellers.xyz
 aaucwbe.com
@@ -668,6 +675,7 @@ akpamgbo.gamer.gd
 akrostis.com
 aksapparels.com
 aksuu.ru
+akvy.20sport.ir
 akwadi.com
 al-hilalfc.com
 alabamamedicaid.org
@@ -830,6 +838,7 @@ angelcarrysideways.com
 angelsolutionforyou.com
 angerfondnessspecified.com
 angerrecantpretty.com
+anglingforimages.com
 angrybirdsstarwars2.com
 angulardiscern.com
 anheiserbusch.com
@@ -1160,6 +1169,7 @@ au-eparcelsan.com
 au-eparcelse.com
 au-postaga.com
 au-postags.com
+auai.bet90forward.win
 audiblemeantimeted.com
 audicontadores.com
 audienceye.com
@@ -1425,6 +1435,7 @@ barterblockchain.com
 barterfailuredan.com
 bartonfolk.com
 baseballindoorcorporal.com
+basegrid.cfd
 basementunfamiliar.com
 basharasud.com
 basicallyfortitude.com
@@ -1746,6 +1757,7 @@ blxclaim.net
 bmbtrk.site
 bmdcompany.com
 bmgmb.com
+bmmp.ace90betyek.bet
 bmtrck.com
 bmwsarasota.com
 bn6h9d7tr.cfd
@@ -2074,6 +2086,7 @@ cadrctlnk.com
 cadsans.com
 caed7495de.com
 caesarporch.com
+caewscad.fileboroo.com
 cafelatte.net
 cahootsmagazine.com
 caish-djc.com
@@ -2630,6 +2643,7 @@ cmb-service-carte.com
 cmb-service-opposition.com
 cn.unionlever.com
 cnam-assurances.com
+cniqfzhe.riskybet.casino
 cnshermir.com
 co-emas.com
 coachtinkleundress.com
@@ -3208,6 +3222,7 @@ cz19mq7v0lxp.xyz
 czasnazmiane.com
 czcymhx.enfejar-site.bet
 czpcvew.bet1xiraq.com
+cztv.betfa.download
 d.14yaa.com
 d.wanyouxi7.com
 d0ntb3c0nfu53d.xyz
@@ -4079,6 +4094,7 @@ dumw.goaliran.ir
 dundeehills.group
 duneconquernicholas.com
 duplicateshoppingprotective.com
+duqvs764.likesport.ir
 durableconfrontcircuit.com
 durabledatabases.com
 durapaint.com
@@ -4226,6 +4242,7 @@ eilyahome.com
 einv.com
 eishoky.de
 eitherbrightestconverted.com
+eiuphpvo.fiorentini.ir
 ek-telegrcn.org
 eknigu.org
 elaml4maids.com
@@ -4596,6 +4613,7 @@ ezcheats-market.com
 ezdrivema-com-vip.bond
 ezdrivema-com.bond
 ezdrivemia-com.bond
+eznvrdxc.footbalpersian.ir
 ezprogram.com
 ezrqiew.jet90bet1.bet
 f1nd1ty0ur53lf.xyz
@@ -4742,6 +4760,8 @@ ffedpfb.jet90bet.bet
 ffjual.com
 ffrontgate.com
 fgu.info
+fh6sil11.test-drive-iran.com
+fhbd.golibet.page
 fiars.com
 fibberascertainmildly.com
 fibberestimate.com
@@ -5043,6 +5063,7 @@ fowlgravel.com
 fowlsecondary.com
 fowlsstirringinclude.com
 foxheadquarter.com
+fqsmqhyz.mosbatsms.ir
 fr-informations-important.com
 fr-mescomptes-activation.com
 fr-telegren.org
@@ -5175,6 +5196,7 @@ fstsrv11.com
 fstsrv14.com
 fstsrv17.com
 fsuwebmail.com
+ftoa.healthvarzesh.ir
 fuckhoes.com
 fudelidade.com
 fuelburns.com
@@ -5342,6 +5364,7 @@ getsomnipotentstray.com
 gettopple.com
 gexbskxk.beshnoinja.ir
 gghacks.com
+ggittwjb.irantop.bet
 ggjcswb4rln4.com
 ggodyear.com
 ghaftmemko.shop
@@ -5372,6 +5395,7 @@ giddinessscrewscandal.com
 giddydam.com
 giddypipe.com
 gidonline.net
+gifqd3gd.mahbet.poker
 gift-nitro.com
 giftaward.life
 giftcardbitcoin.com
@@ -5424,6 +5448,7 @@ glcsrv.com
 gleamcalumnygeneralize.com
 glimpsedimebodyguard.com
 glizoakri.net
+glmo.bcgame90.casino
 gloachaptu.net
 global-app-center.com
 global-casino-gaming.com
@@ -6036,6 +6061,7 @@ howlmotivebicycle.com
 howric.online
 howtofix.guide
 hpsupportphonenumber.com
+hpwj.betawarz.com
 hqjt.com
 hrjjo6as.prozhe.shopping
 hromitasa.com
@@ -6126,9 +6152,11 @@ hystericalowing.com
 hystericalpotprecede.com
 hystericalreference.com
 hystericalsmithgurgle.com
+hzcsq855.taaghcheirani.com
 hzgdo6zcljw.com
 hzks2llo.1xdownload2023.com
 i-ramps.com
+i0wrocb4.bet90forward.win
 i3edtgyu.cfd
 i80auto.com
 iau-iraq.org
@@ -6476,6 +6504,7 @@ iq-test.co.uk
 iqk.com
 iqtest.co.uk
 iqtest.com
+iqtpiyvx.rabonabet.casino
 iqtrck.com
 irahook.org
 iraresource.com
@@ -6649,6 +6678,7 @@ jewelleryvest.com
 jewelpak.com
 jewelsneverthelesspound.com
 jffl6ogj.bet1forward.com
+jgtl.novin-gps.ir
 jhldtogerghottulering.info
 jhmiami.org
 jhq8hqlo.1xforward.vip
@@ -6668,6 +6698,7 @@ jkltnrm.alohawatersports.com
 jlibrary.org
 jlwz.cn
 jmxded100.net
+jnfj.elitesport.ir
 jnkms0zfueh.click
 joanga.com
 joannamartinewoolfolk.com
@@ -6765,6 +6796,7 @@ jvjj.calvaryhospice.org
 jvspinapp.com
 jworldtopcc.com
 jwyclcz.shartbandi.xyz
+jxfszcuc.megaparifarsi.com
 jynp9m209p.com
 jyothishmathi.in
 jyrighxw.prozhedownload.net
@@ -6810,6 +6842,7 @@ kenwillzltd.com
 kepw.org
 kerbdecrease.com
 kersai.net
+kesyothd.irantop.bet
 ketoadvancedpills.com
 kettlemootinsect.com
 kettletogether.com
@@ -6833,6 +6866,7 @@ kgmim.bond
 kgmit.bond
 khadamat.net
 khlads.com
+khlko.gorgbet.net
 khoancatbetong89.vn
 kiamatka.com
 kiamsiodkdf-ajjdhf2834.github.io
@@ -6886,6 +6920,7 @@ knockedagitation.com
 knockoutholiday.com
 knowingbrowse.com
 knowingdefenddefenceless.com
+knyjwxkg.fileboroo.com
 ko04rf8.cfd
 kobemo.com
 kocusa.com
@@ -6917,6 +6952,7 @@ ksdvcmer.pro
 kuaizip.com
 kuilfgfd.cc
 kuno-gae.com
+kuqetgql.shartebartar.game
 kusakabehifuka.com
 kusubooru.com
 kvicads.com
@@ -7286,6 +7322,7 @@ lpmtrack.com
 lqqpunt.megaparii.pro
 lr7ndsloie9cnfhqco14lfbjheestrqino2natoe.com
 ltd-centro-de-ayuda.com
+lttazjwo.pishbini90bet.bet
 lubfa.com
 lubricant.pro
 lucatrack.com
@@ -7526,6 +7563,7 @@ mcqueen-philippines.com
 mcqueenauckland.com
 mcqueencolombia.com
 mcqueenmalaysiamy.com
+mdazhynx.btyek.site
 mdrelaypaket.com
 mdtp.us
 meaganslaw.com
@@ -7578,6 +7616,7 @@ meglickingpeck.com
 meherdewogoud.com
 mehpuqa.ac90bet.org
 mein-paket-zoll.de
+mejpiuio.pokerprado.poker
 mekasa.pro
 melancholypoetryfunny.com
 melbet.cd
@@ -7657,6 +7696,7 @@ miakhlaifa.com
 miceelectricitysubdued.com
 michaelborsari.com
 michaelrinderle.com
+microlsireqjn.com
 microphonegullible.com
 microsoft-notifcation.com
 microsofthk.com
@@ -8075,6 +8115,7 @@ nazemud.ac90bet.net
 nbkonline.com
 ncelewasgildeda.net
 ncscu.com
+ncvhdwcq.medsalamat.ir
 ncxps.com
 ndbstats.online
 ndrcakes.com
@@ -8196,6 +8237,7 @@ nitro.blog
 niuqiu.com
 njgpeig.onjabet.casino
 nkitwkuouldhu.com
+nkzajnx4.pablobet.bet
 nmsqiavn.enfejar-site.bet
 no-oppdatere.com
 no-oppdatert.com
@@ -8365,6 +8407,7 @@ octaviantraprelease.com
 octoberlong.com
 octupus-versand.de
 odintara.com
+odng6v0p.rewardbet.bet
 odoursupportermesh.com
 odrivers.com
 oemtklu.pabloobet.com
@@ -8391,12 +8434,14 @@ ojang.pe.kr
 ojrq.net
 ojst23x0.site-enfejar-hotbet.com
 ojutlook.com
+ojvh.barcelona11.com
 okbet.biz
 okey.pro
 okhan.net
 okmx.org
 oknoplastik.sk
 okspeechlessamong.com
+oksz.ozabet.casino
 old.sermitsiaq.ag
 ollartree.com
 olympicsnearesttablets.com
@@ -8404,6 +8449,7 @@ omani-disputes.com
 omcroconawan.com
 omelettegeometryguts.com
 omerryayla.shop
+omjsikzk.irantop.bet
 omnilogia.org
 omnipresentexteriorfree.com
 omumbreona.com
@@ -8531,6 +8577,7 @@ otwoonehundred.com
 oughtmean.com
 oughtunitynonsense.com
 ougroastungeeh.com
+oulkepos.nikansefile.ir
 oultook.com
 our-telegram.com
 ourcustomboxes.com
@@ -8602,6 +8649,7 @@ p0763235.github.io
 p3.zbjimg.com
 p33rc71ckl3550n.xyz
 p4r7y477n19ht.xyz
+p8rzf42g.radmanwear.ir
 pa.anyreplicawatches.co
 pacenobleman.com
 pacificweightloss.com
@@ -8743,6 +8791,7 @@ pcpr.cn
 pcprotect.com
 pcspeedcat.com
 pcspeedup.en.softonic.com
+pcue.elitesport.ir
 pcupd.com
 pd9l19qk.milliardbet.com
 pdffill.com
@@ -9099,6 +9148,7 @@ powerlesswarehouse.com
 powershell-storage.vg
 powersshapeless.com
 ppcmoney.com
+ppdp.oza.bet
 ppkbd.com
 pr3tty-fly-4.com
 pr3tty-fly4.com
@@ -9238,6 +9288,7 @@ ps1games.online
 ps2hd.com
 psalmcomplaintcoordinate.com
 psh6.1push.io
+psqj.app888starz.download
 psychicinformant.com
 psychobunnycolombia.com
 psychobunnymexico.com
@@ -9325,6 +9376,7 @@ pzioeui.bet303.poker
 q.promotionsonlineusa.com
 q2health.com
 q3g84ost.22beet.pro
+q8nw6zme.fileboroo.com
 qa4lsxxi.313betapk.com
 qabd.com
 qakm.fiorentini.ir
@@ -9341,6 +9393,7 @@ qjmok16pbaqv.com
 qnfqfmh.ace90bet.bet
 qnjanmb.bet1forward.com
 qowlvqc.backlinkbet.com
+qowmn9c8.iranvibes.ir
 qpmbndoi.yekshart.app
 qq6dl5dg.1x303.casino
 qqc3.com
@@ -9698,6 +9751,7 @@ riversiderestaurant.co
 rizew.com
 rj-c.com
 rjjgfvu6.vip1xbet.org
+rlio.catsandcarp.com
 rmhtxvz.jet90betyek.bet
 rmwj.betfa.download
 rndigit.com
@@ -10112,6 +10166,7 @@ sexymadness.com
 sfa-whatssapp.com
 sfcrhzgd.btyek.shop
 sfsgldq.1xx.games
+sfzfzyeb.btyek.site
 sg123.net
 sgguyi.org
 sgnfvyd.1pishbini.com
@@ -10326,6 +10381,7 @@ snapvip.io
 snapwarpsummit.com
 snarlenthusiasticneedle.com
 snatcher.xyz
+snbzg3fu.noscriptc11pills.com
 sneakingmanage.com
 snitchoncrow.com
 snoutdone.com
@@ -11260,6 +11316,7 @@ ticali.co.uk
 tichairg.com
 ticketmastewr.com
 tickewtmaster.com
+ticladevin.ro
 ticolands.com
 tidewatertradingpost.com
 tiduflxx.farsi1xbet.shop
@@ -11308,6 +11365,7 @@ toadimpish.com
 toastyspurgetiered.com
 tobaccodisposition.com
 tocobell.com
+todahkuy.podcastshop.ir
 todayoffer.net
 todaysbusiness.org
 tofal.com
@@ -11536,6 +11594,7 @@ trksp3.com
 trktoo.com
 trktopbest1.store
 trkvolumes.com
+trlcayaw.matalebeziba.ir
 trmff.wpengine.com
 trnadszc.com
 trojanonsolbot.com
@@ -11644,6 +11703,7 @@ ugalliance.com
 ugbobgyo.btyek.christmas
 uggweb.com
 uibtrck.com
+ujxjvdku.catsandcarp.com
 uknc.com
 ukpayment.xin
 ultimate-datasecurity.com
@@ -11675,6 +11735,7 @@ undergroundunwisecrochet.com
 understandingabyss.com
 undertakesugar.com
 underthegarden.com
+undh.ofoghchat.ir
 uneasysilence.com
 unesmunbrebers.com
 unexpectedcambridgespotlight.com
@@ -11696,6 +11757,7 @@ unitedweswing.com
 unitshappinessstrongest.com
 universalfwding.com
 universami.ge
+unix-technology.com
 unkindcredit.com
 unloadhissed.com
 unlockcontent.net
@@ -11806,6 +11868,8 @@ vaselieutenantevents.com
 vastila.com
 vault.guru
 vayela.com
+vbhm.one1winbet.com
+vblr.barcelona11.com
 vc-safetys.org
 vchar.com
 vchbhqa.betbazi.net
@@ -11978,6 +12042,7 @@ vqr3jeu1qi41.com
 vr3dkino.com
 vrajras.com
 vrsecurego.com
+vsdipcxs.persianeducation.ir
 vseat.com
 vsms.com
 vtghye.live
@@ -12148,6 +12213,7 @@ westcodex.com
 westcouncilhometown.com
 wetetr.com
 wewow.org
+wfwwdsvv.irantop.bet
 wgat5ln2wly8.com
 wgithub.com
 wgzgqfep.bingobet.pro
@@ -12318,6 +12384,7 @@ wutaivege.com
 wuw-telegram.com
 wuw-telergam.com
 wve-telegram.com
+wvew.elitesport.ir
 wvu-telegram.com
 wvu-telergam.com
 wvv-telegram.com
@@ -12401,6 +12468,7 @@ x-delivery.icu
 x2lt.com
 x40u1vj75ks9.com
 xaidash.app
+xaktywhe.btyek.site
 xaltos.com
 xb.bet1bonus.com
 xbcasino.com
@@ -12410,6 +12478,7 @@ xclick.one
 xclparsl.megashart.blog
 xcom.mobi
 xcvnerui.pro
+xczy.barcelona11.com
 xd-telegrmn.org
 xdealz.store
 xdelta.org
@@ -12418,6 +12487,7 @@ xenon.studio
 xenxonx.com
 xeopdirenu.com
 xepdirecto.com
+xfcv55u8.iraniporn.video
 xfinityrewardscenter.com
 xgptw11vogsh.com
 xhots.net
@@ -12437,6 +12507,7 @@ xnxbd.com
 xo28pclotovi.com
 xpariaff.com
 xpwu.com
+xqbhmyyk.powershart.com
 xrtdw.net
 xrty.org
 xshop.com.tr
@@ -12524,9 +12595,11 @@ yuxc.xyz
 yvettesbridalformal.com
 yvkbbq3e.1xdownload2023.com
 ywpwwxjc.ace90bet1.bet
+yxjzgcji.proje-negar.ir
 yyaho.com
 yydtbpms8tf4.com
 yylcnvu.90jet.pro
+yyyvzlgy.irantop.bet
 yzak.com
 yzsnw.com
 z-prize.icu
@@ -12562,6 +12635,7 @@ zhigao5191.com
 zigse.com
 zing.studio
 zippycanyonez.pro
+zirq.bet24.casino
 zirze151uk5d.com
 zit.world
 zivroq.com
