@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  VULNETIX_VERSION: v3.59.0
+  VULNETIX_VERSION: v3.59.2
 
 jobs:
   analyze:
@@ -45,7 +45,7 @@ jobs:
             artifact: .vulnetix/ai-bom.cdx.json
           - id: analyze
             name: Analyze
-            run: vulnetix analyze --no-forge --no-upload --no-banner --no-progress --verbose
+            run: vulnetix analyze --no-banner --no-progress --verbose
             artifact: .vulnetix/analyze.report.json
 
     steps:
@@ -55,9 +55,6 @@ jobs:
         run: |
           curl -fsSL https://cli.vulnetix.com/install.sh             | sh -s -- --install-dir "$HOME/.local/bin" --version "$VULNETIX_VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Authenticate with Vulnetix
-        run: vulnetix auth login --noninteractive --store project --no-banner --no-progress --verbose
 
       - name: Verify Vulnetix authentication
         run: vulnetix auth verify --no-banner --no-progress --verbose
@@ -94,9 +91,6 @@ jobs:
         run: |
           curl -fsSL https://cli.vulnetix.com/install.sh             | sh -s -- --install-dir "$HOME/.local/bin" --version "$VULNETIX_VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Authenticate with Vulnetix
-        run: vulnetix auth login --noninteractive --store project --no-banner --no-progress --verbose
 
       - name: Upload all artifacts to Vulnetix
         env:
