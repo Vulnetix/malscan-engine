@@ -73,6 +73,7 @@ jobs:
           name: ${{ matrix.id }}
           path: ${{ matrix.artifact }}
           if-no-files-found: warn
+          include-hidden-files: true
           retention-days: 7
 
   publish:
