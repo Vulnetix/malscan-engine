@@ -45,7 +45,7 @@ jobs:
             artifact: .vulnetix/ai-bom.cdx.json
           - id: analyze
             name: Analyze
-            run: vulnetix analyze --no-upload --no-banner --no-progress --verbose
+            run: vulnetix analyze --no-forge --no-upload --no-banner --no-progress --verbose
             artifact: .vulnetix/analyze.report.json
 
     steps:
