@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  VULNETIX_VERSION: v3.59.3
+  VULNETIX_VERSION: v3.59.4
 
 jobs:
   analyze:
