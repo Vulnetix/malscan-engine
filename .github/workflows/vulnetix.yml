@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  VULNETIX_VERSION: v3.57.1
+  VULNETIX_VERSION: v3.59.0
 
 jobs:
   analyze:
@@ -13,9 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
+      issues: read
     env:
       VULNETIX_ORG_ID: ${{ secrets.VULNETIX_ORG_ID }}
       VULNETIX_API_KEY: ${{ secrets.VULNETIX_API_KEY }}
+      GITHUB_TOKEN: ${{ github.token }}
     strategy:
       fail-fast: false
       matrix:
@@ -40,6 +43,10 @@ jobs:
             name: AIBOM
             run: vulnetix aibom --commit-scan-max 1 --no-banner --no-progress --verbose
             artifact: .vulnetix/ai-bom.cdx.json
+          - id: analyze
+            name: Analyze
+            run: vulnetix analyze --no-upload --no-banner --no-progress --verbose
+            artifact: .vulnetix/analyze.report.json
 
     steps:
       - uses: actions/checkout@v5
