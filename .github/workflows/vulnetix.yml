@@ -10,7 +10,7 @@ env:
 jobs:
   analyze:
     name: ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
     permissions:
       contents: read
       pull-requests: read
@@ -29,7 +29,11 @@ jobs:
             artifact: .vulnetix/sbom.cdx.json
           - id: secrets
             name: Secrets
-            run: vulnetix secrets --ignore-binaries --ignore-git --no-banner --no-progress --verbose
+            run: vulnetix secrets --rule Vulnetix/community-rules --rule Vulnetix/opa-fugue-regula --rule Vulnetix/opa-checkmarx-kics --rule Vulnetix/opa-cds-aws-tf --rule Vulnetix/opa-cigna-tf --rule Vulnetix/opa-aquasecurity-trivy --ignore-binaries --ignore-git --no-banner --no-progress --verbose
+            artifact: .vulnetix/sast.sarif
+          - id: sast
+            name: SAST
+            run: vulnetix sast --rule Vulnetix/community-rules --rule Vulnetix/opa-fugue-regula --rule Vulnetix/opa-checkmarx-kics --rule Vulnetix/opa-cds-aws-tf --rule Vulnetix/opa-cigna-tf --rule Vulnetix/opa-aquasecurity-trivy --no-banner --no-progress --verbose
             artifact: .vulnetix/sast.sarif
           - id: licenses
             name: Licenses
@@ -75,7 +79,7 @@ jobs:
 
   publish:
     name: Publish
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
     needs: analyze
     permissions:
       contents: read
