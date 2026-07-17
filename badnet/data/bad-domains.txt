@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 12881
+# count: 12882
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -4225,6 +4225,7 @@ eccolabgroup.com
 ecentennialcollege.ca
 echkdia.com
 echoic.org
+ecl80.cfd
 eclipsemister.com
 eclipsenumberfirst.com
 eclipsestructure.com
