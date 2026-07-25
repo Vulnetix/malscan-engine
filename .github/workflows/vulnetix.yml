@@ -5,8 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  VULNETIX_VERSION: v3.59.4
-
+  VULNETIX_VERSION: v3.73.0
 jobs:
   analyze:
     name: ${{ matrix.name }}
