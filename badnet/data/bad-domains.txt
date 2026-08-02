@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13468
+# count: 13508
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -2036,6 +2036,7 @@ brittleclogadversary.com
 brittneyskye.com
 brmzm.jadoou.space
 broadsheetspaciouscousin.com
+broadwalkindia.com
 brochuregradual.com
 brochureshown.com
 broilergrowerantitrustsettlement.com
@@ -2325,6 +2326,7 @@ casegenetically.com
 cash93.com
 cashmerethoughtful.com
 casilaman.com
+casinodas.com
 casketforbear.com
 casketparchhey.com
 casksvanefibber.com
@@ -2377,6 +2379,7 @@ cdctvukr.taktikkbet.com
 cdmke7zf.sky7bet.casino
 cdn.anzho06.xyz
 cdn.cs-elect.ru
+cdn.file6.goodid.com
 cdr.life
 cdudeal.com
 ceasedthoughtful.com
@@ -2588,6 +2591,7 @@ churchillmileage.com
 chyperrhox.com
 cicda.com
 cigarettestattoo.com
+cim-kolea.com
 cimb2.one
 cinemarequestsperfume.com
 cinemavf.org
@@ -2742,6 +2746,7 @@ cloudanonymityhub.com
 cloudbar.org
 cloudbarriersafe.com
 cloudghostdefense.com
+cloudimagehostingupdatesrealted.yzz.me
 cloudmail.ontatio.ca
 cloudprivacy-defender.com
 cloudprivacybox.com
@@ -3106,6 +3111,7 @@ correspondimpulsive.com
 corruptionproposalinflux.com
 corvuswellness.com
 cosercosplay.com
+cosmeticapampa.com.ar
 cosmeticminimslapse.com
 cosmeticsunforgivablehousewife.com
 costaricaiswaitingforyou.com
@@ -3864,6 +3870,7 @@ diplomaticamazingbazaar.com
 dippegucker.de
 dippingelse.com
 direccion-general-trafico.com
+directdownloadl.ink
 directedwisdom.com
 direction.info
 directlyboilermarco.com
@@ -4360,6 +4367,7 @@ ecentennialcollege.ca
 echkdia.com
 echoic.org
 ecl80.cfd
+eclipsebible.com
 eclipsemister.com
 eclipsenumberfirst.com
 eclipsestructure.com
@@ -5794,6 +5802,7 @@ googleapis.info
 googlecal.com
 googlefish.com
 googleidle.de
+googletagamnager.com
 googoodee.com
 goole.com.vn
 gooobet.com
@@ -6116,6 +6125,7 @@ heavengirlls.com
 heavilybeef.com
 heavilymosslilac.com
 heavyconsciousnesspanties.com
+heavyhorses.com
 heayhylivingdirect.com
 hectoroxide.com
 hedgejustin.com
@@ -6125,6 +6135,7 @@ heelf.com
 heelsacquire.com
 heelsdormitory.com
 heelsteaching.com
+hehe.dstat.tech
 heirloomdangerouslystudied.com
 heisch.com
 helabet.com
@@ -6159,6 +6170,7 @@ heritagecu.online
 hermes-de.help
 hermesairport.com
 hermitfunctions.com
+heroestales.com
 heroismvarnish.com
 heromarshy.com
 hertharaimondi.github.io
@@ -6204,6 +6216,7 @@ hillflowercommunication.com
 hilllogicannually.com
 hillsidejustificationstitch.com
 hindranceretort.com
+hindustanagency.com
 hintmoderatecruel.com
 hire-just-deep.xyz
 hirecarcover.com
@@ -6371,6 +6384,7 @@ hseda.com
 hsmdek.com
 hszy.nextbahis.blog
 ht326ul6.hazaratbet.bet
+htdentshop.com
 htfll3q5.1x303.casino
 htmail.co.uk
 httpssecure.serveftp.com
@@ -6522,6 +6536,7 @@ ifplugpreparing.com
 ifydnun.com
 igansupport.org
 ignateignategranite.com
+ignetwork.us
 ignorantscufflemorally.com
 igra123.com
 igtayow.xyz
@@ -6533,6 +6548,7 @@ iixryzos.1xyekbet.bet
 ijexgroup.com.br
 ijid.com
 ik029b3d.1xsignupbet.com
+ikincielesyaciankara.com.tr
 ikyu.domirunway.com
 illegalhousework.com
 illegallymoonlight.com
@@ -6639,6 +6655,7 @@ indifferentastronomydispute.com
 indignantinterim.com
 indignationplay.com
 individualbattery.com
+indusenterprises.co
 industriousthemselvestan.com
 inerthankclamp.com
 inevitableinvader.com
@@ -7490,6 +7507,7 @@ lesserrecentrecentnaturalist.com
 lessmonkriotous.com
 let-dyed-crow.xyz
 lethalmedication.com
+letsgobok.com
 lettheupgradebegin.com
 levelarrogantflower.com
 levystab.com
@@ -7846,6 +7864,7 @@ mammalrussia.com
 man745va.takbetkade.com
 manag-gou.com
 manclodwounded.com
+mandarin.net.au
 mandateowl.com
 mandriva.com
 maneige.ca
@@ -8222,6 +8241,7 @@ moandownsave.xyz
 moaningprodigyobsessive.com
 mobelfurniturepk.com
 mobicool.online
+mobilab.by
 mobile-portal.com
 mobile-redirect.com
 mobile-safe-app.com
@@ -8410,6 +8430,7 @@ multitudesayingfrequency.com
 mundocarnes.cl
 mura.info
 muralattentive.com
+muriaspetin.es
 murrads.com
 muscularstraight.com
 musengue.com
@@ -8650,6 +8671,8 @@ nextsoft.icu
 nextwin.icu
 nexxt.cm
 ney-acc.com
+nf.boletos-notas.com
+nfe.boletos-notas.com
 nflflagfootball.com
 nflxkont.help
 nfpljmg.bahiscart.com
@@ -9085,6 +9108,7 @@ outlaysudden.com
 outletaboundtheme.com
 outlink.online
 outloiok.com
+outpost.co.ke
 outpush.net
 outputcharmsfeeble.com
 outputretaliate.com
@@ -9184,6 +9208,7 @@ pamphletsleazycivic.com
 panaonic.com
 pancakeaugustgleeful.com
 pancakesomehowmulticultural.com
+panel.b2brouter-secure.com
 panel.munchyyyyyscpann.live
 panel.works
 pangolin-x.com
@@ -9295,6 +9320,7 @@ pcspeedup.en.softonic.com
 pcue.elitesport.ir
 pcupd.com
 pd9l19qk.milliardbet.com
+pdf-bro.lat
 pdf-srv.pdfbamaa.com
 pdffill.com
 pdfshaper-pro-downloadtool.github.io
@@ -10197,6 +10223,8 @@ repulsiveguarantee.com
 requestglittering.com
 reschedule-delivery.ups.com.com
 reserveamerica.co
+reservphotoinstay.one
+reservphotoinstaynow.shop
 resetyourself.org
 residencecontinentwords.com
 resident.services
@@ -10417,6 +10445,7 @@ s0-gr3at3.net
 s0-great3.com
 s24.cloud
 s3g.site
+s3o65awrf56.net
 s4yn0t0sn00z3.xyz
 sablayan.seasonshotelmindoro.com
 sacramentdeniedbarefooted.com
@@ -10452,6 +10481,7 @@ safestyowl.com
 safesurfcloud.com
 safetrackshield.com
 safetywebgate.com
+safeuploadz.com
 safewatertech.com
 safewebbrowsing-zone.com
 sagaciousgrope.com
@@ -10713,6 +10743,7 @@ separationreverttap.com
 sephorabeauty.com
 sephorajobs.com
 seppy.org
+seputartuban.com
 sequenceinheritancehybrids.com
 serenitycompute.com
 sergiodiazcoach.com
@@ -10965,6 +10996,7 @@ smearmarch.com
 smfnctms.fifa90.bet
 smildilt.1xjet.pro
 smokeboxoffice.com
+smoking-hot.net
 smorgasbordet.com
 smrtsecurelink.com
 smsaar.com
@@ -11814,6 +11846,7 @@ tendnone-heel.xyz
 tendontoss.com
 tenelgram.cc
 tengfeidn.cn
+tenis-team-km.com
 tennesssean.com
 tennisrecuiting.net
 tenscub-goat.xyz
@@ -12348,6 +12381,7 @@ twicerustle.com
 twigentirelysailor.com
 twinklefemale.com
 twistneedylever.com
+twitch.tj
 twityter.com
 twu-hwt.org
 txchart.com
@@ -12541,6 +12575,7 @@ uxobx.xyz
 uyixzgec.betawarz.com
 uzdating1.shop
 uzmanegitim.com
+v-k.com.ua
 v03jplxq79.xyz
 v2l.com
 v40xpnml93.xyz
@@ -12574,6 +12609,7 @@ vchar.com
 vchbhqa.betbazi.net
 vcjh.shimiaodaoflushing.com
 vcrjfnwa.ketab.blog
+vdsina.vg
 vecchiaia.com
 vedacit.com
 vegalforniture.it
@@ -12818,6 +12854,7 @@ waltercapableeighty.com
 waltzmice.com
 want-s0me-push.com
 wantlove.today
+wantsellonline.com
 waptric.com
 wapwhatcsapp.com
 wapwhatsapp.com
@@ -13101,6 +13138,7 @@ wphostingapp.com
 wpinstant.com
 wpvz.boroo.bet
 wqeign6o.vip1xbet.org
+wqok85qtq.net
 wr8.com
 wradio.com
 wreckingplain.com
@@ -13148,9 +13186,11 @@ www.chenwangqiao.com
 www.controliumbt.com
 www.crazywickedaddiction.com
 www.cutting-edge.in
+www.dra.com.ve
 www.drgenov.com
 www.faster-cdn-hk.click
 www.first-security-verden.de
+www.gestroom.it
 www.gridfile.cfd
 www.hostingcloud.science
 www.hseda.com

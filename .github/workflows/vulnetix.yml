@@ -107,6 +107,11 @@ jobs:
   publish-tea:
     name: TEA
     needs: analyze
+    # `needs` alone would skip this whenever any one of the nine scanner legs
+    # fails or is cancelled, which on the self-hosted pool is routine. The
+    # design publishes whatever evidence exists, so a partial scan must still
+    # publish. `!cancelled()` still stops it when the whole run is cancelled.
+    if: ${{ !cancelled() }}
     uses: Vulnetix/cli/.github/workflows/tea-release.yml@tea-release-v1
     with:
       visibility: public
