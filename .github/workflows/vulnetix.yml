@@ -107,7 +107,7 @@ jobs:
   publish-tea:
     name: TEA
     needs: analyze
-    uses: Vulnetix/cli/.github/workflows/tea-release.yml@main
+    uses: Vulnetix/cli/.github/workflows/tea-release.yml@tea-release-v1
     with:
       visibility: public
     secrets: inherit
