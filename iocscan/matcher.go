@@ -76,7 +76,7 @@ func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 				Indicator:      mm.ind,
 				FilePath:       filePath,
 				RelPath:        relPath,
-				Class:          class,
+				Class:          worstClass(class, indicatorClassFloor(mm.ind)),
 				LineNumber:     i + 1,
 				ColStart:       mm.col,
 				ColEnd:         mm.col + len(mm.value),
@@ -123,7 +123,7 @@ func (m *Matcher) matchBinary(filePath, relPath string, data []byte) []Evidence 
 				FilePath:       filePath,
 				RelPath:        relPath,
 				IsBinary:       true,
-				Class:          class,
+				Class:          worstClass(class, indicatorClassFloor(mm.ind)),
 				ByteOffset:     sh.offset + int64(mm.col),
 				MatchedLine:    truncate(sh.value, 200),
 			})
@@ -427,6 +427,66 @@ func tierClass(t iocTier) detect.Class {
 		return detect.ClassContext
 	}
 	return ""
+}
+
+// selfSourcedLabel marks a feed indicator whose only provenance is our own
+// malware advisory records, as opposed to an externally-corroborated feed.
+const selfSourcedLabel = "source:registry"
+
+// indicatorClassFloor demotes a hit to ClassContext when the indicator is a BARE
+// host or address whose only provenance is our own registry — i.e. it exists in
+// the feed because a Vulnetix malware record already referenced it.
+//
+// This breaks a self-reinforcing loop. The STIX feed is generated from our own
+// mints: the api.anthropic.com entry reads "Malicious domain observed in 1353
+// Vulnetix malware advisory record(s)" with external_references pointing at
+// GCVE-110-CARGO-… advisories. So a package referencing that host got minted, the
+// host was harvested into the feed, and from then on EVERY package referencing it
+// was minted — each new mint raising the observation count, which reads as
+// corroboration while being nothing but the loop's own output. Measured on
+// production 2026-08-07: 353 of 1,491 cargo malware records rested on a bare
+// host/IP match alone, and api.anthropic.com accounted for 177 of them.
+//
+// Tiering on feed severity or labels is not possible here: every generated entry
+// carries the same labels (malicious-activity, source:registry, ecosystem:*), so
+// there is no confidence signal to read. Provenance is the only discriminator
+// available, and it is the right one — an indicator we asserted ourselves is not
+// independent evidence for the next scan.
+//
+// Deliberately narrow:
+//   - `url` indicators keep full weight even when self-sourced. A specific path
+//     (https://host/steal.php) is a real artefact, not an incidental reference.
+//   - externally-sourced host/IP indicators (TweetFeed and any other feed without
+//     this label) keep full weight, so genuine C2 domains still mint.
+//   - the hit is still RECORDED, as corroboration. It can raise a score and it
+//     appears in the evidence list; it just cannot carry a verdict by itself.
+func indicatorClassFloor(ind *Indicator) detect.Class {
+	if ind == nil {
+		return ""
+	}
+	switch ind.Type {
+	case TypeDomain, TypeIPv4, TypeIPv6:
+	default:
+		return "" // url and anything else keep full weight
+	}
+	for _, l := range ind.Labels {
+		if strings.EqualFold(strings.TrimSpace(l), selfSourcedLabel) {
+			return detect.ClassContext
+		}
+	}
+	return ""
+}
+
+// worstClass returns the lower-severity (more demoted) of two classes, so a floor
+// can never promote a hit that file tiering already demoted.
+func worstClass(a, b detect.Class) detect.Class {
+	if a == detect.ClassContext || b == detect.ClassContext {
+		return detect.ClassContext
+	}
+	if a != "" {
+		return a
+	}
+	return b
 }
 
 // iocFileTier classifies a file by its repo-relative path. Source maps are

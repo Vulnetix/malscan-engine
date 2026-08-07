@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13508
+# count: 13555
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -160,6 +160,7 @@
 41e9aa5f08.com
 421npyd4nd.com
 428379eb52.com
+45.135.194.70.ptr.pfcloud.network
 45eijvhgj2.com
 461a49d04c.com
 469ccf55cc.com
@@ -815,6 +816,7 @@ amazeprotectiveabonnement.com
 amazinglyperception.com
 amazingmusicbonus.click
 amazingtoilalthough.com
+amazom.my
 amazon-security-info.lnk.to
 amazonaus.com
 ambassadorsecretion.com
@@ -2251,6 +2253,7 @@ cannotmoreover.com
 canoeeverywhereannihilate.com
 canss.mountoliveccc.com
 cant3am.com
+canta-cn.com
 canteenrevertreed.com
 cantireu.ca
 capablejeweller.com
@@ -2324,6 +2327,7 @@ cascadeawful.com
 cascadetraitor.com
 casegenetically.com
 cash93.com
+cashblaq.fit
 cashmerethoughtful.com
 casilaman.com
 casinodas.com
@@ -2614,6 +2618,7 @@ ck-telegren.org
 ck0ny34p.1xprobet.app
 ckugvmkpg.hazarat.now
 cl.ssouy.com
+cla.stingold.com
 clabet.com
 claim-free-prize.com
 claimdice.site
@@ -2928,6 +2933,7 @@ computerremotely.com
 comstaples.com
 comtek.org
 comtrks.com
+comumvidros.com.br
 concealclustershirt.com
 conceitedexotic.com
 conceiveerrandblend.com
@@ -3172,6 +3178,7 @@ cozysigh-nick.xyz
 cp.fyi
 cpa-tc.com
 cpainmotion.com
+cpc188.day
 cpmverdirect.com
 cpmvibes.com
 cpofficial.com
@@ -3179,6 +3186,7 @@ cprapid.com
 cps-pc.de
 cpvt.bet120.games
 cqjeqfltg.fg777jbg.net
+cqylt.net
 crackact.org
 crackbrilliancegown.com
 crackedsoft.org
@@ -3289,7 +3297,9 @@ cryingstopsride.com
 cryingtherefore.com
 cryptefilea.infy.click
 crypter.howto.rocks
+crypter00.gt.tc
 crypto.betfakade.com
+cryptomeshforge5.lol
 cryptoqxl.com
 cryptowin.onelink.me
 crystaldiskinfo.com
@@ -4077,6 +4087,7 @@ dominioneastern.com
 dominionswordecology.com
 dominiosvision.com
 don7g3t0ldy3t.xyz
+donal.gt.tc
 donaldrussel.com
 donebayvanilla.com
 donebroom.com
@@ -4121,6 +4132,8 @@ download.kaobeitu.com
 download.pdf00.cn
 download.pdf00.com
 download.suxiazai.com
+download.tfyxzai.com
+download.ubua.online
 downloadfile.cc
 downloadlocked.com
 downloadprovider.me
@@ -4283,6 +4296,7 @@ duplicateshoppingprotective.com
 duqvs764.likesport.ir
 durableconfrontcircuit.com
 durabledatabases.com
+durakutihs.com
 durapaint.com
 durgapurgovtcollege.org
 duringscorncommittee.com
@@ -5604,6 +5618,7 @@ germanpathetic.com
 germanycityguide.com
 germanyrecoil.com
 gestionycobranzas.com
+gestroom.it
 gesundheitkatalog.de
 get-account-help.com
 get-money-to.shop
@@ -5790,6 +5805,7 @@ goldendefault.com
 goldensummer.xyz
 goldfishka-casino.xyz
 goldland8.com
+golvteametvarberg.se
 gongkong800.com
 good-hands-massage.com
 goodcheat.com
@@ -5923,6 +5939,7 @@ grudgeconvince.com
 gruelregionaledmund.com
 grumpybreakingsalad.com
 grupograncolombia.com
+grupohenry1.com
 grupomcperu.com
 grupomnemon.com
 gsbzyy.com
@@ -6097,6 +6114,7 @@ hdz7omr1.nextbahis.blog
 headlightrecentrecentajar.com
 headphoneconcerngain.com
 headymuffler.com
+heajost.online
 heal-jazz-shop.xyz
 healthandwealthguide.net
 healthcaretastic.com
@@ -6455,6 +6473,7 @@ hvanah.com
 hvaujhmz.alhilal90.com
 hvid2q0h.bet24bet.bet
 hwgi901o.cialispi.com
+hwykplqn.xyz
 hxqt.faux-paws.com
 hxzf4er.com
 hybnjif.1xpin.pro
@@ -6906,6 +6925,7 @@ ivclr.mango-sushi.com
 ivermectin.org
 ivorygrief.com
 ivoryrangecongratulations.com
+ixirgroup.com
 iyfabv1.com
 iyfabv2.com
 iyfabv3.com
@@ -7493,6 +7513,7 @@ lekms.com
 lendvioletmutton.com
 lengthenchateauknights.com
 leniniansexualbeginner.courses
+lenotecadiarqua.it
 leo-deluca.gamer.gd
 leo.services
 leo.systems
@@ -7583,6 +7604,7 @@ links1xslot.com
 links22.com
 linksadsprf.com
 linktostar.com
+linktrap.co
 linkv3c.com
 linkversehub.net
 linkw2c.com
@@ -7591,6 +7613,7 @@ linkw2g.com
 linkwitt.com
 lintcollateral.com
 linuxdeal.com
+lion44.net
 lionesssupercatering.com
 lionrenewalcoloured.com
 lipsate.com
@@ -7689,6 +7712,7 @@ longfengwushi.com
 longuarthot.com
 lookbergseal.xyz
 lookingserving.com
+loosun.net
 lordcozytrap.xyz
 loreal-paris-me.com
 lorenagostosa.com
@@ -7768,6 +7792,7 @@ luizmatoso.com.br
 lukewarmapplications.com
 lull-islebrew.xyz
 lululemon.fnbucks.workers.dev
+lumacrea.com
 lunariacrystals.com
 lunaticencase.com
 lunchtimecontractor.com
@@ -7835,6 +7860,7 @@ maidforyou1985.com
 maidlatepreviously.com
 mail.dns2.vendasptg.com
 mail.pagar10.vendasptg.com
+mailglobalsbg.com
 maimawesometoothbrush.com
 mainexdircllk.com
 mainexpclkdir.com
@@ -8112,6 +8138,7 @@ mercycomplementearth.com
 mercysleevesouth.com
 mere-tosspush.xyz
 merenunderwear.com
+meridia.rs
 mermaidstillrecession.com
 merrell-skodanmark.com
 merrellcanadaoutlets.com
@@ -8402,6 +8429,7 @@ mrktrecord10.com
 mrktrecord12.com
 mrktrecord13.com
 mrl-paquet-echec.com
+mrsweaterltd.com
 mrtravelers.com
 ms9amh2h.1xcart.vip
 ms9datqz.953.games
@@ -9059,6 +9087,7 @@ organsunleashfled.com
 organthycuckoo.com
 orientalthai.com
 orientsalvation.com
+orienttaxtile.com
 orlandogalletta.com
 ormediao.com
 ornamentabattoirventure.com
@@ -9302,6 +9331,7 @@ pay.aqiu6.com
 paybearer.com
 payement-renew.me
 payload.info
+paymentautomations.biz
 payoffyes.com
 paypalgiftcardfree1.pages.dev
 payslipsevictnonfiction.com
@@ -9559,6 +9589,7 @@ pns.org.pk
 pnsc.radioshartbandi.bet
 poboxdeliveries.today
 pochta-ru.com
+pocopaco.co.za
 podgolfalways.com
 podhelp-peat.xyz
 podlossrota.xyz
@@ -10063,6 +10094,7 @@ razorspirit.com
 rbq.info
 rbso1spv.hi-lo.bet
 rbthbhfo.backlinkbet.com
+rcf.co.mz
 rcodtjdj.melbetiran.bet
 rdghu.ink
 rdm.91yunma.cn
@@ -10436,6 +10468,7 @@ rwszncq.1bonus.bet
 rxquickpay.com
 rxxcydjgk.enfejartime.com
 rxyvhv1x.1xforward.cash
+ryanborn.net
 ryo.gamer.free
 rzaxl.switch-vodka.com
 rzecbgjw.enfejartime.com
@@ -10496,6 +10529,7 @@ sailorcondiment.com
 saimission.org
 sakshipradhan.com
 salepromoter.com
+sales.ifree.page
 sales.reuters.cm
 salesrentalsservice.com
 salforce.com
@@ -10830,6 +10864,7 @@ shineconductive.com
 shinybikes.com
 shipblissful.com
 shipmentdiscipleawelessaweless.com
+shipminttracking.net
 shirtbladder.com
 shivyoga.com
 shoaly.org
@@ -11027,6 +11062,7 @@ so-gr3ate.net
 soamc.com
 soathoth.com
 sobbingstampsmisspell.com
+sochibeer.ru
 sociableshaky.com
 social-network.club
 sociallyliable.com
@@ -11383,6 +11419,7 @@ sullivansgifts.com
 sultrysteelemigrant.com
 sumanticipatedwardrobe.com
 sumi.app
+sumiko.vu
 summercovert.com
 summerwaveadventures.com
 sumshaggy.com
@@ -12024,6 +12061,7 @@ tillys.cm
 tilt-wear-weak.xyz
 timeforvideos.com
 timesremembered.com
+timestampasa.howto.rocks
 timidinextricable.com
 timk.shop
 tinalas.com
@@ -12150,6 +12188,7 @@ toysrutumbrella.com
 tp1jcgl644jk.com
 tplinkextender.net
 tplinkwifu.net
+tpp.om-stock.com
 tppkzc.com
 tqotzc.com
 tracesjigsaw.com
@@ -12542,6 +12581,7 @@ urqvdqc.dreambet.casino
 ursaff.com
 urtyert.com
 us-sleepguardplus.com
+us.wind0ws.net
 us5fm2lg.ace90bet.bet
 usafansweepstakes2026.us
 usamovingservices.com
@@ -12908,6 +12948,7 @@ we-telegrcn.org
 we-telegren.org
 we.aibotnet.su
 weak-obeylore.xyz
+wealthishealth.free.je
 wean-bredfact.xyz
 wearinessalimony.com
 weasellotterymanhood.com
@@ -13129,6 +13170,7 @@ wow-i-get-push.com
 wow-robotics.xyz
 wowcon.net
 wowfreebies.com
+wp.ameyiando.com
 wp3.xyz
 wp8zfvuu.sky7bet.casino
 wpbox.net
@@ -13193,11 +13235,13 @@ www.first-security-verden.de
 www.gestroom.it
 www.gridfile.cfd
 www.hostingcloud.science
+www.hqsblog.com
 www.hseda.com
 www.intelligradeeducation.vicentecisnerospub.com
 www.jozefinskiatelje.si
 www.kenwillzltd.com
 www.khavar.com
+www.knockknock.top
 www.konsor.ru
 www.massiv.net
 www.medises.co.kr
@@ -13212,6 +13256,7 @@ www.ojang.pe.kr
 www.okhan.net
 www.playtown.co.za
 www.projecthoneypot.org
+www.propertiesofcayman.com
 www.rbcfort.com
 www.reifenquick.de
 www.saf-oil.ru
@@ -13285,6 +13330,7 @@ xhots.net
 xhozx.onjabet1.com
 xiaobaixitong.com
 xiaobei8.com
+xiazaixitong8.com
 xivtourist.com
 xl-soft.icu
 xlifebase.com
@@ -13483,6 +13529,7 @@ zone-pour-too.xyz
 zonedummy.com
 zoo.care
 zooskatehesitation.com
+zoredaye.com
 zov.ismak.icu
 zozhhgic.btyek.buzz
 zqjjyamd.megaparifarsi.com

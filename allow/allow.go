@@ -67,6 +67,53 @@ var placeholderIPs = map[string]bool{
 	"2.1.1.1": true, "20.20.20.20": true, "10.10.10.10": true,
 	"192.0.2.1": true, "198.51.100.1": true, "203.0.113.1": true,
 	"192.0.2.2": true, "198.51.100.2": true, "203.0.113.2": true,
+	// More public resolvers, added 2026-08-07: each had minted crates.io packages
+	// as malware on a bare-IP match alone. A resolver address in package source is
+	// configuration, not exfiltration.
+	"223.5.5.5": true, "223.6.6.6": true, // AliDNS
+	"149.112.112.112": true, "9.9.9.11": true, "149.112.112.11": true, // Quad9
+	"94.140.14.14": true, "94.140.15.15": true, // AdGuard
+	"77.88.8.8": true, "77.88.8.1": true, // Yandex
+	"180.76.76.76":  true,                        // Baidu
+	"185.228.168.9": true, "185.228.169.9": true, // CleanBrowsing
+	"76.76.2.0": true, "76.76.10.0": true, // ControlD
+	"64.6.64.6": true, "64.6.65.6": true, // Verisign
+}
+
+// oidPrefixes are the dotted-decimal arcs that X.509 / SNMP / LDAP object
+// identifiers live under. An OID such as 2.5.29.37 (id-kp-timeStamping) or
+// 2.5.4.3 (commonName) is a valid dotted quad, so net.ParseIP accepts it and the
+// IOC extractor treats it as an address.
+//
+// VersionLikeIP does not catch these: it only rejects quads whose every octet is
+// <= 31, which covers 2.5.4.3 but not 2.5.29.37 or 2.5.29.35. Measured 2026-08-07
+// on cargo, OIDs under 2.5.* accounted for a dozen malware mints, all of them TLS
+// and certificate-handling crates.
+//
+// Kept deliberately narrow: 2.5.* — the X.500 directory / certificate-extension
+// arc, which is where every OID observed causing a false positive lives
+// (2.5.29.37, 2.5.29.35, 2.5.29.15, 2.5.4.3). A routable address beginning 2.5. is
+// possible in principle but has never appeared in a feed; certificate OIDs appear
+// constantly in TLS crates, so the trade is heavily in favour of rejecting.
+//
+// The other common arc, 1.3.6.1.*, needs no prefix entry: an OID under it has at
+// least five components, so it never parses as a dotted quad in the first place,
+// and the arc root 1.3.6.1 itself is already in placeholderIPs.
+var oidPrefixes = []string{"2.5."}
+
+// OIDLikeIP reports whether an IPv4 string is really an object identifier.
+// Dotted quads under the X.509 / SNMP OID arcs are not addresses.
+func OIDLikeIP(ip string) bool {
+	v := strings.TrimSpace(ip)
+	if p := net.ParseIP(v); p == nil || p.To4() == nil {
+		return false
+	}
+	for _, pfx := range oidPrefixes {
+		if strings.HasPrefix(v, pfx) {
+			return true
+		}
+	}
+	return false
 }
 
 // exampleTLDs are reserved/special-use suffixes (RFC 2606 / 6761) plus common
@@ -131,6 +178,34 @@ var genericServiceHosts = map[string]bool{
 	"mozilla.org": true, "www.mozilla.org": true,
 	"telegram.org": true, "core.telegram.org": true,
 	"localhost": true,
+
+	// ── AI / LLM provider API endpoints ──────────────────────────────────────
+	// These reached a threat feed because malware does exfiltrate through them,
+	// and matching the BARE HOST then brands every legitimate client library that
+	// talks to the provider. Measured 2026-08-07: api.anthropic.com alone had
+	// minted 177 crates.io packages as malware on nothing but a host match — half
+	// of the entire evidence-free malicious population for that ecosystem.
+	// A specific known-bad URL PATH is still an indicator; allow.URL deliberately
+	// does not allowlist those, and this list does not change that.
+	"api.anthropic.com": true, "anthropic.com": true, "www.anthropic.com": true,
+	"api.openai.com": true, "openai.com": true, "platform.openai.com": true,
+	"api.mistral.ai": true, "mistral.ai": true,
+	"api.cohere.ai": true, "api.cohere.com": true, "cohere.com": true,
+	"generativelanguage.googleapis.com": true, "aiplatform.googleapis.com": true,
+	"api.groq.com": true, "api.together.xyz": true, "api.deepseek.com": true,
+	"api.perplexity.ai": true, "api.x.ai": true,
+	"openrouter.ai": true, "api.openrouter.ai": true,
+	"huggingface.co": true, "api-inference.huggingface.co": true, "hf.co": true,
+	"api.replicate.com": true, "replicate.com": true,
+	"ollama.com": true, "registry.ollama.ai": true,
+	"bedrock-runtime.us-east-1.amazonaws.com": true,
+
+	// ── Public DNS resolvers ─────────────────────────────────────────────────
+	// A resolver address in package source is configuration, not exfiltration.
+	// Measured on cargo: 223.5.5.5 (AliDNS) and 149.112.112.112 (Quad9) had each
+	// minted several crates on a bare-IP match alone.
+	"dns.google": true, "one.one.one.one": true, "dns.quad9.net": true,
+	"dns.alidns.com": true, "doh.opendns.com": true,
 
 	// ── Standards bodies / specifications / schemas ──────────────────────────
 	"www.w3.org": true, "w3.org": true, "www.apache.org": true, "apache.org": true,
@@ -234,6 +309,10 @@ func IP(ip string) bool {
 	}
 	// All-equal-octet IPv4 (1.1.1.1, 9.9.9.9, 123.123.123.123) are placeholders.
 	if v4 := parsed.To4(); v4 != nil && v4[0] == v4[1] && v4[1] == v4[2] && v4[2] == v4[3] {
+		return true
+	}
+	// Object identifiers under the X.509 / SNMP arcs parse as dotted quads.
+	if OIDLikeIP(v) {
 		return true
 	}
 	return false

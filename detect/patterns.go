@@ -3,6 +3,7 @@ package detect
 import (
 	_ "embed"
 	"fmt"
+	"github.com/vulnetix/malscan-engine/allow"
 	"log/slog"
 	"regexp"
 	"sort"
@@ -138,6 +139,10 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 				}
 				class = ClassContext
 			}
+			line := firstMatchingLine(content, p.re)
+			if suppressNonRoutableIPURL(p.id, line) {
+				continue
+			}
 			findings = append(findings, Finding{
 				ID:          idPrefix + p.id,
 				Category:    category,
@@ -145,7 +150,7 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 				CWE:         cweForSignal(p.id),
 				Points:      p.points,
 				Description: p.description,
-				MatchedLine: firstMatchingLine(content, p.re),
+				MatchedLine: line,
 			})
 		}
 	}
@@ -160,4 +165,32 @@ func firstMatchingLine(content string, re *regexp.Regexp) string {
 		}
 	}
 	return ""
+}
+
+// rawIPURLRe extracts the address from a P-RAW-IP-URL match so it can be judged.
+var rawIPURLRe = regexp.MustCompile(`https?://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
+
+// suppressNonRoutableIPURL drops a P-RAW-IP-URL hit whose address is not routable.
+//
+// The rule's point is "this package talks to a bare address instead of a hostname",
+// which is only indicative when the address could actually be a C2. http://127.0.0.1
+// is a dev server, http://0.0.0.0 is a bind address, 192.168.x.x is a LAN, and the
+// RFC-5737 blocks are documentation — all of them appear in ordinary source.
+// Measured on production 2026-08-07, P-RAW-IP-URL was the SOLE evidence for 742
+// malware mints across packagist, pypi, go and cargo.
+//
+// This lives in Go rather than in the pattern because allow.IP already encodes every
+// reserved range correctly; a hand-written regex for "routable" got 11-19 and
+// 200-255 wrong on the first attempt while still admitting 127.
+func suppressNonRoutableIPURL(id, line string) bool {
+	if id != "P-RAW-IP-URL" || line == "" {
+		return false
+	}
+	m := rawIPURLRe.FindStringSubmatch(line)
+	if m == nil {
+		// The rule matched somewhere in the content but not in the line we chose to
+		// report; keep the finding rather than dropping it on a formatting detail.
+		return false
+	}
+	return allow.IP(m[1])
 }

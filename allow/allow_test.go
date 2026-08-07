@@ -135,3 +135,77 @@ func TestURLAndBenign(t *testing.T) {
 		}
 	}
 }
+
+// TestOIDLikeIP pins the X.509 / SNMP object-identifier guard. These parse as
+// valid dotted quads, so net.ParseIP accepts them and the IOC extractor treated
+// them as addresses. VersionLikeIP only rejects quads whose every octet is <= 31,
+// which covers 2.5.4.3 but not 2.5.29.37 — and 2.5.29.37 (id-kp-timeStamping) had
+// minted TLS/certificate crates as malware on production.
+func TestOIDLikeIP(t *testing.T) {
+	oids := []string{
+		"2.5.29.37", // id-kp-timeStamping — the measured false positive
+		"2.5.29.35", // authorityKeyIdentifier
+		"2.5.4.3",   // commonName
+		"2.5.29.15", // keyUsage
+	}
+	for _, v := range oids {
+		if !OIDLikeIP(v) {
+			t.Errorf("OIDLikeIP(%q) = false, want true", v)
+		}
+		if !IP(v) {
+			t.Errorf("IP(%q) = false, want true — an OID must be treated as non-indicative", v)
+		}
+	}
+
+	// Real addresses must not be swept up. None of these begin with an OID arc.
+	addrs := []string{"185.100.157.127", "45.33.32.156", "104.21.5.9", "3.5.29.37"}
+	for _, v := range addrs {
+		if OIDLikeIP(v) {
+			t.Errorf("OIDLikeIP(%q) = true, want false — this is a routable address", v)
+		}
+	}
+
+	// 1.3.6.1 needs no OID prefix: OIDs under that arc have five or more
+	// components so they never parse as a dotted quad, and the arc root itself is
+	// already a listed placeholder. IP() must still reject it.
+	if !IP("1.3.6.1") {
+		t.Error(`IP("1.3.6.1") = false, want true — listed as a placeholder`)
+	}
+
+	// Non-IPs are not OIDs for this purpose, and a 5-component OID is not a quad.
+	for _, v := range []string{"", "2.5", "2.5.29.37.1", "1.3.6.1.5.5", "not-an-ip"} {
+		if OIDLikeIP(v) {
+			t.Errorf("OIDLikeIP(%q) = true, want false", v)
+		}
+	}
+}
+
+// TestAIProviderHostsAllowed pins the allowlist half of the fix: a legitimate
+// provider endpoint must not be treated as an indicator on its own.
+func TestAIProviderHostsAllowed(t *testing.T) {
+	hosts := []string{
+		"api.anthropic.com", "api.openai.com", "generativelanguage.googleapis.com",
+		"api-inference.huggingface.co", "openrouter.ai",
+		"223.5.5.5", "149.112.112.112", // public resolvers
+	}
+	for _, h := range hosts {
+		kind := "domain"
+		if h[0] >= '0' && h[0] <= '9' {
+			kind = "ipv4"
+		}
+		if !Benign(kind, h) {
+			t.Errorf("Benign(%q, %q) = false, want true", kind, h)
+		}
+	}
+
+	// A specific known-bad PATH on such a host is still an indicator. Benign is
+	// what the feed filter consults, and it must never allowlist a url kind — the
+	// exfil channel https://api.anthropic.com/v1/steal has to survive even though
+	// the bare host is allowlisted.
+	//
+	// (allow.URL is host-based and would return true here, but it has no production
+	// callers; Benign is the contract that matters.)
+	if Benign("url", "https://api.anthropic.com/v1/steal") {
+		t.Error("Benign() allowlisted a url kind; a specific known-bad path must always be kept")
+	}
+}

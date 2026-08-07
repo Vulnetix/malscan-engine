@@ -816,6 +816,13 @@ override_gate = false
 # Source URL patterns
 [[source_url_analysis]]
 id = "P-RAW-IP-URL"
+# The regex stays broad on purpose. A raw-IP URL is only indicative when the address
+# is ROUTABLE — http://127.0.0.1, http://0.0.0.0, http://192.168.x.x and the
+# RFC-5737 documentation blocks are ordinary source, and this rule carried 742 mints
+# on its own across packagist, pypi, go and cargo largely on those. Expressing
+# "routable" as a regex is error-prone (a first draft excluded 11-19 and 200-255
+# while still allowing 127), so the exclusion lives in Go where allow.IP already
+# encodes every reserved range: see suppressNonRoutableIPURL.
 pattern = 'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
 points = 50
 description = "Source URL uses raw IP address instead of domain"
@@ -2088,7 +2095,12 @@ override_gate = true
 
 [[pkgbuild_analysis]]
 id = "PHP-ASSERT-VAR"
-pattern = 'assert\s*\(\s*\$'
+# Same unanchored-tail problem as PHP-SHELL-EXEC-VAR: without the leading class this
+# matched $validator->assert($value) and Check::assert($x), ordinary application and
+# test code. It carried 665 packagist mints on its own. PHPUnit's assertEquals /
+# assertSame are unaffected either way — a character follows "assert" before the
+# paren, so they never matched.
+pattern = '(^|[^A-Za-z0-9_>:$])assert\s*\(\s*\$'
 points = 45
 description = "PHP assert() on a variable used as a dynamic code-execution sink"
 override_gate = false
@@ -2102,7 +2114,15 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "PHP-SHELL-EXEC-VAR"
-pattern = '(system|exec|shell_exec|passthru|proc_open|popen)\s*\(\s*\$'
+# The leading class is load-bearing. Without it `exec` matched the TAIL of any
+# identifier ending in exec — curl_exec($ch) and $pdo->exec($sql) are ordinary PHP
+# and both fired. Measured on production 2026-08-07: this rule appeared in 10,792
+# of packagist's 15,677 malware mints (69%), and sampling mints whose ONLY evidence
+# was this rule returned matchedLine values like "$raw = curl_exec($ch);" and
+# "$pdo->exec($sql);". RE2 has no lookbehind, so the preceding character is matched
+# and excluded instead: identifier chars (curl_exec), `>` (->exec), `:` (Foo::exec)
+# and `$` (a variable function name).
+pattern = '(^|[^A-Za-z0-9_>:$])(system|exec|shell_exec|passthru|proc_open|popen)\s*\(\s*\$'
 points = 45
 description = "PHP OS command execution sink invoked on a variable"
 override_gate = false
