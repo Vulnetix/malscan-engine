@@ -545,7 +545,20 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-AT-JOB"
-pattern = '\bat\s+(now|midnight|noon|teatime|\d{1,2}:\d{2})'
+# `at` must be in command position. `\bat\s+` matched the English preposition, so
+# prose scheduled nothing and still scored 60 points. Measured on production
+# 2026-08-08: the rule appeared in 1,279 malware mints across nine ecosystems and
+# was the SOLE evidence for hundreds of them — pypi 408/115, packagist 386/145,
+# go 249/62, cargo 102/19, npm 69/19. Sole-evidence samples were a code comment,
+# "# Stop at midnight wraps cleanly to 0 (the modulo)", and an IDE file header,
+# "* Created by PhpStorm on 01/05/2022 at 18:49".
+#
+# Patterns are matched against whole file content (detect/patterns.go:123), so `^`
+# would only ever mean start-of-file. Line starts are covered by putting \n in the
+# separator class instead — the same technique PHP-SHELL-EXEC-VAR relies on. The
+# class is the shell contexts a command can actually begin in: line start,
+# `;` `&&` `||` `|`, a subshell or brace group, and a backquote.
+pattern = '(^|[;&|(){}\n`])[ \t]*at[ \t]+(now|midnight|noon|teatime|\d{1,2}:\d{2})'
 points = 60
 description = "at job scheduling (deferred execution)"
 override_gate = false
