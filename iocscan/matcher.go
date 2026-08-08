@@ -65,8 +65,17 @@ func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 		// The file-level tier sets the floor; a minified line inside an otherwise
 		// kept file is generated-bundle noise, so its URL/domain hits demote to
 		// context too (its IPv4 is already suppressed via skipIPv4 below).
+		//
+		// A comment gets the same treatment, for the same reason: a host named in a
+		// comment is not a host the package talks to. Measured on production
+		// 2026-08-08, IOC-STIX-MATCH was the top sole-evidence rule for both pypi
+		// (2,173 mints) and npm (116), and the npm sample was a JSDoc line —
+		// "* Use this anywhere we'd otherwise reach for `creds.me!.id` to fail fast" —
+		// where `creds.me` is a TypeScript property access, not a hostname.
+		// Demoted rather than dropped, so it still corroborates a real finding
+		// elsewhere in the package but cannot mint on its own.
 		class := tierClass(tier)
-		if class == "" && minified {
+		if class == "" && (minified || detect.IsCommentLine(line)) {
 			class = detect.ClassContext
 		}
 		for _, mm := range m.matchLine(line, skipIPFile || minified) {

@@ -80,6 +80,14 @@ func TestPHPShellExecVarPerSink(t *testing.T) {
 		"variable fn": "<?php $exec($cmd);",
 		"custom sink": "<?php my_exec($cmd);",
 		"mysqli_ping": "<?php $db->real_exec($sql);",
+		// Declarations. The boundary guard was written for call sites and lets these
+		// through, because `public function exec($query)` puts an ordinary space
+		// before the name. Production 2026-08-08: this was the sole evidence for
+		// 6,418 of packagist's 15,678 mints, sampled as exactly these lines.
+		"public method decl":    "<?php class DB { public function exec($query) { return $this->pdo->query($query); } }",
+		"bare function decl":    "<?php function exec($statement) { return run($statement); }",
+		"static method decl":    "<?php class R { public static function system($cmd) {} }",
+		"reference return decl": "<?php function &exec($cmd) { return $out; }",
 	}
 	for name, src := range quiet {
 		t.Run("quiet/"+name, func(t *testing.T) {
@@ -88,6 +96,25 @@ func TestPHPShellExecVarPerSink(t *testing.T) {
 				t.Errorf("fired on benign %q", src)
 			}
 		})
+	}
+}
+
+// A declaration must not hide a real sink lower in the same file. Suppression walks
+// every matching line for exactly this case, so a class that declares its own exec()
+// AND shells out elsewhere is still caught.
+func TestPHPShellExecVarDeclarationDoesNotMaskRealSink(t *testing.T) {
+	src := `<?php
+class Runner {
+    public function exec($query) {
+        return $this->pdo->query($query);
+    }
+    public function run($cmd) {
+        system($cmd);
+    }
+}`
+	f := Detect(&PackageContext{Name: "vendor/pkg", PkgbuildContent: src})
+	if !has(f, "PHP-SHELL-EXEC-VAR") {
+		t.Errorf("declaration suppressed the whole finding and hid system($cmd); findings=%v", ids(f))
 	}
 }
 

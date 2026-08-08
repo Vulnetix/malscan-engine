@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/BurntSushi/toml"
@@ -139,8 +140,8 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 				}
 				class = ClassContext
 			}
-			line := firstMatchingLine(content, p.re)
-			if suppressNonRoutableIPURL(p.id, line) {
+			line, keep := reportableLine(p.id, content, p.re)
+			if !keep {
 				continue
 			}
 			findings = append(findings, Finding{
@@ -166,6 +167,118 @@ func firstMatchingLine(content string, re *regexp.Regexp) string {
 	}
 	return ""
 }
+
+// reportableLine picks the line to report for a match, applying the per-rule
+// suppressors, and reports whether the finding survives at all.
+//
+// It walks EVERY matching line rather than judging only the first. Suppressing on
+// the first match alone loses true positives: a file whose first `exec($x)` is a
+// method declaration and whose tenth is a real command sink would be dropped
+// wholesale. A finding is suppressed only when no matching line survives, so
+// suppression can remove false positives but cannot hide a genuine hit sitting
+// further down the same file.
+//
+// When the pattern matches the content as a whole but no individual line does (a
+// match spanning a line break), the finding is kept with an empty line — the same
+// conservative direction the per-rule suppressors take on an unparseable line.
+func reportableLine(id, content string, re *regexp.Regexp) (string, bool) {
+	matched := false
+	for _, raw := range splitLines(content) {
+		if !re.MatchString(raw) {
+			continue
+		}
+		matched = true
+		line := trimSpace(raw)
+		if !suppressLine(id, line) {
+			return line, true
+		}
+	}
+	if !matched {
+		return "", true
+	}
+	return "", false
+}
+
+// suppressLine reports whether this rule considers this specific line a false
+// positive. Rules with no suppressor still get the comment guard.
+func suppressLine(id, line string) bool {
+	if IsCommentLine(line) {
+		return true
+	}
+	switch id {
+	case "P-RAW-IP-URL":
+		return suppressNonRoutableIPURL(id, line)
+	case "PHP-SHELL-EXEC-VAR":
+		return phpFunctionDeclRe.MatchString(line)
+	}
+	return false
+}
+
+// IsCommentLine reports whether a line is a comment — text the interpreter never
+// executes.
+//
+// A comment cannot be a behaviour. Measured on production 2026-08-08 by replaying the
+// lines packagist and pypi mints actually matched through the engine, the recurring
+// live false positive was a rule firing on documentation ABOUT the behaviour it
+// detects, in packages that do the opposite of malware:
+//
+//	P-TELEGRAM-BOT  "* You should set [telegram bot token](https://core.telegram.org/…"
+//	P-CRON-CREATE   "* CronManager provides easy access to the crontable"
+//	P-URL-SHORTENER "* @link http://bit.ly/hg3gHb"
+//	P-CRYPTO-WALLET "#   \"contractAddress\": \"0xee2a03aa6dacf51c18679c516ad5283d8e7c2637\","
+//	P-CRON-CREATE   "# 2026 March equinox is ~14:46 UTC Mar 20; at 12:08 UTC (solar noon"
+//
+// Because reportableLine only suppresses when EVERY matching line is suppressed, a
+// payload that also appears on one executable line is still reported — this drops
+// findings whose entire basis is prose, not findings that happen to be discussed in a
+// comment somewhere in the file.
+//
+// Deliberately excluded: `;` (a shell statement separator as often as an ini comment)
+// and a bare `--` flag. `*` counts only in the PHPDoc/JSDoc continuation form (`* `
+// followed by something other than `)`), so a shell case label like `*) curl x | sh ;;`
+// is NOT read as a comment.
+func IsCommentLine(line string) bool {
+	s := trimSpace(line)
+	if s == "" {
+		return false
+	}
+	switch {
+	case strings.HasPrefix(s, "#"):
+		return true
+	case strings.HasPrefix(s, "//"):
+		return true
+	case strings.HasPrefix(s, "/*"):
+		return true
+	case strings.HasPrefix(s, "*/"):
+		// A block-comment close stands alone; `*/*.php` is a glob.
+		return trimSpace(s[2:]) == ""
+	case strings.HasPrefix(s, "<!--"):
+		return true
+	case strings.HasPrefix(s, "-- "):
+		return true
+	case strings.HasPrefix(s, "* "):
+		// PHPDoc/JSDoc continuation, but not `* )` — a shell case label.
+		return !strings.HasPrefix(trimSpace(s[2:]), ")")
+	}
+	return false
+}
+
+// phpFunctionDeclRe matches a PHP function DECLARATION of a command-sink name, which
+// is not a call to one.
+//
+// PHP-SHELL-EXEC-VAR's boundary guard was added for call sites — curl_exec($ch),
+// $pdo->exec($sql), Foo::exec($x) — and a declaration slips straight through it,
+// because `public function exec($query)` puts an ordinary space before `exec`.
+// Measured on production 2026-08-08: the rule was the SOLE evidence for 6,418 of
+// packagist's 15,678 malware mints (41%), the single largest false-positive driver in
+// the corpus, and its sampled lines were `public function exec($query)` and
+// `public function exec($statement)` — database and process abstractions declaring
+// their own exec method, which every DBAL, queue and console library has.
+//
+// A declaration cannot be the sink: defining `exec($cmd)` does not run anything. The
+// body that calls the real system function is matched on its own line.
+var phpFunctionDeclRe = regexp.MustCompile(
+	`\bfunction\s+&?\s*(system|exec|shell_exec|passthru|proc_open|popen)\s*\(`)
 
 // rawIPURLRe extracts the address from a P-RAW-IP-URL match so it can be judged.
 var rawIPURLRe = regexp.MustCompile(`https?://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
