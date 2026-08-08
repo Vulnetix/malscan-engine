@@ -55,3 +55,33 @@ func TestVersionLikeIPKeepsCoordinateShapes(t *testing.T) {
 		}
 	}
 }
+
+// X.509 object identifiers parse as dotted quads and are everywhere in crypto
+// code. malscan-stix published 2.5.29.35 (authorityKeyIdentifier) typed as IPV4
+// into the PUBLIC STIX feed. The octets<=31 rule caught only part of the arc —
+// 2.5.29.14 and 2.5.29.17 were dropped while 2.5.29.35 and 2.5.29.255 were not,
+// splitting one namespace arbitrarily.
+func TestVersionLikeIPRejectsX509OIDs(t *testing.T) {
+	for _, v := range []string{
+		"2.5.29.35",  // authorityKeyIdentifier — the one that was published
+		"2.5.29.14",  // subjectKeyIdentifier
+		"2.5.29.17",  // subjectAltName
+		"2.5.29.19",  // basicConstraints
+		"2.5.29.255", // above the old octet ceiling
+		"2.5.4.3",    // commonName
+		"2.5.4.10",   // organizationName
+	} {
+		if !VersionLikeIP(v) {
+			t.Errorf("VersionLikeIP(%q) = false, want true — this OID publishes as a malicious IP", v)
+		}
+	}
+}
+
+// The arc prefixes must not swallow neighbouring real addresses.
+func TestVersionLikeIPKeepsAddressesNearTheOIDArcs(t *testing.T) {
+	for _, v := range []string{"2.5.30.35", "2.6.29.35", "3.5.29.35", "2.55.29.35"} {
+		if VersionLikeIP(v) {
+			t.Errorf("VersionLikeIP(%q) = true, want false — outside the 2.5.29/2.5.4 arcs", v)
+		}
+	}
+}

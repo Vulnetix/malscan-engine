@@ -443,6 +443,17 @@ func VersionLikeIP(ip string) bool {
 		return false
 	}
 
+	// X.509 / X.500 object identifiers under the 2.5.29 (certificate extension)
+	// and 2.5.4 (attribute type) arcs parse as valid dotted quads, and they are
+	// everywhere in crypto code. The octets<=31 rule below catches only part of
+	// each arc — 2.5.29.14 and 2.5.29.17 are dropped, but 2.5.29.35
+	// (authorityKeyIdentifier) and 2.5.29.255 are not, which is an arbitrary split
+	// through one namespace. malscan-stix was publishing 2.5.29.35 typed as IPV4
+	// into the public STIX feed because of it. Treat the whole arc as OID-like.
+	if strings.HasPrefix(v, "2.5.29.") || strings.HasPrefix(v, "2.5.4.") {
+		return true
+	}
+
 	// A dotted quad whose last three octets are all zero is a /8 network address,
 	// never a host that a malicious-IP indicator would name — but it is exactly
 	// what a browser version looks like. Production evidence: a pubdev mint
