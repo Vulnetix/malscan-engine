@@ -76,7 +76,14 @@ func TestVersionLikeIP(t *testing.T) {
 			t.Errorf("VersionLikeIP(%q) = false, want true", ip)
 		}
 	}
-	real := []string{"129.144.52.38", "1.15.65.96", "119.0.0.0", "185.100.157.127", "45.137.21.9"}
+	// "119.0.0.0" was moved OUT of this list deliberately. It is the only /8
+	// network address here — every other entry has a non-zero tail — and that
+	// shape is also how a browser version appears: a pubdev mint was created
+	// because "Malicious IP address 120.0.0.0" matched "Chrome/120.0.0.0
+	// Safari/537.36". A dotted quad ending .0.0.0 is never a host worth naming as
+	// an indicator, so it now counts as version-like. See
+	// TestVersionLikeIPRejectsBrowserVersions.
+	real := []string{"129.144.52.38", "1.15.65.96", "185.100.157.127", "45.137.21.9"}
 	for _, ip := range real {
 		if VersionLikeIP(ip) {
 			t.Errorf("VersionLikeIP(%q) = true, want false (larger octets)", ip)

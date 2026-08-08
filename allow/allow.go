@@ -415,6 +415,18 @@ func VersionLikeIP(ip string) bool {
 	if len(octets) != 4 {
 		return false
 	}
+
+	// A dotted quad whose last three octets are all zero is a /8 network address,
+	// never a host that a malicious-IP indicator would name — but it is exactly
+	// what a browser version looks like. Production evidence: a pubdev mint
+	// (GCVE-110-PUB-2026-000236) was created because the indicator
+	// "Malicious IP address 120.0.0.0" matched the text
+	// "Chrome/120.0.0.0 Safari/537.36" in a user-agent string. The octets<=31 rule
+	// below cannot catch it, since Chrome major versions are well past 31.
+	if octets[1] == "0" && octets[2] == "0" && octets[3] == "0" {
+		return true
+	}
+
 	for _, o := range octets {
 		if o == "" || len(o) > 2 { // >2 digits => octet >= 100 > 31
 			return false

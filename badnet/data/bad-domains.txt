@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13555
+# count: 13562
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -937,6 +937,7 @@ antipathyharbourbate.com
 antiquarianjenny.com
 antiqueforhire.com
 antiquityundeniable.com
+antleds.com
 antlerrhinoceros.com
 antlersolidthrilled.com
 antoniarosa.com
@@ -4430,6 +4431,7 @@ ef42245b5e.com
 effaceecho.com
 effc4p41.honardartarikh.xyz
 effectiveformatgate.com
+effectively32.infinityfree.me
 effectsounds.com
 efficientdescent.com
 efficientdigestivesalutation.com
@@ -4976,6 +4978,7 @@ fendil.com
 fentwentieth.com
 ferel.com
 feridogames.com
+ferncurrent14.com
 ferocityrover.com
 ferocitysuperintend.com
 fertagus.com
@@ -7861,6 +7864,7 @@ maidlatepreviously.com
 mail.dns2.vendasptg.com
 mail.pagar10.vendasptg.com
 mailglobalsbg.com
+mailify.cc
 maimawesometoothbrush.com
 mainexdircllk.com
 mainexpclkdir.com
@@ -10344,6 +10348,7 @@ rinnovoclientebnl.com
 rinvay.cn
 riotshoprecollection.com
 ripamatic.com
+rippled.cleverpondky.com
 rippleoneselfguards.com
 riseofthetide.xyz
 risesilastaught.com
@@ -10974,6 +10979,7 @@ skinnytate.com
 skirmishharbour.com
 skmcapital.com
 skpostl-sk.com
+skript.club
 skshop.store
 skullclenched.com
 skycatz.com
@@ -13371,6 +13377,7 @@ y12.org
 y4d9qpyb.bazisangkaqazgeychidancepoli.com
 y4h1lqu6.jadoou.lat
 y96q29a1fo.com
+yakult-hk.com
 yandex.avito.www.com
 yandex.pay.avito.com
 yardcalling.com
