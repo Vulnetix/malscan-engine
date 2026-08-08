@@ -365,6 +365,14 @@ func BenignDocURL(u string) bool {
 // though it is property access, not a hostname.
 var codeCollidingGTLDs = map[string]bool{
 	"top": true, "global": true, "group": true, "xyz": true,
+	// "email" is a real gTLD that collides with one of the most common field
+	// names in existence. A pubdev mint was created from
+	// "Malicious domain commit.author.email" — a git config key, matched as a
+	// domain purely because .email registers. Deliberately NOT added here:
+	// dev, app, cloud, sh, id, page and site, which host large numbers of
+	// genuine services (cgr.dev, vercel.app) and where suppressing a match
+	// would hide real indicators.
+	"email": true,
 }
 
 // codeIdentSLDs are common source identifiers that appear as the label before a
@@ -375,6 +383,13 @@ var codeIdentSLDs = map[string]bool{
 	"target": true, "event": true, "error": true, "result": true, "config": true,
 	"options": true, "context": true, "element": true, "props": true, "state": true,
 	"data": true, "rgb": true, "rgba": true, "hsl": true, "hsla": true,
+	// Identifiers that precede a field name in manifest and git-config paths:
+	// commit.author.email, package.maintainer.email, git.user.email. These make
+	// the label before a code-colliding gTLD recognisable as a property access
+	// rather than a registrable name.
+	"author": true, "user": true, "maintainer": true, "owner": true,
+	"committer": true, "sender": true, "recipient": true, "contact": true,
+	"notification": true, "publisher": true,
 }
 
 // CodeTokenDomain reports whether host is almost certainly a code-token access
