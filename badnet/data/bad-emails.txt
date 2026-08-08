@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 53061
+# count: 53059
 0000.anthony523@att.net
 0000000999999999999webmail@gmail.com
 0000001@llb465.onmicrosoft.com
@@ -6684,7 +6684,6 @@ bjamison@uwm.edu
 bjandrews@newbedfordschools.org
 bjarney@burke.k12.nc.us
 bjarte.nesheim@haugesund.kommune.no
-bjcc.reintegration@doc.state.ok.us
 bjcooper@aps.k12.co.us
 bje8@students.calvin.edu
 bjeglum@iupui.edu
@@ -22784,7 +22783,6 @@ jeffg@illinois.edu
 jeffguliman@amefird.com.hk
 jeffreimer@royallepage.ca
 jeffrey.adams@dallascityhall.com
-jeffrey.allen@doc.nc.gov
 jeffrey.chan@purchase.edu
 jeffrey.eigenbrood@bp.com
 jeffrey.evans@hhchealth.org

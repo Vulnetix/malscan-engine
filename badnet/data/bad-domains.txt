@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13562
+# count: 13560
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -4040,8 +4040,6 @@ dns2.vendasptg.com
 dnslink.com
 do-fedex.cfd
 doableshuttercrate.com
-doc.e-statements.app
-doc.eagle-web-concept.fr
 docker.pro
 dockvanillaparttime.com
 dockwhip.com

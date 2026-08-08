@@ -35,3 +35,48 @@ func TestPublicFeedFixesStayNarrow(t *testing.T) {
 		}
 	}
 }
+
+// After the first false-positive purge, the surviving critical-severity
+// MalwareHost domains still included six documentation hosts, all published in a
+// PUBLIC STIX feed. Enumerating vendors one at a time keeps losing that race, so
+// the leftmost label is the signal.
+func TestDocSubdomainsAreBenign(t *testing.T) {
+	for _, h := range []string{
+		"docs.n8n.io", "docs.openstack.org", "docs.exodus.com",
+		"docs.automagik.dev", "docs.embedder.com", "docs.rongcloud.cn",
+		"doc.rust-lang.org", "documentation.suse.com",
+		"readthedocs.example.org", "apidocs.example.com",
+	} {
+		if !Benign("domain", h) {
+			t.Errorf("Benign(domain, %q) = false — a documentation host publishes as a malicious indicator", h)
+		}
+	}
+}
+
+// The rule must need a real subdomain: a two-label host called "docs.<tld>" is a
+// registrable name, not a documentation subdomain, and must not be allowed.
+func TestDocRuleRequiresASubdomain(t *testing.T) {
+	for _, h := range []string{"docs.io", "doc.ai", "documentation.co"} {
+		if Benign("domain", h) {
+			t.Errorf("Benign(domain, %q) = true — a two-label host is registrable, not a docs subdomain", h)
+		}
+	}
+	// A non-docs subdomain on an unknown domain is still an indicator.
+	for _, h := range []string{"cdn.evil-drop.top", "c2.attacker.net", "loginbp.ggpolarbear.com"} {
+		if Benign("domain", h) {
+			t.Errorf("Benign(domain, %q) = true — genuine indicators must survive", h)
+		}
+	}
+}
+
+// Survivors added explicitly, each published at critical before this change.
+func TestPurgeSurvivorsAllowlisted(t *testing.T) {
+	for _, h := range []string{
+		"alpinejs.dev", "contributor-covenant.org",
+		"chatapi.viber.com", "api.devnet.solana.com", "api.testnet.solana.com",
+	} {
+		if !Benign("domain", h) {
+			t.Errorf("Benign(domain, %q) = false", h)
+		}
+	}
+}

@@ -199,6 +199,16 @@ var genericServiceHosts = map[string]bool{
 	"api.replicate.com": true, "replicate.com": true,
 	"ollama.com": true, "registry.ollama.ai": true,
 
+	// ── Survivors of the first FP purge that are plainly legitimate ──────────
+	// All were published at severity critical. alpinejs.dev is Alpine.js's own
+	// site; contributor-covenant.org is the code-of-conduct text every other
+	// project links to; chatapi.viber.com is a messaging API in the same category
+	// as api.telegram.org and discord.com, both already listed; the Solana RPC
+	// endpoints are public test networks.
+	"alpinejs.dev": true, "contributor-covenant.org": true,
+	"chatapi.viber.com": true, "viber.com": true,
+	"api.devnet.solana.com": true, "api.testnet.solana.com": true,
+
 	// ── Tool vendors whose docs hosts were being published as malicious ──────
 	// docs.astral.sh (uv / ruff documentation) was exported at severity critical
 	// into the PUBLIC malscan-stix feed. Listed as the registrable name so the
@@ -266,9 +276,30 @@ var benignHostSuffixes = []string{
 
 // Domain reports whether host is a benign (non-IOC) domain. The comparison is
 // case-insensitive and tolerant of a trailing root dot and a :port suffix.
+// docSubdomainLabels are leftmost labels that mark a documentation site.
+//
+// Evidence for treating these as benign: after the first false-positive purge,
+// the surviving critical-severity MalwareHost domains still included
+// docs.n8n.io, docs.openstack.org, docs.exodus.com, docs.automagik.dev,
+// docs.embedder.com and docs.rongcloud.cn — six documentation hosts published as
+// critical malware indicators in a PUBLIC STIX feed. Enumerating vendors one at a
+// time does not scale and keeps losing that race; the subdomain is the signal.
+//
+// The trade is deliberate and asymmetric: a docs. host on an attacker domain would
+// be allowed, but we publish these indicators publicly, so wrongly accusing a real
+// project is the worse error. A genuine payload host is also unlikely to be served
+// from a "docs." name.
+var docSubdomainLabels = map[string]bool{
+	"docs": true, "doc": true, "documentation": true,
+	"readthedocs": true, "devdocs": true, "apidocs": true,
+}
+
 func Domain(host string) bool {
 	h := normHost(host)
 	if h == "" || exampleDomains[h] {
+		return true
+	}
+	if labels := strings.Split(h, "."); len(labels) >= 3 && docSubdomainLabels[labels[0]] {
 		return true
 	}
 	if genericServiceHosts[h] {
