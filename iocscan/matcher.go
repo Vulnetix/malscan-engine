@@ -205,7 +205,8 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 			// Reject only tokens that were never an address — a literal that a real
 			// C2 could not inhabit. Anything that COULD be a malicious endpoint
 			// (including IPv4-mapped IPv6 like ::ffff:1.2.3.4) is kept for matching.
-			if ipv4InSlashVersion(s, loc[0]) || ipv4InSVGGeometry(s, loc[0]) {
+			if ipv4InSlashVersion(s, loc[0]) || ipv4InSVGGeometry(s, loc[0]) ||
+				ipv4InVersionConstraint(s, loc[0]) {
 				continue
 			}
 			ipStr := s[loc[0]:loc[1]]
@@ -271,6 +272,50 @@ func ipv4InSlashVersion(s string, start int) bool {
 
 func isASCIILetter(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+}
+
+// ipv4InVersionConstraint reports whether the dotted-quad at s[start:] is the version
+// operand of a dependency constraint — `opencv-python>=4.13.0.92`, `^1.2.3.4`,
+// `~=4.10.0.82`, `v4.10.0.82`. A four-segment version is ordinary in Python, .NET and
+// Java packaging, and octet-range heuristics cannot separate it from an address:
+// allow.VersionLikeIP requires every octet <= 31, so 4.13.0.92 and 4.10.0.82 sail past
+// it and get looked up as network endpoints.
+//
+// Measured on production 2026-08-08: IOC-STIX-MATCH was the SOLE evidence for 2,173 of
+// pypi's 8,058 malware mints, and sampled matches included
+// `"opencv-python>=4.13.0.92",` in a setup.py install_requires list, described as
+// "Malicious IP address 4.10.0.82". A version pin is not a connection.
+//
+// Deliberately narrow, because `=` alone is how configuration assigns a real host:
+// a bare `SERVER=1.2.3.4` or `host: 1.2.3.4` is still matched. Only a genuine
+// comparison operator counts — one of >= <= == != ~= ^= or a bare > < ~ ^ — or a `v`
+// version marker that is not itself part of a word. A C2 address is never written
+// `>=1.2.3.4`.
+func ipv4InVersionConstraint(s string, start int) bool {
+	i := start
+	for i > 0 && (s[i-1] == ' ' || s[i-1] == '\t') {
+		i--
+	}
+	if i == 0 {
+		return false
+	}
+	switch c := s[i-1]; c {
+	case '>', '<', '~', '^':
+		return true
+	case '=':
+		// Require a two-character comparison operator so plain assignment of a real
+		// address is untouched.
+		return i >= 2 && strings.ContainsRune("=><~!^", rune(s[i-2]))
+	case 'v', 'V':
+		return i == 1 || !isVersionWordChar(s[i-2])
+	}
+	return false
+}
+
+// isVersionWordChar reports whether c would make a preceding `v` part of a word
+// (so "rev4.10.0.82" is not read as a version marker).
+func isVersionWordChar(c byte) bool {
+	return isASCIILetter(c) || (c >= '0' && c <= '9') || c == '_'
 }
 
 // svgGeometryAttrs open an SVG vector-geometry attribute whose value is pure
