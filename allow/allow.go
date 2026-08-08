@@ -198,6 +198,12 @@ var genericServiceHosts = map[string]bool{
 	"huggingface.co": true, "api-inference.huggingface.co": true, "hf.co": true,
 	"api.replicate.com": true, "replicate.com": true,
 	"ollama.com": true, "registry.ollama.ai": true,
+
+	// ── Tool vendors whose docs hosts were being published as malicious ──────
+	// docs.astral.sh (uv / ruff documentation) was exported at severity critical
+	// into the PUBLIC malscan-stix feed. Listed as the registrable name so the
+	// suffix match covers docs. and any other subdomain.
+	"astral.sh": true,
 	"bedrock-runtime.us-east-1.amazonaws.com": true,
 
 	// ── Public DNS resolvers ─────────────────────────────────────────────────
@@ -387,6 +393,12 @@ var codeIdentSLDs = map[string]bool{
 	// commit.author.email, package.maintainer.email, git.user.email. These make
 	// the label before a code-colliding gTLD recognisable as a property access
 	// rather than a registrable name.
+	// Decorator and CLI-builder identifiers: "@click.group" is Click's command
+	// decorator, and it was published as the malicious domain "click.group" at
+	// severity critical in the public malscan-stix feed. Same shape as
+	// "command.group" and "option.group".
+	"click": true, "command": true, "option": true, "argument": true,
+	"flag": true, "param": true, "subcommand": true,
 	"author": true, "user": true, "maintainer": true, "owner": true,
 	"committer": true, "sender": true, "recipient": true, "contact": true,
 	"notification": true, "publisher": true,
