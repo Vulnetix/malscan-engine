@@ -83,6 +83,19 @@ type FeedLoader struct {
 	TweetFeedTimeout time.Duration
 	DisableTweetFeed bool
 
+	// DisableVulnetixIndex skips the vulnetix STIX index (DefaultIndexURL) and its
+	// per-ecosystem feeds, while still loading the embedded badnet set and
+	// TweetFeed.
+	//
+	// This exists for the project that PUBLISHES that index. vdb-manager generates
+	// https://vulnetix.com/malscan-stix/ from its own MalwareHost/MalwareIoc rows;
+	// if its processors then read the same index back through this loader, an
+	// indicator it published becomes "third-party known-bad" evidence for its own
+	// next scan, and a single false positive is self-confirming. For any OTHER
+	// consumer the index genuinely is third-party, which is why it stays the
+	// default and this is opt-out rather than opt-in.
+	DisableVulnetixIndex bool
+
 	// now is a test seam for the clock; nil means time.Now. It governs both the
 	// timestamp encoded into a new cache filename and the freshness comparison.
 	now func() time.Time
@@ -189,23 +202,26 @@ func (l *FeedLoader) Refresh(ecosystems ...string) ([]Warning, error) {
 func (l *FeedLoader) load(forceFresh, wantAll bool, ecosystems ...string) (*IndicatorSet, []Warning, error) {
 	var warnings []Warning
 
-	idxData, w, err := l.acquire("index", l.indexURL(), "", l.ttl(), l.httpClient(), forceFresh)
-	if err != nil {
-		return nil, warnings, fmt.Errorf("load stix index: %w", err)
-	}
-	if w != nil {
-		warnings = append(warnings, *w)
-	}
-
 	var idx Index
-	if err := json.Unmarshal(idxData, &idx); err != nil {
-		return nil, warnings, fmt.Errorf("parse stix index: %w", err)
+	if !l.DisableVulnetixIndex {
+		idxData, w, err := l.acquire("index", l.indexURL(), "", l.ttl(), l.httpClient(), forceFresh)
+		if err != nil {
+			return nil, warnings, fmt.Errorf("load stix index: %w", err)
+		}
+		if w != nil {
+			warnings = append(warnings, *w)
+		}
+		if err := json.Unmarshal(idxData, &idx); err != nil {
+			return nil, warnings, fmt.Errorf("parse stix index: %w", err)
+		}
 	}
 
 	wanted := wantedEcosystems(ecosystems)
 	set := NewIndicatorSet()
 	feedFailures := 0
 
+	// idx.Feeds is empty when the index is disabled, so this loop is skipped and
+	// the set keeps only the embedded badnet plus TweetFeed below.
 	for _, feed := range idx.Feeds {
 		if !wantAll && !wanted[feed.Ecosystem] {
 			continue
