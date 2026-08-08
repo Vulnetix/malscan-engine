@@ -129,6 +129,15 @@ func TestPHPAssertVarBoundary(t *testing.T) {
 		"custom suffix":  "<?php my_assert($x);",
 		"variable fn":    "<?php $assert($x);",
 		"phpunit equals": "<?php $this->assertEquals($a, $b);",
+		// Boolean invariants, the standard psalm/phpstan idiom. Production
+		// 2026-08-08: PHP-ASSERT-VAR was the sole evidence for 665 packagist mints
+		// and a replay showed 126 of 150 matched lines still firing after the
+		// boundary fix, because that fix addressed the callee, not the argument.
+		"instanceof":      "<?php assert($iterator instanceof \\Iterator);",
+		"identity":        "<?php assert($response->getStatusCode() === 204);",
+		"negated compare": "<?php assert($count !== 0);",
+		"is_ function":    "<?php assert(is_string($name));",
+		"boolean and":     "<?php assert($a && $b);",
 	}
 	for name, src := range quiet {
 		t.Run("quiet/"+name, func(t *testing.T) {
@@ -140,6 +149,8 @@ func TestPHPAssertVarBoundary(t *testing.T) {
 	}
 
 	loud := map[string]string{
+		// A bare variable is the shape that could carry a code string — PHP 7's
+		// assert('...') eval sink — so it must still fire.
 		"bare call":       "<?php assert($code);",
 		"after semicolon": "<?php $x = 1; assert($code);",
 		"with space":      "<?php assert ($code);",

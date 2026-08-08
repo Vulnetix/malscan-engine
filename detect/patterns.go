@@ -210,9 +210,32 @@ func suppressLine(id, line string) bool {
 		return suppressNonRoutableIPURL(id, line)
 	case "PHP-SHELL-EXEC-VAR":
 		return phpFunctionDeclRe.MatchString(line)
+	case "PHP-ASSERT-VAR":
+		return phpAssertBooleanRe.MatchString(line)
 	}
 	return false
 }
+
+// phpAssertBooleanRe matches an assert() whose argument is plainly a boolean
+// expression rather than a string of code.
+//
+// PHP-ASSERT-VAR exists for the historical eval sink: assert('$code') evaluated a
+// STRING as PHP. Passing an expression never did that, and string assert was removed
+// outright in PHP 8. Meanwhile `assert($x instanceof Foo)` is the standard way
+// psalm/phpstan-annotated code states an invariant, and it compiles to nothing when
+// zend.assertions is off.
+//
+// Measured on production 2026-08-08: PHP-ASSERT-VAR was the SOLE evidence for 665 of
+// packagist's malware mints, and a replay of the lines it matched showed 126 of 150
+// still firing after the earlier boundary fix — because that fix only addressed
+// $obj->assert() and Foo::assert(), not the argument. The sampled lines were
+// `assert($response->getStatusCode() === 204);` and `assert($iterator instanceof
+// \Iterator);`.
+//
+// A bare `assert($code)` with no operator still fires: that is the shape that could
+// carry a code string.
+var phpAssertBooleanRe = regexp.MustCompile(
+	`assert\s*\(\s*\$[^)]*?(instanceof|===|!==|==|!=|>=|<=|&&|\|\||->|::|\bis_[a-z_]+\s*\(|\bcount\s*\(|\bin_array\s*\()`)
 
 // IsCommentLine reports whether a line is a comment — text the interpreter never
 // executes.

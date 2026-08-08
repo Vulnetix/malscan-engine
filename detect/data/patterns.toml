@@ -317,7 +317,16 @@ override_gate = false
 # System reconnaissance
 [[pkgbuild_analysis]]
 id = "P-SYSINFO-RECON"
-pattern = '(\buname\s+-a|\bcat\s+/proc/cpuinfo|\blspci|\bip\s+addr|\bhostname\s+-[fI]|\bcat\s+/etc/machine-id|\bdmidecode)'
+# `\bip\s+addr` matched the English phrase "ip address", because "addr" is a prefix
+# of "address" and nothing required a boundary after it. Measured on production
+# 2026-08-08: this rule was the SOLE evidence for 189 packagist and 68 pypi malware
+# mints, on lines like `throw new \InvalidArgumentException('Invalid ip address');`
+# and `'Argument "%s" is invalid. Must enter a string (valid ip address).'` — input
+# validation messages, in packages that validate IP addresses for a living.
+# `\bip\s+addr\b` keeps the iproute2 command (`ip addr`, `ip addr show`) while
+# rejecting the prose, and the explicit `ip address <subcommand>` alternative keeps
+# the long form of the real command, which the boundary alone would have dropped.
+pattern = '(\buname\s+-a|\bcat\s+/proc/cpuinfo|\blspci|\bip\s+addr\b|\bip\s+address\s+(show|add|del|flush|list)\b|\bhostname\s+-[fI]|\bcat\s+/etc/machine-id|\bdmidecode)'
 points = 40
 description = "System information gathering (reconnaissance)"
 override_gate = false
