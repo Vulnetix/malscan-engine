@@ -56,3 +56,44 @@ func assertFindingPresent(t *testing.T, findings []Finding, id string) {
 	}
 	t.Fatalf("expected %s finding, got %v", id, ids(findings))
 }
+
+// A rule written for one language must not judge another. Without ecosystem
+// scoping the Rust build.rs rules ran against npm packuments, which is how
+// chalk and thirteen other npm packages were reported as malware.
+func TestCargoRulesDoNotApplyToNpm(t *testing.T) {
+	rust := `let body = reqwest::blocking::get("https://example.com/x")?;`
+
+	npm := Detect(&PackageContext{
+		Name: "legit", Ecosystem: "npm", InstallScriptContent: rust,
+	})
+	assertFindingAbsent(t, npm, "P-CARGO-BUILD-DOWNLOAD")
+
+	// ...but it must still fire where it belongs.
+	cargo := Detect(&PackageContext{
+		Name: "evil", Ecosystem: "cargo", InstallScriptContent: rust,
+	})
+	found := false
+	for _, f := range cargo {
+		if f.ID == "P-CARGO-BUILD-DOWNLOAD" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("P-CARGO-BUILD-DOWNLOAD must still fire for cargo")
+	}
+
+	// An unscoped rule is unaffected, and an unknown ecosystem still runs
+	// everything rather than silently skipping detection.
+	any := Detect(&PackageContext{
+		Name: "evil", Ecosystem: "", InstallScriptContent: rust,
+	})
+	found = false
+	for _, f := range any {
+		if f.ID == "P-CARGO-BUILD-DOWNLOAD" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("an unspecified ecosystem must not disable scoped rules")
+	}
+}

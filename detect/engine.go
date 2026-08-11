@@ -26,22 +26,22 @@ func Detect(ctx *PackageContext) []Finding {
 
 	if ctx.PkgbuildContent != "" {
 		if ctx.capEnabled(CapManifestPatterns) {
-			f = matchSection(ctx.PkgbuildContent, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, f)
+			f = matchSection(ctx.PkgbuildContent, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapSourceURLPatterns) {
-			f = matchSection(ctx.PkgbuildContent, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, f)
+			f = matchSection(ctx.PkgbuildContent, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapGTFObins) {
-			f = matchSection(ctx.PkgbuildContent, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, f)
+			f = matchSection(ctx.PkgbuildContent, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapShellObfuscation) {
 			f = append(f, analyzeShell(ctx.PkgbuildContent, "", "")...)
 		}
 	}
 	if ctx.InstallScriptContent != "" && ctx.capEnabled(CapInstallScript) {
-		f = matchSection(ctx.InstallScriptContent, "install_script_analysis", "install", "", true, f)
+		f = matchSection(ctx.InstallScriptContent, "install_script_analysis", "install", "", true, ctx.Ecosystem, f)
 		if ctx.capEnabled(CapGTFObins) {
-			f = matchSection(ctx.InstallScriptContent, "gtfobins_analysis", "gtfobins", "IS-", true, f)
+			f = matchSection(ctx.InstallScriptContent, "gtfobins_analysis", "gtfobins", "IS-", true, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapShellObfuscation) {
 			f = append(f, analyzeShell(ctx.InstallScriptContent, "IS-", "(in install script)")...)

@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13579
+# count: 13581
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -8459,6 +8459,7 @@ mufflerauracotton.com
 mugrikees.com
 muisjes.com
 mujerlunabella.net
+mukabar.co.mz
 mukmnvwls.101motorsports.net
 muledo.com
 multa-dgt.com
@@ -10655,6 +10656,7 @@ screechdeprivescatter.com
 screwoffensivebanter.com
 scrollcrush.com
 scrollpay.live
+scrroeder.com
 sctawfw.1xgame.games
 sculptorpreventionnewspapers.com
 sculpturelooking.com

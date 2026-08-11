@@ -36,6 +36,12 @@ type patternRule struct {
 	// it stops firing on npm/pypi/etc. declarative manifests (the P-HTTP-SOURCE /
 	// P-RAW-IP-URL false positives).
 	PkgbuildOnly bool `toml:"pkgbuild_only"`
+	// Ecosystems scopes a rule to the ecosystems it was written for. Empty (the
+	// default, and the case for almost every rule) means it runs everywhere.
+	// Set it whenever a pattern encodes one language's idioms — a Rust build.rs
+	// call, an npm lifecycle hook — because callers such as the package firewall
+	// run every detector against every ecosystem's metadata.
+	Ecosystems []string `toml:"ecosystems"`
 }
 
 // compiledPattern is a runtime-ready rule.
@@ -47,6 +53,27 @@ type compiledPattern struct {
 	overrideGate bool
 	hookOnly     bool
 	pkgbuildOnly bool
+	ecosystems   map[string]bool // empty = every ecosystem
+}
+
+// appliesTo reports whether the rule should run for this ecosystem. A rule with
+// no ecosystems listed runs everywhere, which keeps every existing rule
+// behaving exactly as before.
+//
+// Without this, a rule written for one language judged every other: the Rust
+// build.rs rule P-CARGO-BUILD-DOWNLOAD reported chalk, eslint, moment and eleven
+// more npm packages as "build.rs downloads a remote resource at build time",
+// because the package firewall feeds a registry packument through the same
+// detectors and nothing said which language a rule was about.
+func (p compiledPattern) appliesTo(eco string) bool {
+	if len(p.ecosystems) == 0 {
+		return true
+	}
+	if eco == "" {
+		// Caller did not say. Run the rule rather than silently skip detection.
+		return true
+	}
+	return p.ecosystems[strings.ToLower(strings.TrimSpace(eco))]
 }
 
 var (
@@ -72,10 +99,18 @@ func loadPatterns() {
 					skippedPatterns = append(skippedPatterns, r.ID)
 					continue
 				}
+				var ecos map[string]bool
+				if len(r.Ecosystems) > 0 {
+					ecos = make(map[string]bool, len(r.Ecosystems))
+					for _, e := range r.Ecosystems {
+						ecos[strings.ToLower(strings.TrimSpace(e))] = true
+					}
+				}
 				patternsBySection[section] = append(patternsBySection[section], compiledPattern{
 					id: r.ID, re: re, points: r.Points,
 					description: r.Description, overrideGate: r.OverrideGate,
 					hookOnly: r.HookOnly, pkgbuildOnly: r.PkgbuildOnly,
+					ecosystems: ecos,
 				})
 			}
 		}
@@ -117,10 +152,16 @@ const evidenceThreshold = 40
 // whether content auto-executes at build/install time (an install hook, or a
 // PkgbuildContent the caller flagged PkgbuildExecutes). hook_only patterns found
 // outside such a surface are demoted to ClassContext corroboration.
-func matchSection(content, section, category, idPrefix string, inHookSurface bool, findings []Finding) []Finding {
+func matchSection(content, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
 	loadPatterns()
 	pkgbuildLike := inHookSurface || looksLikePkgbuild(content)
 	for _, p := range patternsBySection[section] {
+		// An ecosystem-scoped rule is meaningless elsewhere. Checked before the
+		// regex so a scoped rule costs nothing on the ecosystems it does not
+		// apply to.
+		if !p.appliesTo(eco) {
+			continue
+		}
 		if p.re.MatchString(content) {
 			// PKGBUILD-source-hygiene rules carry no signal on a declarative
 			// (non-PKGBUILD, non-hook) manifest — skip them entirely there.

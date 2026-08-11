@@ -1984,6 +1984,7 @@ override_gate = false
 
 [[install_script_analysis]]
 id = "P-CARGO-BUILD-PROCESS-EXEC"
+ecosystems = ["cargo"]
 pattern = '(std::process::Command|Command::new)\s*\('
 points = 30
 description = "build.rs spawns a process at build time (std::process::Command)"
@@ -1991,6 +1992,7 @@ override_gate = false
 
 [[install_script_analysis]]
 id = "P-CARGO-BUILD-SHELL"
+ecosystems = ["cargo"]
 pattern = '(Command::new|process::Command)[^\n]{0,60}(sh|bash|cmd|powershell)'
 points = 50
 description = "build.rs invokes a shell at build time (download-and-execute vector)"
@@ -1998,6 +2000,7 @@ override_gate = true
 
 [[install_script_analysis]]
 id = "P-CARGO-BUILD-DOWNLOAD"
+ecosystems = ["cargo"]
 # The second branch used to be a bare `https?://...\.(sh|ps1|exe|bin)`, which has
 # nothing to do with Rust or build.rs. Pattern rules carry no ecosystem filter, so
 # every rule runs against every ecosystem's content: that branch matched any
@@ -2014,6 +2017,7 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-RUST-INCLUDE-BYTES-DECODE"
+ecosystems = ["cargo"]
 pattern = 'include_bytes!\s*\([^\n]{0,200}(base64|from_hex|xor|decrypt)'
 points = 40
 description = "embedded byte blob paired with a runtime decoder (obfuscated payload)"
@@ -2021,6 +2025,7 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-RUST-ENV-EXFIL"
+ecosystems = ["cargo"]
 pattern = 'std::env::var(_os)?\s*\([^\n]{0,80}(reqwest|ureq|TcpStream|UdpSocket)'
 points = 35
 description = "reads an environment variable then contacts the network (secret exfil)"
