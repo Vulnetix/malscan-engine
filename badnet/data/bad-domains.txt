@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13561
+# count: 13579
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -124,6 +124,7 @@
 2c236979-b1bb-4c7a-915c-df74dbad0d8c.s3.ap-northeast-2.amazonaws.com
 2d-plus.com
 2ffuyto6.taktikbet.bio
+2goelectricity.co.za
 2i2joe5h.aviatorfly.casino
 2lhhe5ae.1xfa.bio
 2linkfast.com
@@ -789,6 +790,7 @@ aloyogacz.com
 aloyogairelandstore.com
 aloyogaturkey.com.tr
 alphabetmondayfowl.com
+alphalkenya.com
 alrightconsulatevarying.com
 alrightkindergarten.com
 alsoextraorduki.info
@@ -959,6 +961,7 @@ apebuildingchurchill.com
 apeobservedoverlook.com
 apexcucumber.com
 apexdataserver4.sbs
+api.mineblack.lol
 api.recapcha.space
 api.socialsearchconverter.com
 apieceskilful.com
@@ -2510,6 +2513,7 @@ chceshi001.com
 cheapendeliquencydeliquencytry.com
 cheapjerseys.online
 cheapnikeshoes.com
+cheatclients.com
 cheaterx.com
 check-it-out-first.com
 check-me.online
@@ -4276,6 +4280,7 @@ dublinelectrical.com
 dubsteadily.com
 duck-fondmoan.xyz
 duckedknown.com
+duct-master.com
 ducusign.com
 dudleyspirittoaster.com
 duel-gulp-luck.xyz
@@ -4359,6 +4364,7 @@ eastgruff.com
 easy-sex-dates.com
 easy-vpnaccess.com
 easybrand.vn
+easycryptos.org
 easydisplay.no
 easygoingfacultativespoil.com
 easyprivacyconnect.com
@@ -6583,6 +6589,7 @@ illustrationcompute.com
 illustrationnonstopenthusiastic.com
 illustrationpitcherbooklet.com
 illustrationserenityurgently.com
+iloveboats.st
 imageshake.de
 imaginationhumiliate.com
 imbulk.com
@@ -7861,6 +7868,7 @@ maidforyou1985.com
 maidlatepreviously.com
 mail.dns2.vendasptg.com
 mail.pagar10.vendasptg.com
+mail.quietsurfwi.help
 mailglobalsbg.com
 mailify.cc
 maimawesometoothbrush.com
@@ -8158,6 +8166,7 @@ metateress.com
 metaversesystemtime.com
 mete-bella.click
 meteog2.com
+meteorclient.shop
 meteorheadphonesbite.com
 metozemoon.com
 metretravelled.com
@@ -9807,6 +9816,7 @@ privateprotectcloud.com
 privatesecurenet.com
 privatethrill.com
 privilegedepartmentstoll.com
+privrawmirai.privnetwork.tech
 prize-claim-now.com
 prize-collecting-site.com
 prizerush.life
@@ -10024,6 +10034,7 @@ quickbooks-ultimate-downloadtool.github.io
 quickdomainfwd.com
 quickfindresults.com
 quickieirritate.com
+quietsurfwi.help
 quiksilver-canada.com
 quiksilver-southafrica.com
 quiltblazing.com
@@ -10768,6 +10779,7 @@ sendingauspost.today
 sendpost.today
 sendrafrance.com
 sengly.org
+seniorsushi.com
 senjakala.com
 sensationalconnote.com
 sentencekillerdrift.com
@@ -10918,6 +10930,7 @@ sidesteamroll.com
 siftclaptendency.com
 sigmajobsearch.com
 sigmareg.com
+signageinsignia.co.za
 signal-routing-framework.christmas
 signalinvestorcarbonate.com
 signedapprovals.com
@@ -11562,6 +11575,7 @@ system-wave-kit.github.io
 systemengagedwisely.com
 systemnetworkroute.com
 systemsnotifications.com
+sysupdate.online
 szexi.com
 sznude.com
 t.tonightshookup.com
@@ -12307,6 +12321,7 @@ triadpollutionenvious.com
 tributeattentions.com
 tributerevokeliking.com
 trickoldteacher.com
+triflackcom.com
 trifleboxofficeatrocious.com
 triflecardslouse.com
 triggersenjoymentflinch.com
@@ -12678,6 +12693,7 @@ verb-fowl-old.xyz
 verbcardinal.com
 verbsireblew.xyz
 verdienst-umfragen.com
+verdiva.life
 verfutbolgratisonline.com
 verificationcenter.top
 verify-needed.com
@@ -12812,6 +12828,7 @@ voidgame.cc
 voidmaple.com
 vollares.com
 volleyballsuccessor.com
+voltagec2.tech
 voltejeasteis.click
 voocaroo.com
 voraciousdutylover.com
@@ -12878,6 +12895,7 @@ wa-telegren.org
 wackel-dackel.com
 wadbrnz.1xx.games
 waermepumpe-iwp.de
+waf.proxytunnel.co
 wageinsane.com
 waggonerfoulpillow.com
 wagxbxx.ac90bet.net
