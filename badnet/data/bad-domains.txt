@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13581
+# count: 13605
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -596,6 +596,7 @@ aepbestdeals.click
 aepbestdiscounts.click
 aepdeals.click
 aepdiscounts.click
+aeplled.cfd
 aerepostal.com
 aergerforum.de
 affair18.de
@@ -1930,6 +1931,7 @@ bothers.com
 botherwhilebananas.com
 bothgiggle.com
 bothpersonality.com
+botnet.botnet.xd.67.flightleaks.xyz
 botswanapostt.com
 bottleapply.com
 bottlecapgames.com
@@ -3489,6 +3491,7 @@ darknesstrace.com
 darksincenightclub.com
 darliingdating.com
 darlingdatiing.com
+dasberlinerhotel.com
 dasdaily.com
 dashedpavilion.com
 dashingherebyforeigner.com
@@ -4677,6 +4680,7 @@ espionagedisqualify.com
 essayzon.com
 essencewidow.com
 essentialpomegranate.com
+essizs.com
 establishanymore.com
 establishmenttoenailinside.com
 estatesectcoolest.com
@@ -5168,6 +5172,7 @@ flockregarding.com
 flockthoughtfulnestle.com
 flogemigrant.com
 flooddimlylens.com
+flooriscoveringworld.com
 floormakers.com
 flora-monitoring-core.garden
 floralincreasinglysuperserver.com
@@ -5455,6 +5460,7 @@ frownfirsthand.com
 frozemodeamorous.com
 frozeroadfeint.com
 frqbuzgo.bingobet.bingo
+frtkvnpa.xyz
 frugalfriends.com
 frugalityerevarnish.com
 frugalityevadeenterprising.com
@@ -5733,6 +5739,7 @@ glassbroth.com
 glassdoir.com
 glasssoor.com
 glazeobliteratetoys.com
+glbeletronica.com.br
 glcsrv.com
 gleamcalumnygeneralize.com
 glimpsedimebodyguard.com
@@ -7106,6 +7113,7 @@ jogglespectacularmatrimony.com
 johanwaller.info
 johnknowshemorhoidscary.com
 join-google-meet.com
+joker.aec944b68370194a50.link
 jokingbeatingresign.com
 jollydeductsummon.com
 jollyproficient.com
@@ -7809,6 +7817,7 @@ lunggrandfatherhedge.com
 lurahosting.com.br
 lusciousdemocraticsnuff.com
 lutherancommunitygrace.net
+luxcar-24.com
 luxerycard.com
 luxuryfurnishing.biz
 luxuryonward.com
@@ -7886,6 +7895,7 @@ makisushi.net
 makler.pro
 makriousbishop.com
 maladie-espace.info
+malaysianpastrybakery.org
 male-martloss.xyz
 maledisappointingscholarship.com
 maliciouscolognehorrid.com
@@ -8022,6 +8032,7 @@ mays.world
 mazeduskloud.xyz
 mb1-cdn.com
 mb223.com
+mbcasesores.com
 mbenzusa.com
 mbifcxdz.careeriran.ir
 mbsrv2.com
@@ -8078,6 +8089,7 @@ mediateclement.com
 mediationcenter.com
 mediatrknow.xyz
 medication.coupons
+medicosantiagomarrero.com
 medicower.online
 medigov.com
 meditation.net
@@ -8198,6 +8210,7 @@ midgetgravelshorthand.com
 midiuser.net
 midlandcultivatecoherence.com
 midlanddisorganizeddivide.com
+midle-eastcompany.com
 midsummertuesdaydistress.com
 midwifemother.com
 mie.world
@@ -8273,6 +8286,7 @@ mlbbraves.pro
 mlbfanstore.com
 mmbti.com
 mmrafricanfashions.com
+mnurlogistics.az
 moadoopsouwhast.net
 moan-prod-did.xyz
 moandownsave.xyz
@@ -8468,6 +8482,7 @@ multiplylonesomepigeons.com
 multiquality.tech
 multitudesayingfrequency.com
 mundocarnes.cl
+munihuacho.gob.pe
 mura.info
 muralattentive.com
 muriaspetin.es
@@ -9288,6 +9303,7 @@ parkcrestinn.com
 parket.store
 parkinglights.com
 parookaville-ticket.pages.dev
+parquelosencinos.cl
 parsleymain.com
 part-doselawn.xyz
 part-lame-door.xyz
@@ -11377,6 +11393,7 @@ stp12.zabanenglishanari.xyz
 stqdx.gominhabjj.com
 straitpaltrybelief.com
 strangelygroundless.com
+stratagemzw.com
 strawberryexperiment.com
 streamcolumnistgot.com
 streamfavourpage.com
@@ -11646,6 +11663,7 @@ tardytoosled.com
 targetedtv.org
 tariffartistpeal.com
 tariffprovisionalbitterness.com
+tarkioweb.com
 tarquiniagroup.com
 taskcatalyst.com
 taskconcealbreathe.com
@@ -11898,6 +11916,7 @@ temperaturetwit.com
 temperconceited.com
 temperusersfinishing.com
 templar.network
+ten.devurek.xyz
 tenantwailedshudder.com
 tenderlyvenue.com
 tendnone-heel.xyz
@@ -12194,6 +12213,7 @@ torrybirch.com
 toshibatec.de
 totadblock.com
 totaladblocker.xyz
+totalfitting.com.au
 totalinsuranceoffers.com
 totalwebshield.com
 totalwebshield.xyz
@@ -12367,6 +12387,7 @@ trpttgovqs.icu
 trtmyanmar.com
 trttv.com
 true-gategrin.xyz
+trueinggrik.com
 trumops.com
 trupoynt.com
 trust-localdata.com
@@ -12458,6 +12479,7 @@ tzpzc.com
 u2bviews.com
 u5xjkopi.1xbetpartnersiran.com
 u6ggk611.elizabethspizzadenton.com
+u87yy3f87b23f8293bfg83bgu94.bombamodzik.xyz
 u9gcj5sd.oxiidbet.com
 uaat6cni.bet1yek1.bet
 uafu.fadedfractal.com
@@ -13240,6 +13262,7 @@ wwindstream.net
 wwo-telegram.com
 wwopenclick.club
 wwv-telegram.com
+www-connect-secure-wellcfargo.sekolahkejarpaket.com
 www-samsclub.com
 www.ardguisser.com
 www.astenterprises.com.pk
@@ -13292,6 +13315,7 @@ www.springhillmontessori.com
 www.ss-01.com
 www.starcountry.net
 www.steamrub.com
+www.stratagemzw.com
 www.support-data.com
 www.tdejb.com
 www.tecunonline.com
