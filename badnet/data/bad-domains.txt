@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13613
+# count: 13617
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -8715,6 +8715,7 @@ newsgate.biz
 newsjump.xyz
 newsmaven.xyz
 newspaperconvicted.com
+newstan.online
 newstrend1.com
 newsvibe.info
 newtabsearch.net
@@ -9892,6 +9893,7 @@ provideoadblocker.com
 provisiondim.com
 prowlcandy.com
 prt-post-ctt.com
+prtsscr.com
 prudencephotograph.com
 prudentborough.com
 prudentialonerealty.com
@@ -12072,6 +12074,7 @@ throbmannerunderestimate.com
 throughoutaboriginesshy.com
 ths.lat
 thtp2.volamngayxua.net
+thu-iphone-07.cfd
 thumbthesishealthy.com
 thumpdrownthreat.com
 thunderoffer.net
@@ -12275,6 +12278,7 @@ tracksvantage.com
 tracktds.site
 tracktracking.com
 trackwebclick.com
+traderhype.com
 tradextrem.com
 traditionallyobjectlessblinked.com
 traditionvaluation.com
