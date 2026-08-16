@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13605
+# count: 13613
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -4131,6 +4131,7 @@ down.54nb.com
 down.fwqlt.com
 down.pcclear.com
 down.qqfarmer.com.cn
+down.unicron-cdn.click
 download.caihong.com
 download.doumaibiji.cn
 download.haozip.com
@@ -7712,6 +7713,7 @@ lolo.sickbeard.com
 lolo.sickcache.com
 loloszod.xyz
 lomejordesalamanca.es
+lomeqpe.com
 londonfinancialadviser.com
 lonelinessboarding.com
 lonelyenumerate.com
@@ -8791,6 +8793,7 @@ nobullespanaoutlet.com
 nockerlpittite.website
 noddingaffordedanne.com
 noddingrunway.com
+nodemetrics3379.com
 nodesjs.org
 noiselesscoarseegoism.com
 noithaticon.vn
@@ -10701,6 +10704,7 @@ searchstarters.com
 searchunique.com
 searchvity.com
 seasonprizeportal.org
+seasquadshipping.com
 sec.dashabi.in
 sec.xiaojiji.nl
 sec.xiaoshabi.nl
@@ -10813,6 +10817,7 @@ sephorajobs.com
 seppy.org
 seputartuban.com
 sequenceinheritancehybrids.com
+serdaregitim.com
 serenitycompute.com
 sergiodiazcoach.com
 serialsonline.net
@@ -11066,6 +11071,7 @@ smashvintage.com
 smearmarch.com
 smfnctms.fifa90.bet
 smildilt.1xjet.pro
+smmnet.store
 smokeboxoffice.com
 smoking-hot.net
 smorgasbordet.com
@@ -13291,6 +13297,7 @@ www.kenwillzltd.com
 www.khavar.com
 www.knockknock.top
 www.konsor.ru
+www.krypton-client.net
 www.massiv.net
 www.medises.co.kr
 www.mobimpex.ro
@@ -13574,6 +13581,7 @@ znnop.frisbeeburgerllc.com
 zodiacirrigateglobal.com
 zoho-books-windows-app.github.io
 zombooru.com
+zonaah.co.uk
 zonaws.com
 zone-pour-too.xyz
 zonedummy.com
