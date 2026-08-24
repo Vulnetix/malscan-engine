@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13617
+# count: 13648
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -64,6 +64,7 @@
 1cqslawq.1xhot.org
 1e2sdyr4.honardartarikh.xyz
 1enzmx.com
+1h.vuregyy1.ru
 1hos.cf
 1hosts.cf
 1log-wellsfargo.serveftp.com
@@ -1312,6 +1313,7 @@ aussie-gamer.com
 austeritybelongingcontrol.com
 australien-embassy.de
 ausupoisteoline.com
+auth2api.site
 authentic-love-hub.com
 authenticupside.com
 authoritativepilgrimwhirlwind.com
@@ -1444,6 +1446,7 @@ bakekneelrecentrecent.com
 baking-stone-thermal-mass.garden
 bakingnotion.com
 bakingnullgrownup.com
+balanced-red-emhnkdfj-dp7g2kvqxx8n.edgeone.dev
 balanceddefensesterile.com
 balancer.sabad724.xyz
 balancerightyuniversal.com
@@ -1844,6 +1847,7 @@ blushingobsession.com
 blusterflintbig.com
 blusterhawspontaneous.com
 blxclaim.net
+bm2contabilidade.com.br
 bmbtrk.site
 bmdcompany.com
 bmgmb.com
@@ -2079,6 +2083,7 @@ brutallyselfevidentmiser.com
 brutalmathematics.com
 brutalobserver.com
 bse.digital
+bserail.com
 bsswift.com
 bt666.com
 btbag8nzdzb.com
@@ -2103,6 +2108,7 @@ buildinpublic.site
 builtpartridgethan.com
 bulbbarbed.com
 bulbpainlessindeed.com
+bulkdevices.com
 bulkyfriend.com
 bulldozer.group
 bulletinmoonoral.com
@@ -2757,6 +2763,7 @@ cloudaccessshield.com
 cloudanonymityhub.com
 cloudbar.org
 cloudbarriersafe.com
+cloudenterprise26.com
 cloudghostdefense.com
 cloudimagehostingupdatesrealted.yzz.me
 cloudmail.ontatio.ca
@@ -2805,6 +2812,7 @@ cockpitconquered.com
 cockydoomsquirt.com
 cocoaclash.com
 cocoafabulous.com
+coconutoficial.com.br
 codepit-rized-denengine.garden
 codlivergaiety.com
 coefficientbreathtakingcounteract.com
@@ -4210,6 +4218,7 @@ dramaticconsequencedigestion.com
 dramaticsuperbmend.com
 dramdare-shop.xyz
 drankglowfigure.com
+drastok.xyz
 drawingsugarnegative.com
 drawpacketlanguage.com
 drbbble.com
@@ -4385,6 +4394,7 @@ ec2-44-192-106-88.compute-1.amazonaws.com
 ec2-52-53-211-120.us-west-1.compute.amazonaws.com
 ec2-54-177-49-112.us-west-1.compute.amazonaws.com
 eccentricchronic.com
+eccmice.com
 eccolabgroup.com
 ecentennialcollege.ca
 echkdia.com
@@ -4866,6 +4876,7 @@ fablewoodland.com
 fabulousmelodramatichoop.com
 faceb00k.com
 facebookhacker.pages.dev
+faceit-anti-cheat.com
 facetspring.com
 facialinconvenienceinadequacy.com
 facilisoft.com
@@ -5151,6 +5162,7 @@ fleshartsyvelvet.com
 fleshbungalowmushy.com
 flewthankpatronize.com
 flexpromeals.com
+flicargo.com
 flickerprobabilityset.com
 flightconsolidator.com
 flightlcub.com
@@ -5498,6 +5510,7 @@ funkysexycool.com
 funmem.com
 funmempu.com
 funnelcominglamp.com
+funneldiy.com
 funnyoffer.com
 funnyvot.com
 furiousfar.com
@@ -5580,6 +5593,7 @@ gardeninvasion.com
 gardenworkflowhub.garden
 garmentdevelop.com
 garndinroad.com
+garogradba.mk
 gaspedpubshake.com
 gastrodocs.info
 gatejesus.com
@@ -7241,6 +7255,7 @@ kdmttk.com
 kdoyvze.megaparii.pro
 kdtrk.net
 kedai.run
+kee126.com
 keejachidoaze.net
 keenshufflewondering.com
 keenspain.es
@@ -8284,6 +8299,7 @@ mixnightclubshare.com
 mizunodeutschland.de
 mjca.fontanayoga.com
 mjinga-frod.github.io
+mkconstructions.net
 mlbbraves.pro
 mlbfanstore.com
 mmbti.com
@@ -8335,6 +8351,7 @@ momentsoflife.com
 mommyarson.com
 mommymicrophone.com
 mompsychopathsudden.com
+mon-blanc-03.cfd
 mon-suivi-bp.com
 monarchdisregard.com
 monarchyjanuarycohere.com
@@ -8565,6 +8582,7 @@ myscence.com
 mysteriousspikeatlas.com
 mysticentangledconfine.com
 mysunywcc.com
+mysura.it
 mytaxi.pro
 mythandmycelium.com
 mytrackshield.com
@@ -9359,6 +9377,7 @@ pausingrespectfully.com
 pavementbluffybluffy.com
 pawpostage.com
 pawsdeceive.com
+pawsockenjoyer.site
 pay-actualizar.com
 pay.aqiu6.com
 paybearer.com
@@ -9518,6 +9537,7 @@ phrix-lnc.com
 physicallysuddenassail.com
 physiquevariabilityreliance.com
 pianisttyranbeach.com
+pic.li
 picchipacchitx.com
 picknewspapers.com
 picme.online
@@ -9555,6 +9575,7 @@ pitfallsubstantial.com
 pittpanthers.store
 pivonoms.net
 pixalance.com
+pixelnoased.com
 pixeltrclink.com
 pizzadelish.com
 pizzanonetheless.com
@@ -9767,6 +9788,7 @@ prabh-njt.com
 practicebyeembezzlement.com
 practicedmarcomaiden.com
 practicepeter.com
+practisingcertificateprotection.com
 praisedbrass.com
 praisednoticemedia.com
 praisepolitenessoriginal.com
@@ -9860,6 +9882,7 @@ producernatreflect.com
 productionai.shop
 professionaldancers.com
 profileobstaclepicture.com
+profitable-pink-0y9btnew-dpk6vqe6eheo.edgeone.dev
 profoundbegrudge.com
 progenyrenderedrestrict.com
 progr4essive.com
@@ -11079,6 +11102,7 @@ smoking-hot.net
 smorgasbordet.com
 smrtsecurelink.com
 smsaar.com
+smsechodata.cc
 smsecuredomain.com
 smsecurepath.com
 smug-graze-omit.xyz
@@ -11120,6 +11144,7 @@ sodapilewall.com
 sofabrew.com
 soft-load.com
 soft-mac-install.github.io
+soft-update.dev
 soft.110route.com
 softcatalog.ru
 softdady.com
@@ -11157,6 +11182,7 @@ solutioncurious.com
 solvusoft.com
 solvv.finance
 sometimescarefullyprosecution.com
+somostask.co
 songoptioncreeper.com
 songsunk-view.xyz
 soonmuff-cob.xyz
@@ -11681,6 +11707,7 @@ tastespillarluke.com
 tastingpeatasterisk.com
 tastingsnoreexceedingly.com
 tatidealgo.com
+tattinamecheap.com
 taxassessment.cyou
 taxbit-download.github.io
 taxifoster.com
@@ -12067,6 +12094,7 @@ thousandfixedlyyawn.com
 thq.com.au
 thrashmerciful.com
 three-hundred-bucks.com
+threedrows.net
 thricepeopleasset.com
 thrilleloquent.com
 thrillingsites.net
@@ -12729,6 +12757,7 @@ verbsireblew.xyz
 verdienst-umfragen.com
 verdiva.life
 verfutbolgratisonline.com
+verification-process.com
 verificationcenter.top
 verify-needed.com
 verify.hashtopoils.org
@@ -13146,6 +13175,7 @@ windeers.com
 windomstatetheater.com
 windowdemiselowlife.com
 windowtinted.com
+winds11.site
 winechaosridiculous.com
 wineglug.com
 winghorrordecency.com
@@ -13423,6 +13453,7 @@ xverikstat.us
 xwlctmz.yek90bet.com
 xxjbypq.takbetkade.com
 xxklt.gamehazarat.bet
+xxpro.dev
 xxx-telegram.com
 xxxmessages.com
 xynro.com

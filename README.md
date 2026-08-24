@@ -175,4 +175,4 @@ all, `Load`/`Scan` returns an error.
   development.
 - `package-firewall` — loads the `badhash` set (embedded + `MalwareIoc`) to gate
   digest-bearing package requests.
-<!-- ci-touch: 2026-08-14T04:04:34Z -->
+<!-- ci-touch: 2026-08-24T13:14:25Z -->
