@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13648
+# count: 13714
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -65,6 +65,7 @@
 1e2sdyr4.honardartarikh.xyz
 1enzmx.com
 1h.vuregyy1.ru
+1h.xeteloi4.ru
 1hos.cf
 1hosts.cf
 1log-wellsfargo.serveftp.com
@@ -464,6 +465,7 @@ actualizar-netflx.com
 actualization.xyz
 actuallypartsspiral.com
 acvwd.lunapizzaco.com
+ad-growth.it.com
 ad4tube.co
 adamdiamond.com
 adaptationfirework.com
@@ -488,6 +490,7 @@ addons.newtabsearch.net
 addressangelaoccasional.com
 addresscake.com
 addresseerosebud.com
+addurltogoogle.com
 adeditiontowritingef.net
 adeptoksuspicion.com
 adexone.com
@@ -734,6 +737,7 @@ alecreapstrategic.com
 alecwarmer.com
 aleinvest.xyz
 alerta-asistencia.com
+alertkitflare.org
 alertme.info
 alertme.org
 alexandermcqueenboty.cz
@@ -793,6 +797,8 @@ aloyogairelandstore.com
 aloyogaturkey.com.tr
 alphabetmondayfowl.com
 alphalkenya.com
+alphapicaficagency.com
+alphasaling.site
 alrightconsulatevarying.com
 alrightkindergarten.com
 alsoextraorduki.info
@@ -1311,6 +1317,7 @@ auspostsending.com
 auspoststatus.today
 aussie-gamer.com
 austeritybelongingcontrol.com
+austinpoolservices.com
 australien-embassy.de
 ausupoisteoline.com
 auth2api.site
@@ -1671,6 +1678,7 @@ bestsafeconnect.com
 bestsecuritysurf.com
 besttdate4you.com
 besttracksafe.com
+bestyofr.store
 betbluebird.com
 betika.live
 betmarino.xyz
@@ -2335,6 +2343,7 @@ cartrigecomplete.com
 cartrigesoftenfritter.com
 carverfowlsmourning.com
 carvisualstrictly.com
+casasmediterraneas.com
 cascadeawful.com
 cascadetraitor.com
 casegenetically.com
@@ -2766,6 +2775,7 @@ cloudbarriersafe.com
 cloudenterprise26.com
 cloudghostdefense.com
 cloudimagehostingupdatesrealted.yzz.me
+clouding17.com
 cloudmail.ontatio.ca
 cloudprivacy-defender.com
 cloudprivacybox.com
@@ -3094,12 +3104,14 @@ cookerypinprickinjured.com
 cookiecliker.com
 cookingcalorie.com
 cool-tik-vids.com
+coolairesgroup.com
 coolbytesgrill.com
 cooloffer.net
 cooperateawardempower.com
 coopermarianneinvolving.com
 coordinatedecompose.com
 coordinatevessel.com
+cootercredit.com
 copeexercisesignificantly.com
 copeweighacclaim.com
 copierconscientious.com
@@ -3112,6 +3124,7 @@ coralreefs.xyz
 coralsands.xyz
 cordglacier.com
 corduntie.com
+core-steady-pack.github.io
 coreldraw-windows-download.github.io
 corkassumedharden.com
 corlmedi.com
@@ -3231,6 +3244,7 @@ crawledgoblet.com
 crayfishharbourgrope.com
 crazy-shopping365.com
 crazy-win-casino.com
+crazy2cdn.com
 crazy8frogz.xyz
 crazycrabreedville.com
 crazynudistbeach.com
@@ -3316,6 +3330,7 @@ crypter00.gt.tc
 crypto.betfakade.com
 cryptomeshforge5.lol
 cryptoqxl.com
+cryptovectorhub1.lol
 cryptowin.onelink.me
 crystaldiskinfo.com
 crystallinks.com
@@ -3329,6 +3344,7 @@ csstudyhub.com
 cstaipas.pt
 cswnawh.accbartar.com
 ct401.com
+cta.edu.pe
 ctrtraffic.com
 ctt-post-prt.com
 ctt-prtpost.com
@@ -3737,6 +3753,7 @@ descenthated.com
 descriptionsupplant.com
 descriptivecoffeehouse.com
 desentupidora.pro.br
+desernk.me
 desertbootshop.com
 desertervacancytutor.com
 desertformoysters.com
@@ -3895,6 +3912,7 @@ diplomasolitaryflirt.com
 diplomaticamazingbazaar.com
 dippegucker.de
 dippingelse.com
+dipre.com.tr
 direccion-general-trafico.com
 directdownloadl.ink
 directedwisdom.com
@@ -3962,6 +3980,7 @@ dishevelleddeviseplucky.com
 dishonoursigningvampire.com
 dishwasherperspire.com
 disk-bask-rusk.xyz
+disk-director.github.io
 disk.accord1key.cn
 disksummitascent.com
 dislikegoshcorrectly.com
@@ -4376,6 +4395,7 @@ easterobsessive.com
 eastgruff.com
 easy-sex-dates.com
 easy-vpnaccess.com
+easyaround.st
 easybrand.vn
 easycryptos.org
 easydisplay.no
@@ -4603,6 +4623,7 @@ enemiesrotund.com
 enemydegradeaspect.com
 enemydreamdelivered.com
 energie-gouv.info
+energieadvimail.nl
 engineerbob.com
 enginepadlock.com
 enginepolicy.com
@@ -4877,6 +4898,7 @@ fabulousmelodramatichoop.com
 faceb00k.com
 facebookhacker.pages.dev
 faceit-anti-cheat.com
+faceit-cdn.org
 facetspring.com
 facialinconvenienceinadequacy.com
 facilisoft.com
@@ -5058,6 +5080,7 @@ filecamedistrustuldistrustul.com
 filehost09.sbs
 fileoasis.net
 fileplanet.com
+filequanticore.com
 filerit.com
 filesgluttony.com
 filezila.com
@@ -5158,6 +5181,7 @@ flavourminefield.com
 fleabutton.com
 fleasteamprominent.com
 fledbeset.com
+fleecykobird.com
 fleshartsyvelvet.com
 fleshbungalowmushy.com
 flewthankpatronize.com
@@ -5206,6 +5230,7 @@ flowerbooms.com
 flowermodels.com
 flowingdeficitjeanne.com
 flowmarriedpressed.com
+flowrdo.com
 flpquwu.enfejar-site.bet
 fluencypierre.com
 fluentropeinquiry.com
@@ -5408,6 +5433,7 @@ freedvile.com
 freee-cpm.pages.dev
 freeee.online
 freeflix.click
+freeflowducts.com
 freeinstallcpc.xyz
 freeknot-norm.xyz
 freelanceeditors.com
@@ -5606,6 +5632,7 @@ gbbox.com
 gbhzex.com
 gboutros.howto.rocks
 gclz.futboliran.ir
+gd.ozzhlb.net
 gdexpiress.co
 gdmsecure-ig.com
 geacorn.com
@@ -5676,6 +5703,7 @@ ggodyear.com
 ghaftmemko.shop
 ghana-post.bond
 ghanapost.my.id
+ghanioilandgas.com
 ghastlyejection.com
 ghccipia.fifa90bet.casino
 ghdbhbjhbc2.com
@@ -5871,6 +5899,8 @@ governmentawake.com
 governorshyrow.com
 gownattacks.com
 gowntriumphant.com
+goxlr.io
+goxlrutility.net
 goya.world
 gp32.com
 gpt-4-unlocked.pages.dev
@@ -6629,6 +6659,7 @@ impactterminatesank.com
 impartialsubjecttruthfully.com
 impatiencedefacemanicure.com
 impatientbowpersecution.com
+impectorinternational.com
 impedimentdense.com
 impelwhoeverdrake.com
 imperativedishwasher.com
@@ -6663,6 +6694,7 @@ inaneoweidle.com
 inasa.pdfbama.com
 inaugurateglovesapp.com
 inazumarillom.com
+inboxthrust.org
 inc-get-account-help.com
 inc-help-centro-de-ayuda.com
 incapabledespair.com
@@ -7232,6 +7264,7 @@ kabukydenimoficial.com
 kadam.net
 kadxin.net
 kaizokuusagi.com
+kajaland.net
 kaloed.pro
 kambohmag.net
 kamikbootsukstore.com
@@ -7240,6 +7273,7 @@ karancloud.com
 kartm.com
 kascarpet.net
 katehopefully.com
+katukaposole.com
 kavacanada.ca
 kavfquba.onjabet1.com
 kayoutlets.com
@@ -7322,6 +7356,7 @@ kidroleland.info
 kiff.tech
 kigalidelivery.com
 killerlyrics.com
+killurself1337-cdn.doxbin.mom
 kiltwent-our.xyz
 kimtorsyu3984-kika.github.io
 kimyen.net
@@ -7486,6 +7521,7 @@ laughterbitterness.com
 laughterentitled.com
 laughterporridgefound.com
 lavatoryyourself.com
+lavos.life
 lawfirm.paperbirdtech.com
 lawh.com
 laxarmaturecliff.com
@@ -7826,6 +7862,7 @@ lukewarmapplications.com
 lull-islebrew.xyz
 lululemon.fnbucks.workers.dev
 lumacrea.com
+luminouspower.com.pk
 lunariacrystals.com
 lunaticencase.com
 lunchtimecontractor.com
@@ -8353,6 +8390,7 @@ mommymicrophone.com
 mompsychopathsudden.com
 mon-blanc-03.cfd
 mon-suivi-bp.com
+mon-xxx-02.cfd
 monarchdisregard.com
 monarchyjanuarycohere.com
 monarchyslack.com
@@ -8731,6 +8769,7 @@ newoffertops.info
 newscode.me
 newsgate.biz
 newsjump.xyz
+newslettersstream.com
 newsmaven.xyz
 newspaperconvicted.com
 newstan.online
@@ -8851,6 +8890,8 @@ noteitchyrumble.com
 nothingelsewherethesaurus.com
 nothingnightingalejuly.com
 nothingviewcontend.com
+notification-redirection-link.com
+notificationredirectionlink.com
 notifycertainty.com
 notifyfemaleoverjoyed.com
 notionsantagonizeobliged.com
@@ -8911,6 +8952,7 @@ nutscolouredrefrain.com
 nutshellsusceptiblesophomore.com
 nuttyuptodate.com
 nverewereal.info
+nw.almfwb.com
 nwajobs.com
 nxbv.sabad724.bio
 nxk3vadq.1xprobet.app
@@ -9248,6 +9290,7 @@ pacifyinvalid.com
 packartless.com
 packet-relay-engine.courses
 packetget.com
+packmate.in
 paddlemoscowsplit.com
 padlockstrollreverend.com
 paevzvhgt.efbetfarsi.com
@@ -9636,6 +9679,7 @@ plumberanyhow.com
 plungebriefinggladly.com
 plungedbigmentally.com
 plus500-app-for-desktop.github.io
+plutotvshow.biz
 pmarehunter.com
 pmucodes.com
 pmvhv3tpovz.com
@@ -9908,6 +9952,7 @@ protectmydevicepro.com
 protectsurfcloud.com
 protectsurfhub.com
 proteinfasthealthy.com
+protherapycenter.com
 protocolroutetag.com
 protojsmgw.com
 protrendus.com
@@ -9972,6 +10017,7 @@ punishmentaudibly.com
 punkthigh.com
 puppychoose.com
 puppytestament.com
+puravivex.best
 purealgermany.com
 pureenergy.life
 purmed.ro
@@ -10028,6 +10074,7 @@ qasirgame.com
 qatarairwys.com
 qcfonhxm.1pishbini.com
 qcom.us
+qed.uk.com
 qee052b3.irantop.bet
 qfammnuy.hazaratbet.game
 qfphjme9.irani-music.com
@@ -10291,6 +10338,7 @@ removalexperts.com.au
 renaissancerestrictedconveyed.com
 renatogarcia.com
 rendasiareset.com
+render-6.com
 renderedrazor.com
 renderinformsfactor.com
 rendez-vousfilmfestival.com
@@ -10346,6 +10394,7 @@ restorationmaliceall.com
 restroomchateaudeceit.com
 restroomremindercapture.com
 resultsfastfind.com
+resultsfinderonline.com
 resultulterior.com
 resumeg.com
 resumemaximizer.com
@@ -10558,6 +10607,7 @@ safedevicebarrier.com
 safefreedomconnect.com
 safeghostnet.com
 safeguard-mydevice.com
+safeifm.com
 safejokesearch.com
 safelink.kadal.club
 safelyabed.com
@@ -10627,6 +10677,7 @@ sandoval.info
 sangcrowded.com
 sanidad-tsi-renovacion.com
 sanmias.com
+sannapacewiczxgogi.github.io
 sansui.de
 santander.wikaba.com
 santoscurrency.com
@@ -10697,6 +10748,7 @@ scrambledfair.com
 scramblerun.com
 scrapebust.com
 screechdeprivescatter.com
+screen.lixiiimunchiihamzzz.live
 screwoffensivebanter.com
 scrollcrush.com
 scrollpay.live
@@ -11083,6 +11135,7 @@ smartdrugprice.com
 smartdt-secure.com
 smartdtlink.com
 smartermail.host
+smarthomy.cl
 smartlearning.xyz
 smartlinkprivate.com
 smartliving.group
@@ -11151,6 +11204,7 @@ softdady.com
 softeneddefenceinflation.com
 softeninsinuate.com
 softenopera.com
+softgot.net
 softmix.online
 softnext.icu
 softprivacydefender.com
@@ -11738,6 +11792,7 @@ technicalitypactinsinuate.com
 technicianemphasize.com
 techofheart.co
 techorfy.com
+techrxv.com
 tecnone.com
 tectonic-fault-seismograph.garden
 tecunonline.com
@@ -11881,6 +11936,7 @@ telemegrm.cc
 telemeiram.cc
 telemeirm.cc
 telemetry-grid.christmas
+telemetryloop.net
 telemetrymesh.christmas
 telemgram.cc
 telemgrasm.cc
@@ -11994,6 +12050,7 @@ tf4srv.com
 tfd2ceqg.bet365persian.com
 tfxeoexc.betfakade.com
 tfys92ie.hazzarat.world
+tg-drive-bx4f.onrender.com
 tg-gram-lk.org
 tg.legrama.org
 tg.legramc.org
@@ -12001,6 +12058,7 @@ tg.legrame.org
 tg.legramvi.org
 tgas6.kr
 tgcomcis.com
+tgdrive.app
 tggram-bn.org
 tggram-er.org
 tggram-fd.org
@@ -12175,6 +12233,7 @@ todayoffer.net
 todaysbusiness.org
 tofal.com
 tokenthings.com
+tokidsa.com
 toksearches.xyz
 toleratelikeable.com
 tomatoglitterstrategic.com
@@ -12276,6 +12335,7 @@ track.tkbo.com
 track.traffic.club
 track.vcdc.com
 track01.top
+trackallnotifrewa.com
 trackao.com
 trackaupost2.today
 trackaupost3.today
@@ -12361,6 +12421,7 @@ tredzc.com
 treepng.com
 trekkeepprecise.com
 trekpeak.site
+trekworkshop3.com
 trend.zauberportal.com
 trending-celeb-news.com
 trendrecord.com
@@ -12430,6 +12491,7 @@ trumops.com
 trupoynt.com
 trust-localdata.com
 trusted-sites.com
+trustus-eu.uk
 trustworthyexisting.com
 truthallergic.com
 truthfulfifthcake.com
@@ -12601,6 +12663,7 @@ unique.center
 unitedweswing.com
 unitshappinessstrongest.com
 universalfwding.com
+universalmobility.pro
 universami.ge
 unix-technology.com
 unixcheats.shop
@@ -13318,6 +13381,7 @@ www.crazywickedaddiction.com
 www.cutting-edge.in
 www.dra.com.ve
 www.drgenov.com
+www.eleganceclub.xyz
 www.faster-cdn-hk.click
 www.first-security-verden.de
 www.gestroom.it
@@ -13344,6 +13408,7 @@ www.notbak.com
 www.ojang.pe.kr
 www.okhan.net
 www.playtown.co.za
+www.pointtohealth.com
 www.projecthoneypot.org
 www.propertiesofcayman.com
 www.rbcfort.com
@@ -13563,6 +13628,7 @@ z-zip.org
 z15e6bey.nextbahis.poker
 z3br41ch0c0.xyz
 za95.com
+zaffersnouty.com
 zaflv.senorgyros.com
 zainiguesthouse.com
 zalvetra.com

@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build, Vet & Test
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    # The pool's runners are ephemeral: one instance takes one job and
+    # deregisters. A job that hangs therefore holds a whole instance until the
+    # Actions default of six hours expires, and the pool is capped at 24. This
+    # repo's suite runs in about a minute, so anything past ten is wedged.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      # -race because this engine is called concurrently from package-firewall's
+      # request path; a data race here surfaces as a wrong verdict on a package,
+      # not as a crash, so it has to be caught by the detector rather than by
+      # symptoms. -count=1 defeats the result cache, which on a fresh ephemeral
+      # runner would be empty anyway but is not free to reason about.
+      - name: Test
+        run: go test -race -count=1 ./...
