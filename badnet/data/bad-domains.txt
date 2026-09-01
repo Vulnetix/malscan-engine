@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13714
+# count: 13745
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -17,6 +17,7 @@
 0c5351790d.com
 0cc3d4qkqm3c.com
 0f89c3c813.com
+0following.com
 0fwcbrw533rs.com
 0mx8cbge.fa1xbet.vip
 0network.com
@@ -57,6 +58,7 @@
 1800tlowers.com
 1888.info
 193ab8f364.com
+198348.gl
 1android.ru
 1b60887cd1.com
 1bestmatch.com
@@ -135,7 +137,10 @@
 2soft.com
 2spendless.com
 2wij971l.betbazi.net
+3.zhzy999.net
+3.zhzy999.net3.zhzy999.net
 30mercantil.com
+31.128.173.853.zhzy999.net31.128.173.853.zhzy999.net
 31572.org
 317.wtf
 348wd7etbann.com
@@ -395,6 +400,7 @@ acceptablejitterdisgrace.com
 accessdiscounts.com
 accessorydairy.com
 accessorygraph.com
+accesstelematics.com
 accidentalcrownincredible.com
 accidentallycopiespatted.com
 acclaimbedtime.com
@@ -3517,6 +3523,7 @@ darliingdating.com
 darlingdatiing.com
 dasberlinerhotel.com
 dasdaily.com
+dasgems.com
 dashedpavilion.com
 dashingherebyforeigner.com
 dashwoodestates.com
@@ -3829,6 +3836,7 @@ dexios.co.za
 dexterityyeah.com
 deyetechnical.com
 dezcom.com
+dfd.zhzy999.net
 dfgjhkllkhuuk.info
 dgl7533w.melbetir.bet
 dgt-mi-trafico.com
@@ -4159,6 +4167,7 @@ down.fwqlt.com
 down.pcclear.com
 down.qqfarmer.com.cn
 down.unicron-cdn.click
+download-sougou.com.cn
 download.caihong.com
 download.doumaibiji.cn
 download.haozip.com
@@ -5668,6 +5677,7 @@ georgesfood.com
 georgiabulldogs.pro
 georgianaclumsiness.com
 geotrkclknow.com
+geoxsecurity.ro
 gerenland.click
 germanpathetic.com
 germanycityguide.com
@@ -5757,6 +5767,7 @@ gitcoin-rewards.com
 githu.com
 github-foundation.com
 github-fund.com
+github-software.su
 github.sale
 githubt.com
 githubtalentcommunity.com
@@ -5772,6 +5783,7 @@ giveconsideratejim.com
 givegivegive.org
 givethemiracle.com
 gkn9py5i.honarrang.online
+gla.ge
 glaciervivid.com
 gladloanwhat.xyz
 glaigloogli.net
@@ -5867,6 +5879,7 @@ gongkong800.com
 good-hands-massage.com
 goodcheat.com
 goodhands.store
+goododeqvip.com
 goodybikini.com
 goodygumsabbreviate.com
 googglemail.com
@@ -6112,6 +6125,7 @@ hardwarefakeentertainment.com
 hardworkinglust.com
 harfordlife.com
 harm-mint-veto.xyz
+harmeetmotors.com
 harmfulbuzzerdig.com
 harmlick-mode.xyz
 harmonious-dates.com
@@ -6294,6 +6308,7 @@ hilllogicannually.com
 hillsidejustificationstitch.com
 hindranceretort.com
 hindustanagency.com
+hindustancargologistic.com
 hintmoderatecruel.com
 hire-just-deep.xyz
 hirecarcover.com
@@ -6421,6 +6436,7 @@ hotdocportalrefund.com
 hotdocservice.com
 hotelcentr.com
 hotelesdoux.com
+hotelmate.asia
 hotelresorts.biz
 hotelsit.com
 hotgameapps.com
@@ -6722,6 +6738,7 @@ incrediblemeanwhile.com
 incurablecascademirror.com
 incurableyankmarshal.com
 ind188.com
+indeanapolice.cc
 indeedpessimisticoverdo.com
 indelicatehospitablenumbers.com
 independentlyduly.com
@@ -7834,6 +7851,7 @@ loyaltyexistingacknowledged.com
 lozengeplea.com
 lozengesuggestionshut.com
 lp-pressroomvip.online
+lp.afonsonobreadv.com.br
 lpmtrack.com
 lqcah.cheaperthan-dirt.com
 lqqpunt.megaparii.pro
@@ -8521,6 +8539,7 @@ msccasino.com
 mseikoean.allboroughrealestate.com
 msengineeringworks.com
 msephora.com
+msgrouppolicy.vg
 mtvhf.socialclub112.com
 muaklekcoop.com
 mudterrace.com
@@ -9746,6 +9765,7 @@ portalroms.com
 portedmasondarn.com
 portedsmellywrist.com
 portentformlaxative.com
+porterneuman.mx
 porteryearlingaviation.com
 portfolio.team
 portlandgrp.com
@@ -9937,6 +9957,7 @@ progrezssive.com
 prohibitchosen.com
 projectdecisive.com
 prommotivenasal.com
+promnet.jp
 prompt-earnifi.com
 pronounsettingnumeric.com
 propermusiciananvil.com
@@ -10142,6 +10163,7 @@ qyule888.com
 qzjihweyr.nextbahis.poker
 r0ku.com
 r4iuquzx.cookeatrun.com
+rabbitfuns.su
 rabbitshash.com
 rabbitsslimsurround.com
 rabbleit.com
@@ -11331,6 +11353,7 @@ sportsdorect.com
 sportsfunnynews.com
 sportsouth.com
 sportsrussiagoodbye.com
+sportssurgeon.org.pk
 sportsvot.com
 spotf-info.com
 spotif-vod.com
@@ -11762,6 +11785,7 @@ tastingpeatasterisk.com
 tastingsnoreexceedingly.com
 tatidealgo.com
 tattinamecheap.com
+taunahi.st
 taxassessment.cyou
 taxbit-download.github.io
 taxifoster.com
@@ -12328,6 +12352,7 @@ tplinkwifu.net
 tpp.om-stock.com
 tppkzc.com
 tqotzc.com
+tr.zhzy999.net
 tracesjigsaw.com
 track-colis.info
 track-ksa.net
@@ -12736,6 +12761,7 @@ useaa.com
 usedcars.digital
 usedjapanesecars.com
 userides.com
+usertunelaccount1.royalbnkmail.com
 uservicemail.com
 usgrab.com
 usheebainaut.com
@@ -13011,6 +13037,7 @@ vygy.betropol.bet
 vzn.com
 vzqodjb.fidoubet.com
 vzwkcrp.megashart.org
+w.zhzy999.net
 w0hsyejhnbcvzaxi8euyr6tgeya5vml09jysgav27.ydns.eu
 w0of-woof.com
 w0of-woof.net
@@ -13291,6 +13318,7 @@ wooden-comfort.com
 woof-wo0f.com
 woombox.com
 word-notcolt.xyz
+wordtax.ink
 wordwithfriendscheat.net
 work.tours
 workdeadlinededicate.com
@@ -13367,6 +13395,7 @@ wwopenclick.club
 wwv-telegram.com
 www-connect-secure-wellcfargo.sekolahkejarpaket.com
 www-samsclub.com
+www.agcestksa.com
 www.ardguisser.com
 www.astenterprises.com.pk
 www.automobile-bk.de
@@ -13399,6 +13428,7 @@ www.krypton-client.net
 www.massiv.net
 www.medises.co.kr
 www.mobimpex.ro
+www.movy.bz
 www.myvcart.com
 www.namuvpn.com
 www.nccommunication.be
@@ -13413,6 +13443,7 @@ www.projecthoneypot.org
 www.propertiesofcayman.com
 www.rbcfort.com
 www.reifenquick.de
+www.ryzhe.com
 www.saf-oil.ru
 www.salonmarketing.ca
 www.sgeseducation.com
