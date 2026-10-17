@@ -442,6 +442,9 @@ var codeIdentSLDs = map[string]bool{
 // `mybrand.xyz`) have a distinctive SLD and are NOT matched here.
 func CodeTokenDomain(host string) bool {
 	h := normHost(host)
+	if SourceFileName(h) {
+		return true
+	}
 	parts := strings.Split(h, ".")
 	if len(parts) < 2 {
 		return false
@@ -574,4 +577,42 @@ func hostOf(value string) string {
 		}
 	}
 	return normHost(v)
+}
+
+// sourceFileTLDs are country-code TLDs that are also the extension of a source or
+// script file: .rs (Serbia / Rust), .py (Paraguay / Python), .sh (Saint Helena / shell),
+// .pl (Poland / Perl), .md (Moldova / Markdown), .cc (Cocos / C++), .so (Somalia / shared
+// object), .pm (Saint Pierre / Perl module).
+var sourceFileTLDs = map[string]bool{
+	"rs": true, "py": true, "sh": true, "pl": true, "md": true, "cc": true, "so": true, "pm": true,
+}
+
+// sourceFileStems are the conventional BASENAMES of a project's own files: the label
+// before one of those extensions when the token is a file name rather than a host.
+// `build.rs` is every Cargo build script; `setup.py` every distutils package. They were
+// extracted as malicious domains - 419 cargo mints rested on `build = "build.rs"` alone.
+//
+// Deliberately a short list of names that are conventions and not products. `ntfy.sh`,
+// `bun.sh`, `crates.rs` and `pixi.sh` are real registrable domains whose label is a
+// brand, and none of them is here; `install.sh` and `build.sh` are, because they name
+// the file, never a host.
+var sourceFileStems = map[string]bool{
+	"build": true, "lib": true, "main": true, "mod": true, "setup": true, "app": true,
+	"manage": true, "conftest": true, "__init__": true, "__main__": true, "config": true,
+	"settings": true, "utils": true, "util": true, "index": true, "test": true, "tests": true,
+	"models": true, "views": true, "cli": true, "core": true, "version": true, "types": true,
+	"common": true, "helpers": true, "install": true, "uninstall": true, "run": true,
+	"start": true, "deploy": true, "entrypoint": true, "bootstrap": true, "init": true,
+	"readme": true, "changelog": true, "contributing": true, "makefile": true,
+}
+
+// SourceFileName reports whether host is really a file name: a conventional project
+// file stem with a source-file extension that happens to be a country-code TLD.
+func SourceFileName(host string) bool {
+	h := normHost(host)
+	parts := strings.Split(h, ".")
+	if len(parts) != 2 {
+		return false
+	}
+	return sourceFileTLDs[parts[1]] && sourceFileStems[parts[0]]
 }

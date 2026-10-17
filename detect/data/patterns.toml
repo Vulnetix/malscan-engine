@@ -46,7 +46,7 @@ override_gate = true
 
 [[pkgbuild_analysis]]
 id = "P-EVAL-BASE64"
-pattern = '(eval.*base64|base64.*eval)'
+pattern = '\beval\b\s*\(?[^\n]{0,100}base64|base64[^\n]{0,100}\beval\b\s*\('
 points = 85
 description = "Base64-decoded payload executed via eval"
 override_gate = false
@@ -55,6 +55,7 @@ override_gate = false
 id = "P-BASE64"
 pattern = 'base64\s+(\S+\s+)*(-d|--decode)'
 points = 60
+hook_only = true
 description = "Base64 decoding (possible payload hiding)"
 override_gate = false
 
@@ -62,6 +63,7 @@ override_gate = false
 id = "P-EVAL-VAR"
 pattern = 'eval\s+["$]'
 points = 50
+hook_only = true
 description = "Dynamic code execution via eval"
 override_gate = false
 
@@ -104,6 +106,7 @@ override_gate = false
 id = "P-PROFILE-MOD"
 pattern = '(>>?\s*~/\.(bashrc|zshrc|profile|bash_profile))'
 points = 55
+hook_only = true
 description = "Modifying shell profile (persistence)"
 override_gate = false
 
@@ -116,7 +119,7 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-CRON-CREATE"
-pattern = 'crontab|/etc/cron\.d/'
+pattern = '(?:^|[^A-Za-z0-9_.-])crontab\s+[-<\w/.]|["\x27]crontab["\x27]\s*,\s*["\x27]-|/etc/cron(?:\.d/|tab\b)|/var/spool/cron'
 points = 45
 description = "Creating cron job (persistence)"
 override_gate = false
@@ -144,7 +147,7 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-URL-SHORTENER"
-pattern = '(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
+pattern = '(?:^|[^A-Za-z0-9.-])(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
 points = 60
 description = "URL shortener (hiding real destination)"
 override_gate = false
@@ -174,6 +177,7 @@ override_gate = true
 id = "P-PYTHON-INLINE"
 pattern = "python[23]?\\s+-c\\s+[\"']"
 points = 45
+hook_only = true
 description = "Python inline code execution"
 override_gate = false
 
@@ -246,6 +250,7 @@ id = "P-CRYPTO-WALLET"
 # must stand alone rather than surface inside a longer token.
 pattern = '(\b4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}\b|\bbc1[02-9ac-hj-np-z]{39,59}\b|\b0x[0-9a-fA-F]{40}\b)'
 points = 75
+hook_only = true
 description = "Cryptocurrency wallet address (Monero/Bitcoin/Ethereum)"
 override_gate = false
 
@@ -261,6 +266,7 @@ override_gate = true
 id = "P-PYTHON-DYNAMIC-IMPORT"
 pattern = "__import__\\s*\\(\\s*['\"]os['\"]\\s*\\)\\s*\\.\\s*system"
 points = 65
+hook_only = true
 description = "Python dynamic import to execute system commands"
 override_gate = false
 
@@ -380,7 +386,7 @@ override_gate = false
 # DNS/HTTP exfiltration
 [[pkgbuild_analysis]]
 id = "P-DNS-EXFIL"
-pattern = '(dig|nslookup|host)\s+\$'
+pattern = '(?:^|[^A-Za-z0-9_])(dig|nslookup)\s+\$|(?:^|[;&|(`])\s*host\s+\$'
 points = 60
 description = "DNS lookup with variable interpolation (possible DNS exfiltration)"
 override_gate = false
@@ -405,6 +411,7 @@ override_gate = false
 id = "P-ENV-TOKEN-ACCESS"
 pattern = '\$(AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|GITHUB_TOKEN|GH_TOKEN|GITLAB_TOKEN|NPM_TOKEN|DOCKER_PASSWORD|API_KEY|SECRET_KEY|PRIVATE_KEY|DATABASE_URL|SLACK_TOKEN|DISCORD_TOKEN)'
 points = 55
+hook_only = true
 description = "Accessing sensitive environment variables (token/credential theft)"
 override_gate = false
 
@@ -643,6 +650,7 @@ override_gate = false
 id = "P-DD-WRITE"
 pattern = '\bdd\s+.*of=/dev/'
 points = 70
+hook_only = true
 description = "dd writing to device file"
 override_gate = false
 
@@ -656,14 +664,14 @@ override_gate = false
 # Install script patterns
 [[install_script_analysis]]
 id = "P-INSTALL-CURL"
-pattern = 'curl\s'
+pattern = '(?:^|[^A-Za-z0-9_])curl\s'
 points = 45
 description = "curl in install script (should not download during install)"
 override_gate = false
 
 [[install_script_analysis]]
 id = "P-INSTALL-WGET"
-pattern = 'wget\s'
+pattern = '(?:^|[^A-Za-z0-9_])wget\s'
 points = 45
 description = "wget in install script (should not download during install)"
 override_gate = false
@@ -861,7 +869,7 @@ pkgbuild_only = true
 
 [[source_url_analysis]]
 id = "P-URL-SHORTENER"
-pattern = '(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
+pattern = '(?:^|[^A-Za-z0-9.-])(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
 points = 60
 description = "Source URL uses URL shortener (hiding real destination)"
 override_gate = false
@@ -1470,6 +1478,7 @@ hook_only = true
 id = "G-LD-LIBRARY-PATH"
 pattern = 'LD_LIBRARY_PATH\s*='
 points = 50
+hook_only = true
 description = "LD_LIBRARY_PATH manipulation (shared library injection)"
 override_gate = false
 
@@ -1585,6 +1594,7 @@ override_gate = false
 id = "G-SED-EXEC"
 pattern = "sed\\s+(-[neEi]+\\s+)?.*[0-9/]e[\\s;']"
 points = 65
+hook_only = true
 description = "GNU sed e command (executes pattern space as shell command)"
 override_gate = false
 
@@ -1866,6 +1876,22 @@ id = "P-NPM-HOOK-NODE-EVAL"
 pattern = 'node\s+(--eval|-e)\b'
 points = 55
 description = "lifecycle install hook executes inline node code (node -e/--eval)"
+weakness = true
+cwe = "CWE-95"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
+
+# The hostile shape of an inline `node -e` hook: it opens a network channel AND reads the
+# machine or its environment in the same script. P-NPM-HOOK-NODE-EVAL above is the
+# capability (husky, `require('./scripts/postinstall')`, a version check); this is the
+# beacon. Measured 2026-10-17 over every recorded P-NPM-HOOK-NODE-EVAL line in production
+# (363): 21 match, and 11 of those are in packages OpenSSF independently confirmed as malware
+# (52%, against about 7% for the broad rule). A localhost-only beacon with hostname/user in
+# the query string is a dependency-confusion probe and is kept as malware on purpose.
+[[install_script_analysis]]
+id = "P-NPM-HOOK-NODE-EVAL-EXFIL"
+pattern = 'node\s+(--eval|-e)\b[^\n]*((require\(["\x27](https?|net|dgram)["\x27]\)|\bfetch\s*\()[^\n]*(os\.hostname|userInfo\(\)|npm_config_|process\.env|os\.homedir)|(os\.hostname|userInfo\(\)|npm_config_|process\.env|os\.homedir)[^\n]*(require\(["\x27](https?|net|dgram)["\x27]\)|\bfetch\s*\())'
+points = 80
+description = "lifecycle install hook runs inline node code that reads host/env data and opens a network channel"
 override_gate = true
 
 [[install_script_analysis]]
@@ -1921,6 +1947,24 @@ id = "P-PY-COMPILE-EXEC"
 pattern = 'exec\s*\(\s*compile\s*\('
 points = 48
 description = "exec(compile(...)) dynamic code execution"
+weakness = true
+cwe = "CWE-94"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
+
+# The hostile shape of the same call: what is compiled is DECODED, fetched or carries an
+# obfuscator's identifier. P-PY-COMPILE-EXEC above is the capability (a plugin loader, a
+# notebook runner, a test harness); this is the intent. Measured 2026-10-17 against every
+# recorded P-PY-COMPILE-EXEC line in production (622 distinct): 7 match, all of them
+# base64/bytes-decoded payloads or `_0x...` names. Against OpenSSF malicious-packages, the
+# 10 confirmed PyPI packages whose mint carried P-PY-COMPILE-EXEC include `_HOOK.decode()`
+# (fastapii, flasq, idnna, pydanticc), `base64.b64decode(ENCODED)` (flask-header-guard) and
+# `_0x667f` (ig-gox) - this rule keeps those as malware while the broad rule above stops
+# naming every plugin loader.
+[[pkgbuild_analysis]]
+id = "P-PY-COMPILE-EXEC-DECODED"
+pattern = 'exec\s*\(\s*compile\s*\([^\n]{0,160}(\.decode\s*\(|b64decode|fromhex|unhexlify|decompress|marshal\.loads|urlopen|requests\.get|_0x[0-9a-f]{3,})'
+points = 80
+description = "exec(compile(...)) of a decoded, fetched or obfuscated payload"
 override_gate = true
 
 [[pkgbuild_analysis]]
@@ -1996,7 +2040,9 @@ ecosystems = ["cargo"]
 pattern = '(Command::new|process::Command)[^\n]{0,60}(sh|bash|cmd|powershell)'
 points = 50
 description = "build.rs invokes a shell at build time (download-and-execute vector)"
-override_gate = true
+weakness = true
+cwe = "CWE-78"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[install_script_analysis]]
 id = "P-CARGO-BUILD-DOWNLOAD"
@@ -2041,14 +2087,18 @@ id = "GO-EXEC-SHELL"
 pattern = 'exec\.Command\(\s*"(/bin/)?(ba)?sh"\s*,\s*"-c"'
 points = 55
 description = "exec.Command invoking a shell with -c (arbitrary command execution)"
-override_gate = true
+weakness = true
+cwe = "CWE-78"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[pkgbuild_analysis]]
 id = "GO-SYSCALL-EXEC"
 pattern = 'syscall\.(Exec|ForkExec)\('
 points = 50
 description = "syscall.Exec/ForkExec direct process replacement/spawn"
-override_gate = true
+weakness = true
+cwe = "CWE-78"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[pkgbuild_analysis]]
 id = "GO-B64-DECODE-EXEC"
@@ -2113,10 +2163,12 @@ override_gate = false
 
 [[install_script_analysis]]
 id = "P-NUGET-MSBUILD-INLINE-EXEC"
-pattern = '(?i)<usingtask[^>]*taskfactory\s*=\s*"(code|roslyncodetask)factory"'
+pattern = '(?i)<usingtask[^>]*taskfactory\s*=\s*"(code|roslyncode)taskfactory"'
 points = 50
 description = "MSBuild inline-task code execution via CodeTaskFactory in NuGet .targets/.props"
-override_gate = true
+weakness = true
+cwe = "CWE-94"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[pkgbuild_analysis]]
 id = "P-NUGET-PS-ENV-EXFIL"
@@ -2168,6 +2220,7 @@ id = "PHP-SHELL-EXEC-VAR"
 # and `$` (a variable function name).
 pattern = '(^|[^A-Za-z0-9_>:$])(system|exec|shell_exec|passthru|proc_open|popen)\s*\(\s*\$'
 points = 45
+hook_only = true
 description = "PHP OS command execution sink invoked on a variable"
 override_gate = false
 
@@ -2230,7 +2283,9 @@ id = "HEX-MIX-CODE-EVAL"
 pattern = 'Code\.eval_(string|quoted)\('
 points = 50
 description = "mix.exs evaluates dynamically constructed Elixir at compile time"
-override_gate = true
+weakness = true
+cwe = "CWE-95"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 [[install_script_analysis]]
 id = "HEX-MIX-BASE64-EVAL"
 pattern = 'Base\.decode64[^\n]{0,80}(Code\.eval|System\.cmd|:os\.cmd)'
@@ -2262,7 +2317,9 @@ id = "DART-PROCESS-SHELL"
 pattern = 'Process\.(run|start)\s*\(\s*"(/bin/)?(ba)?sh"'
 points = 55
 description = "Dart Process.run/start spawning a shell (command execution)"
-override_gate = true
+weakness = true
+cwe = "CWE-78"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 [[pkgbuild_analysis]]
 id = "DART-HTTPCLIENT-PROCESS-EXEC"
 pattern = 'HttpClient\(\)[\s\S]{0,400}Process\.(run|start)'
@@ -2306,7 +2363,9 @@ id = "R-ONLOAD-SYSTEM"
 pattern = '\.(onLoad|onAttach)\s*<-\s*function[\s\S]{0,400}(system2?|shell|download\.file)\s*\('
 points = 50
 description = "R load hook (.onLoad/.onAttach) runs system()/download.file at library load"
-override_gate = true
+weakness = true
+cwe = "CWE-78"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 # --- Julia ---
 [[install_script_analysis]]
@@ -2314,7 +2373,9 @@ id = "JL-BUILD-SHELL-INTERP"
 pattern = 'run\(\s*`\s*(ba)?sh\b'
 points = 55
 description = "build.jl spawns a shell interpreter at Pkg.build time"
-override_gate = true
+weakness = true
+cwe = "CWE-78"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 [[install_script_analysis]]
 id = "JL-DOWNLOAD-EXEC"
 pattern = '(Base\.)?download\([^)]{0,120}\)[\s\S]{0,200}(include|evalfile|eval)\b'

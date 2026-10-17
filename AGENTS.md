@@ -54,10 +54,27 @@ and gated via `config.EcosystemConfig.Enabled`.
    score/tier (unlike its `traur` origin). A package is malicious iff it has ≥1
    `ClassEvidence` finding, OR the combination gate fires. See `detect/model.go`
    header.
-2. **The three classes.** `ClassEvidence` mints alone. `ClassTrigger` never mints
+2. **The four classes.** `ClassEvidence` mints alone. `ClassTrigger` never mints
    alone — it combines (high-entropy payload + an identity/ownership trigger, or
    ≥2 independent identity families with a change-family). `ClassContext` is
-   reputation/risk metadata and never mints.
+   reputation/risk metadata and never mints. `ClassWeakness` is a **dual-use
+   code-execution capability** (`exec(compile(...))`, a shell spawned from a build
+   script, `Code.eval_string`): it never mints, never corroborates, and is reported
+   downstream as a vulnerability candidate with a CWE and a CVSS vector. It is the
+   class for "this code can execute what it is given", as opposed to "this code does
+   something hostile".
+   - A weakness rule is `weakness = true` in `patterns.toml` with a **required**
+     `cwe` and `cvss`; `loadPatterns` panics on a weakness that is also
+     `override_gate` or is unscored, so neither can reach production.
+   - **Split the capability from the intent, don't pick one.** Keep the broad rule as
+     a weakness and add a narrow evidence rule for the hostile shape, each justified
+     by a measurement. `P-PY-COMPILE-EXEC` (weakness) / `P-PY-COMPILE-EXEC-DECODED`
+     (evidence: the compiled text is decoded, fetched or `_0x…`-named) and
+     `P-NPM-HOOK-NODE-EVAL` / `…-EXFIL` (inline hook that reads the host and opens a
+     socket) are the worked examples; their comments in `patterns.toml` carry the
+     numbers.
+   - **A publisher is named only on `ClassEvidence`.** A weakness, a trigger and a
+     context finding must never reach an actor-attribution path.
 3. **The combination gate** (`CombinedVerdict`, P0–P4): P0 any evidence; P4 owner
    is a known-bad actor; P1/P2 payload trigger + ≥1 identity trigger; P3 ≥2
    independent identity families incl. ≥1 change family. Pure-newness and

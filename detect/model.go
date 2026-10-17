@@ -31,6 +31,14 @@ const (
 	// (new reporter / maintainer / contributor, changed maintainer/contributor
 	// email) are all triggers.
 	ClassTrigger Class = "trigger"
+	// ClassWeakness is a dual-use code-execution capability (exec(compile(...)),
+	// a shell spawned from a build script, Code.eval_string) that ordinary, honest
+	// packages contain as often as hostile ones. It is NOT evidence of malice and
+	// never mints a malware advisory, an IOC or a threat-actor attribution. It is
+	// reported as a weakness in the package — a vulnerability candidate carrying a
+	// CWE and a CVSS vector — which accuses no one: a publisher is only ever named
+	// on the strength of ClassEvidence.
+	ClassWeakness Class = "weakness"
 )
 
 // Combination-gate signal ids. These are referenced by both the engine and the
@@ -126,11 +134,15 @@ func EvidenceFinding(id, category, cwe, desc, matchedLine string) Finding {
 type Finding struct {
 	ID          string // signal id, e.g. "P-CURL-PIPE", "SA-VAR-CONCAT-EXEC"
 	Category    string // "pkgbuild" | "install" | "source-url" | "gtfobins" | "shell" | "name" | "behavioral" | "temporal" | "metadata"
-	Class       Class  // ClassEvidence | ClassContext
+	Class       Class  // ClassEvidence | ClassContext | ClassTrigger | ClassWeakness
 	CWE         string // mapped CWE id (best-effort), e.g. "CWE-506"
 	Points      int    // traur's original weight, retained for reference/sorting only
 	Description string // human-readable explanation
 	MatchedLine string // the triggering line (trimmed), when pattern-based
+
+	// CVSSVector scores a ClassWeakness finding, taken from the rule that fired.
+	// Empty for every other class: only a weakness is reported as a vulnerability.
+	CVSSVector string
 }
 
 // PackageContext carries all data a detector needs. Originally modelled on

@@ -63,3 +63,39 @@ func TestVersionConstraintNotMatchedByFeed(t *testing.T) {
 		t.Error("stopped matching the same value used as a real endpoint")
 	}
 }
+
+// The attribute and key forms of a version field, from NuGet, Maven and JSON manifests.
+// The first three are verbatim production lines from nuget mints.
+func TestIPv4InVersionField(t *testing.T) {
+	versions := map[string]string{
+		`<dependency id="Tenuto" version="1.0.0.39" exclude="Build,Analyzers" />`:        "1.0.0.39",
+		`<dependency id="AWSSDK.Extensions.CborProtocol" version="[4.0.0.53, 5.0.0)" />`: "4.0.0.53",
+		`<PackageReference Include="Foo" Version="11.5.55.0" />`:                         "11.5.55.0",
+		`<version>2.8.52.0</version>`:                                                    "2.8.52.0",
+		`  "version": "4.13.0.92",`:                                                      "4.13.0.92",
+		`version: 1.3.101.113`:                                                           "1.3.101.113",
+	}
+	for s, quad := range versions {
+		if !ipv4InVersionField(s, atQuad(t, s, quad)) {
+			t.Errorf("ipv4InVersionField(%q) = false, want true", s)
+		}
+	}
+	// Anything that names an endpoint must still be matchable, including a key that merely
+	// CONTAINS the word: `version_server` is not `version`.
+	addresses := map[string]string{
+		`SERVER=1.2.3.4`:                      "1.2.3.4",
+		`host: 1.2.3.4`:                       "1.2.3.4",
+		`"c2": "1.2.3.4"`:                     "1.2.3.4",
+		`http://1.2.3.4/gate.php`:             "1.2.3.4",
+		`version_server = "1.2.3.4"`:          "1.2.3.4",
+		`<endpoint>1.2.3.4</endpoint>`:        "1.2.3.4",
+		`<dependency id="x" url="1.2.3.4" />`: "1.2.3.4",
+		`REMOTE_ADDR=1.2.3.4`:                 "1.2.3.4",
+		`connect 1.2.3.4 now`:                 "1.2.3.4",
+	}
+	for s, quad := range addresses {
+		if ipv4InVersionField(s, atQuad(t, s, quad)) {
+			t.Errorf("ipv4InVersionField(%q) = true, want false — a real address was dropped", s)
+		}
+	}
+}

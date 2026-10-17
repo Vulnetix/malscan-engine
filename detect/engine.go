@@ -124,6 +124,19 @@ func Triggers(findings []Finding) []Finding {
 	return out
 }
 
+// Weaknesses returns only the ClassWeakness findings from a Detect result:
+// dual-use code-execution capabilities that are reported as vulnerability
+// candidates and are never, on their own, a reason to call a package malicious.
+func Weaknesses(findings []Finding) []Finding {
+	var out []Finding
+	for _, f := range findings {
+		if f.Class == ClassWeakness {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // IsMalicious reports whether any evidence finding fired.
 func IsMalicious(findings []Finding) bool {
 	for _, f := range findings {
