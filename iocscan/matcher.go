@@ -215,7 +215,7 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 			// C2 could not inhabit. Anything that COULD be a malicious endpoint
 			// (including IPv4-mapped IPv6 like ::ffff:1.2.3.4) is kept for matching.
 			if ipv4InSlashVersion(s, loc[0]) || ipv4InSVGGeometry(s, loc[0]) ||
-				ipv4InVersionConstraint(s, loc[0]) {
+				ipv4InVersionConstraint(s, loc[0]) || ipv4InVersionField(s, loc[0]) {
 				continue
 			}
 			ipStr := s[loc[0]:loc[1]]
@@ -719,4 +719,49 @@ func truncate(s string, max int) string {
 		return s
 	}
 	return s[:max] + "…"
+}
+
+// ipv4InVersionField reports whether the dotted-quad at s[start:] is the VALUE of a
+// field named version: `Version="1.0.0.39"` (a NuGet <dependency> or csproj
+// <PackageReference>), `<version>1.2.3.4</version>` (a pom.xml), `"version": "4.0.0.53"`
+// (a JSON manifest), `version: 1.2.3.4`. A four-part assembly version is ordinary in
+// .NET and Java packaging, and ipv4InVersionConstraint only recognises the operator
+// forms (`>=4.13.0.92`), not the attribute and key forms those ecosystems use.
+//
+// Measured on production 2026-10-17: IOC-STIX-MATCH was the sole evidence for 14 of
+// nuget's 112 malware mints, on lines like
+// `<dependency id="AWSSDK.Extensions.CborProtocol" version="[4.0.0.53, 5.0.0)" />`.
+//
+// Narrow on purpose. The field name must be exactly `version` (any case, optionally
+// prefixed by `assembly`/`file`/`product`/`package`), directly before the value, so a
+// key like `server`, `host` or `c2` that names an endpoint is never affected.
+func ipv4InVersionField(s string, start int) bool {
+	// Look back over the value's opening punctuation: quote, bracket, paren, space.
+	i := start
+	for i > 0 && strings.IndexByte(`"'[( `+"\t", s[i-1]) >= 0 {
+		i--
+	}
+	if i == 0 {
+		return false
+	}
+	// What precedes must be a separator after the key: = : or the > of an XML tag.
+	sep := s[i-1]
+	if sep != '=' && sep != ':' && sep != '>' {
+		return false
+	}
+	j := i - 1
+	for j > 0 && strings.IndexByte(`"' `+"\t", s[j-1]) >= 0 { // quote closing the key, space before the separator
+		j--
+	}
+	k := j
+	for k > 0 && isASCIILetter(s[k-1]) {
+		k--
+	}
+	word := strings.ToLower(s[k:j])
+	for _, name := range []string{"version", "assemblyversion", "fileversion", "productversion", "packageversion"} {
+		if word == name {
+			return true
+		}
+	}
+	return false
 }

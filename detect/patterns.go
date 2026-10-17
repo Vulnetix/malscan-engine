@@ -42,6 +42,16 @@ type patternRule struct {
 	// call, an npm lifecycle hook — because callers such as the package firewall
 	// run every detector against every ecosystem's metadata.
 	Ecosystems []string `toml:"ecosystems"`
+	// Weakness marks a dual-use code-execution capability that is NOT evidence of
+	// malice: exec(compile(...)), a shell spawned from a build script,
+	// Code.eval_string. A matching hit is ClassWeakness — reported as a
+	// vulnerability candidate, never minted as malware and never attributed to a
+	// publisher. It is mutually exclusive with override_gate (a rule cannot be both
+	// proof and not-proof); loadPatterns refuses a rule that sets both. CWE and
+	// CVSS are required: a weakness is only worth reporting if it can be scored.
+	Weakness bool   `toml:"weakness"`
+	CWE      string `toml:"cwe"`
+	CVSS     string `toml:"cvss"`
 }
 
 // compiledPattern is a runtime-ready rule.
@@ -53,6 +63,9 @@ type compiledPattern struct {
 	overrideGate bool
 	hookOnly     bool
 	pkgbuildOnly bool
+	weakness     bool
+	cwe          string
+	cvss         string
 	ecosystems   map[string]bool // empty = every ecosystem
 }
 
@@ -94,6 +107,11 @@ func loadPatterns() {
 		patternsBySection = make(map[string][]compiledPattern, len(raw))
 		for section, rules := range raw {
 			for _, r := range rules {
+				if r.Weakness && (r.OverrideGate || r.CWE == "" || r.CVSS == "") {
+					// A weakness that is also proof, or that cannot be scored, is a
+					// ruleset bug. Fail at load so it cannot reach production.
+					panic(fmt.Sprintf("malscan-engine/detect: rule %s: weakness needs cwe and cvss and excludes override_gate", r.ID))
+				}
 				re, err := regexp.Compile(r.Pattern)
 				if err != nil {
 					skippedPatterns = append(skippedPatterns, r.ID)
@@ -110,12 +128,30 @@ func loadPatterns() {
 					id: r.ID, re: re, points: r.Points,
 					description: r.Description, overrideGate: r.OverrideGate,
 					hookOnly: r.HookOnly, pkgbuildOnly: r.PkgbuildOnly,
+					weakness: r.Weakness, cwe: r.CWE, cvss: r.CVSS,
 					ecosystems: ecos,
 				})
 			}
 		}
 		sort.Strings(skippedPatterns)
 	})
+}
+
+// WeaknessRule reports whether id (with or without the install-script "IS-" prefix) is
+// a weakness rule, and returns the CWE and CVSS vector it carries. Used by tools that
+// re-judge advisories minted before a rule became a weakness, such as the repair that
+// turns a weakness-only malware mint into a vulnerability advisory.
+func WeaknessRule(id string) (cwe, cvss string, ok bool) {
+	loadPatterns()
+	base := strings.TrimPrefix(id, "IS-")
+	for _, ps := range patternsBySection {
+		for _, p := range ps {
+			if p.weakness && p.id == base {
+				return p.cwe, p.cvss, true
+			}
+		}
+	}
+	return "", "", false
 }
 
 // SkippedPatterns returns the ids of any patterns.toml rules that failed RE2
@@ -185,7 +221,7 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 			if !keep {
 				continue
 			}
-			findings = append(findings, Finding{
+			f := Finding{
 				ID:          idPrefix + p.id,
 				Category:    category,
 				Class:       class,
@@ -193,7 +229,13 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 				Points:      p.points,
 				Description: p.description,
 				MatchedLine: line,
-			})
+			}
+			if p.weakness {
+				// A weakness is decided by the rule, not by points or the hook surface:
+				// the capability is dual-use wherever it appears.
+				f.Class, f.CWE, f.CVSSVector = ClassWeakness, p.cwe, p.cvss
+			}
+			findings = append(findings, f)
 		}
 	}
 	return findings
@@ -249,6 +291,8 @@ func suppressLine(id, line string) bool {
 	switch id {
 	case "P-RAW-IP-URL":
 		return suppressNonRoutableIPURL(id, line)
+	case "P-CURL-PIPE", "P-WGET-PIPE", "P-CURL-PIPE-PYTHON", "P-CURL-PIPE-PERL", "P-WGET-PIPE-PYTHON":
+		return suppressVendorInstaller(line)
 	case "PHP-SHELL-EXEC-VAR":
 		return phpFunctionDeclRe.MatchString(line)
 	case "PHP-ASSERT-VAR":
@@ -370,4 +414,34 @@ func suppressNonRoutableIPURL(id, line string) bool {
 		return false
 	}
 	return allow.IP(m[1])
+}
+
+// pipeURLHostRe extracts the host of every http(s) URL on a line.
+var pipeURLHostRe = regexp.MustCompile("https?://([^/\\s\"'`\\\\)\\]},;|]+)")
+
+// suppressVendorInstaller drops a pipe-to-shell hit whose every URL is a vendor's own
+// documented install endpoint (or a reserved example host).
+//
+// `curl -LsSf https://astral.sh/uv/install.sh | sh` is how uv tells you to install uv.
+// A package that quotes it — in a README, a CLI hint, a Dockerfile string — is not
+// downloading and executing anything of its own. Measured on production 2026-10-17,
+// P-CURL-PIPE was the sole evidence for 796 pypi mints, and by host: astral.sh 522,
+// sh.rustup.rs 101, ollama.com 56, bun.sh 41, … with 0 of them in a package OpenSSF
+// confirmed as malware.
+//
+// The test is "every URL on the line", not "any": a line that also fetches from an
+// unlisted host keeps the finding, and a line with no URL at all (`curl $URL | sh`) is
+// never suppressed. raw.githubusercontent.com is deliberately not an installer host —
+// 98 OpenSSF-confirmed packages stage their payload there (see allow/installer.go).
+func suppressVendorInstaller(line string) bool {
+	hosts := pipeURLHostRe.FindAllStringSubmatch(line, -1)
+	if len(hosts) == 0 {
+		return false
+	}
+	for _, m := range hosts {
+		if !allow.InstallerHost(m[1]) {
+			return false
+		}
+	}
+	return true
 }
