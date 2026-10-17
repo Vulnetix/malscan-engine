@@ -116,7 +116,7 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 		}
 		// setup.py dynamic module load + exec/compile: a common obfuscation TTP
 		// that hides the payload in a separately-fetched or embedded module.
-		if pyImportlibExecRE.MatchString(combined) {
+		if pyImportlibExecRE.MatchString(combined) || pyImportlibStagedRE.MatchString(combined) {
 			out = append(out, qualifiedEvidence(
 				"PY-SETUP-IMPORTLIB-EXEC",
 				"behavioral",
@@ -256,7 +256,20 @@ var (
 
 	pyCredFileRE  = regexp.MustCompile(`(?:~/\.aws/credentials|~/\.ssh/id_(?:rsa|ed25519|ecdsa)|~/\.docker/config\.json|~/\.netrc|~/\.pypirc)`)
 	pyNetEgressRE = regexp.MustCompile(`(?:urllib\.request\.urlopen|requests\.(?:post|get|put)|httpx\.(?:post|get|Client)|urlopen|socket\.connect)`)
-	pyImportlibExecRE = regexp.MustCompile(`(?i)(?:importlib|imp\b)[\s\S]{0,120}(?:exec(?:_module)?\s*\(|compile\s*\(|eval\s*\()`)
+	// importlib/imp followed, within 120 characters, by a real exec/eval/compile CALL. Three things
+	// the first version counted as that call, and which made this the largest single-rule driver
+	// of pypi mints (1,736 sole, 14%), are excluded by the leading [^\w.]:
+	//   spec.loader.exec_module(m)  - the standard idiom for loading a module by path (reading
+	//                                 __version__, plugin systems): exec_module is not exec(
+	//   re.compile(...)             - a regular expression, not code
+	//   model.eval()                - a method call
+	// Measured 2026-10-17: the three packages this minted on its own that day (grok-gadgets-linux-sdk,
+	// sqlbuild, btclib-secp256k1) matched only `spec.loader.exec_module(`; none has a setup.py.
+	pyImportlibExecRE = regexp.MustCompile(`(?i)(?:importlib|\bimp\b)[\s\S]{0,120}[^\w.](?:exec|compile|eval)\s*\(`)
+	// The hostile shape of the module-by-path idiom: the module is loaded from a STAGED location
+	// (a temp or shared-memory directory), not from the package itself. Loading pkg/_version.py is
+	// ordinary; loading /tmp/payload.py is a payload that was written there first.
+	pyImportlibStagedRE = regexp.MustCompile(`(?i)(?:spec_from_file_location|load_source|load_module)\s*\([^)\n]{0,160}["'](?:/tmp/|/var/tmp/|/dev/shm/|/run/user/)`)
 
 	// A cargo config path AND a write call. They may appear in either order
 	// (fs::write(path, …) or path = …; fs::write), so two separate regexes both

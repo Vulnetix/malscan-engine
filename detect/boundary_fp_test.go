@@ -141,3 +141,43 @@ func TestBase64DecodeAndWalletAreContextInLibraryCode(t *testing.T) {
 		t.Errorf("base64 -d piped to sh in the install hook must mint; findings=%v", ids(f))
 	}
 }
+
+// PY-SETUP-IMPORTLIB-EXEC counted `exec_module(` as an exec and `re.compile(` as compile,
+// so the standard module-by-path loader idiom read as an "obfuscated execution TTP". It was
+// the sole evidence for 1,736 of pypi's mints (14%) - the largest single rule - and the three
+// packages it minted on 2026-10-17 matched only `spec.loader.exec_module(`.
+func TestImportlibExecIgnoresTheModuleLoaderIdiom(t *testing.T) {
+	for _, src := range []string{
+		"import importlib.util\nspec = importlib.util.spec_from_file_location('v', 'pkg/_version.py')\nmod = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(mod)\n",
+		"import importlib, re\nVERSION = re.compile(r'__version__ = \"(.*)\"')\n",
+		"import importlib\nm = importlib.import_module('x')\nm.model.eval()\n",
+	} {
+		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: src, InstallScriptContent: src})
+		if fires(f, "PY-SETUP-IMPORTLIB-EXEC") {
+			t.Errorf("benign loader idiom matched PY-SETUP-IMPORTLIB-EXEC:\n%s", src)
+		}
+	}
+	for _, src := range []string{
+		"import importlib\nsrc = fetch()\nexec(compile(src, 'x', 'exec'))\n",
+		"import imp\nm = imp.load_source('x', p); eval(m.payload)\n",
+		"import importlib; exec(importlib.import_module('x').CODE)\n",
+	} {
+		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: src})
+		if !fires(f, "PY-SETUP-IMPORTLIB-EXEC") {
+			t.Errorf("hostile dynamic exec no longer matched:\n%s\nfindings=%v", src, ids(f))
+		}
+	}
+}
+
+// Loading a module from a STAGED path is the hostile shape of the same idiom.
+func TestImportlibLoadFromStagedPathStillMints(t *testing.T) {
+	src := "import importlib.util\nspec = importlib.util.spec_from_file_location('x', '/tmp/payload.py')\nspec.loader.exec_module(importlib.util.module_from_spec(spec))\n"
+	f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: src})
+	if !fires(f, "PY-SETUP-IMPORTLIB-EXEC") {
+		t.Errorf("a module loaded from /tmp must still match; findings=%v", ids(f))
+	}
+	ok := "import importlib.util\nspec = importlib.util.spec_from_file_location('v', 'pkg/_version.py')\nspec.loader.exec_module(importlib.util.module_from_spec(spec))\n"
+	if fires(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: ok}), "PY-SETUP-IMPORTLIB-EXEC") {
+		t.Error("a module loaded from inside the package must not match")
+	}
+}
