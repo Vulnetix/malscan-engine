@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13885
+# count: 13905
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -60,6 +60,7 @@
 193ab8f364.com
 198-macros.com
 198348.gl
+198macros.org
 1android.ru
 1b60887cd1.com
 1bestmatch.com
@@ -259,6 +260,7 @@
 7ur7l33sm1l3.xyz
 7v8ver7f.1xgame.pro
 800callboys.com
+80a6jnaz.basickantoor1.nl
 80ca.buzz
 80cf.buzz
 80cp.buzz
@@ -1349,6 +1351,7 @@ autobaenasl.com
 autobk.com
 autoforwarddisplay.com
 autoforwardnative.com
+autohaus-bender.de
 automated-sprout-labs.garden
 autonomous.online
 autopartsguru.com
@@ -2038,6 +2041,7 @@ breedingdeferencetoffee.com
 breedssupposedlypoetry.com
 breedtopia.com
 breezeclient.com
+breezeclient.org
 brenhen.icu
 brevitycartrigechinese.com
 brevityminute.com
@@ -2212,6 +2216,7 @@ bzp.net
 c-f-u.com
 c0cd2idcl5.com
 c0yc77zn.blackjackonlineplay83.com
+c2.teamzeroday.net
 c2d.tech
 c2uwzjf8.blackjackonlineplay83.com
 c4ase-verified9932.serveftp.com
@@ -2421,6 +2426,7 @@ cdaonline.com.ar
 cdbjehadcd3.com
 cdbxemdoq.toofan90bet.com
 cdctvukr.taktikkbet.com
+cde.monther.life
 cdmke7zf.sky7bet.casino
 cdn.anzho06.xyz
 cdn.cs-elect.ru
@@ -4872,6 +4878,7 @@ exitpourunconscious.com
 exl-trk.com
 exl-trkcd.com
 exmainclcknew.com
+exo-api.tf
 expandeddown.com
 expandinglair.com
 expandingwalkingpurify.com
@@ -4977,6 +4984,7 @@ falhuhna.shop
 falsespiritualmailman.com
 familiarrelentless.com
 familyaddons.com
+familyaddons.org
 familycover.com
 familyfreedomfund.org
 famousrightlyvegetation.com
@@ -5825,6 +5833,9 @@ githubu.com
 githubuser.com
 gitlab.git.git.com
 gitlab.gitlab.git.com
+gitrm.sbs
+gitsl.xyz
+gitview.sbs
 give-lawncalm.xyz
 give-pore-upon.xyz
 giveaway-site.com
@@ -7449,6 +7460,7 @@ king-culmdown.xyz
 kingdomoutdoorscowboy.com
 kingwith.com
 kirastyler.com
+kis.marketing
 kissgeneticallyfly.com
 kitchen-news.com
 kitchenmusings.com
@@ -7850,6 +7862,7 @@ lolo.sickcache.com
 loloszod.xyz
 lomejordesalamanca.es
 lomeqpe.com
+londonairportstransfer.co.uk
 londonfinancialadviser.com
 lonelinessboarding.com
 lonelyenumerate.com
@@ -8389,6 +8402,7 @@ minalkhan.com
 minasgerais.net
 minecraft2.com
 minefieldvehemence.com
+minefox.lol
 mineralsincerely.com
 mingleassertiveregard.com
 minibuiltperjury.com
@@ -9576,6 +9590,7 @@ peattropical.com
 peckbattledrop.com
 pecu.xyz
 peculiaritysting.com
+pee-files.nl
 peeksexplodedamnesty.com
 peepunauthorizeddisturb.com
 peer-tend-urge.xyz
@@ -10260,6 +10275,7 @@ qyule888.com
 qzjihweyr.nextbahis.poker
 r0ku.com
 r4iuquzx.cookeatrun.com
+rabbids.cc
 rabbitfuns.su
 rabbitshash.com
 rabbitsslimsurround.com
@@ -10327,6 +10343,7 @@ rdm.91yunma.cn
 rdrtrkmsg.com
 rdsporthorses.com
 rdt.li
+re-id-v3.com
 re-media.info
 reactfireman.com
 reactionprobable.com
@@ -11161,6 +11178,7 @@ sidenoteallureparameter.com
 sidesteamroll.com
 siftclaptendency.com
 sigmaclient.net
+sigmaclient.org
 sigmajobsearch.com
 sigmareg.com
 signageinsignia.co.za
@@ -11528,6 +11546,7 @@ stallionquietly.com
 stallsboat.com
 stampfetid.com
 stampspreviously.com
+stanarcservice.com
 standardjackpot.com
 standcolorful.com
 standout.life
@@ -13039,6 +13058,7 @@ vidox.net
 vietnamsupplier.com
 viewconsole.com
 viewercarterfactor.com
+viewgit.sbs
 viewmedias.blogspot.com
 viewonlyfansforfree.pages.dev
 viewprivateinstagram.pages.dev

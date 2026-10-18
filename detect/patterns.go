@@ -26,9 +26,10 @@ type patternRule struct {
 	// HookOnly marks a dual-use command (bare aria2c/docker/npx-remote, …) that is
 	// malicious evidence ONLY when it appears in an auto-execution surface (an
 	// install hook, or a PkgbuildContent whose processor set PkgbuildExecutes).
-	// Outside such a surface the hit is demoted to ClassContext corroboration. Never
-	// set on override_gate rules (reverse/bind shells, curl|sh) — those are proof
-	// regardless of context.
+	// Outside such a surface the hit is demoted to ClassContext corroboration. Not set on
+	// override_gate rules whose command is hostile wherever it appears (reverse/bind shells).
+	// curl|sh is the exception, on measurement: in a library's runtime source it is an
+	// install hint or a help string (1 of 1,147 pypi packages carrying it is OpenSSF-confirmed).
 	HookOnly bool `toml:"hook_only"`
 	// PkgbuildOnly marks a rule that is only meaningful for Arch-PKGBUILD source
 	// hygiene (plain-HTTP source, raw-IP source URL). It is skipped entirely when

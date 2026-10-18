@@ -4,10 +4,16 @@
 
 [[pkgbuild_analysis]]
 id = "P-CURL-PIPE"
+# hook_only: in an install hook this is download-and-execute. In a library's runtime source
+# it is an install HINT, a help string or a bootstrap helper: 1 of 1,147 pypi packages
+# carrying it is OpenSSF-confirmed malicious (and that one has other evidence), and the
+# rescan of 4 withdrawn mints showed `curl ... | sh` inside a dict of per-OS install
+# commands, an error message and a docstring.
 pattern = 'curl\s[^|\n]*\|\s*(ba)?sh'
 points = 90
 description = "curl output piped to shell (download-and-execute)"
 override_gate = true
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE"
@@ -15,6 +21,7 @@ pattern = 'wget\s[^|\n]*\|\s*(ba)?sh'
 points = 90
 description = "wget output piped to shell (download-and-execute)"
 override_gate = true
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-DEVTCP"
@@ -46,7 +53,10 @@ override_gate = true
 
 [[pkgbuild_analysis]]
 id = "P-EVAL-BASE64"
-pattern = '\beval\b\s*\(?[^\n]{0,100}base64|base64[^\n]{0,100}\beval\b\s*\('
+# `eval` must be CALLED, not merely precede the word base64: the optional-paren form matched
+# "the eval-binding ROOT COMMITMENT (receipt.root_b64, a non-empty base64 string)" in a docstring.
+# A call is `eval(`, `eval $(`, eval "..." or eval `...`; the other direction is `| eval`.
+pattern = '\beval\s*[\(\$"\x27\x60][^\n]{0,100}base64|base64[^\n]{0,100}(?:\|\s*(?:sudo\s+)?eval\b|\beval\s*\()'
 points = 85
 description = "Base64-decoded payload executed via eval"
 override_gate = false
@@ -83,10 +93,14 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-SSH-ACCESS"
+# hook_only: ssh clients, deploy tools and key managers name ~/.ssh in ordinary source (4 of
+# 662 pypi packages carrying this are OpenSSF-confirmed, all with other evidence). A build or
+# install hook reading it is the signal.
 pattern = '~/\.ssh/|/home/[^/]+/\.ssh/'
 points = 75
 description = "Accessing SSH keys"
 override_gate = false
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-BROWSER-DATA"
@@ -133,10 +147,16 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-PASSWD-READ"
+# hook_only: outside an install hook the path is a string in a path-traversal test, a
+# docstring, a sandbox deny-list or a detector's own pattern table. Rescan of 10 withdrawn
+# mints: every matched line was one of those (`os.path.join(dest, "/etc/passwd")`,
+# `check_url("file:///etc/passwd")`, `("/etc/shadow", "data_leakage", 0.30)`). 5 of 1,200
+# pypi packages carrying it are OpenSSF-confirmed, all with other evidence.
 pattern = '/etc/(passwd|shadow)'
 points = 60
 description = "Reading system password files"
 override_gate = false
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-DISCORD-WEBHOOK"
@@ -158,6 +178,7 @@ pattern = 'curl\s[^|\n]*\|\s*python[23]?'
 points = 90
 description = "curl output piped to Python interpreter (download-and-execute)"
 override_gate = true
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-CURL-PIPE-PERL"
@@ -165,6 +186,7 @@ pattern = 'curl\s[^|\n]*\|\s*perl'
 points = 90
 description = "curl output piped to Perl interpreter (download-and-execute)"
 override_gate = true
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE-PYTHON"
@@ -172,6 +194,7 @@ pattern = 'wget\s[^|\n]*\|\s*python[23]?'
 points = 90
 description = "wget output piped to Python interpreter (download-and-execute)"
 override_gate = true
+hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-PYTHON-INLINE"
@@ -897,10 +920,26 @@ override_gate = false
 
 [[source_url_analysis]]
 id = "P-TELEGRAM-BOT"
+# hook_only: a Telegram client library, a bot framework and a notifier all name this URL.
+# 11 of 267 pypi packages carrying it are OpenSSF-confirmed (4.1%); the hostile shape is a bot
+# TOKEN written into the source, which P-TELEGRAM-BOT-TOKEN below keeps as evidence.
 pattern = '(telegram\.org/bot|api\.telegram\.org/bot)'
 points = 65
 description = "Telegram bot API URL (data exfiltration channel)"
 override_gate = false
+hook_only = true
+
+[[source_url_analysis]]
+id = "P-TELEGRAM-BOT-TOKEN"
+# A literal bot token (<8-10 digit bot id>:<35 chars>) in the URL is a hard-coded exfiltration
+# credential: the author of a library never ships their own token, a malware author does.
+# The documentation example (123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11) is excluded by the
+# lookahead-free shape below: the bot id must be 8+ digits. Measured 2026-10-18 over every
+# stored pypi P-TELEGRAM-BOT line: 1 package matches and it is OpenSSF-confirmed.
+pattern = 'telegram\.org/bot[0-9]{8,10}:[A-Za-z0-9_-]{34,}'
+points = 80
+description = "Telegram bot API URL with a hard-coded bot token (data exfiltration channel)"
+override_gate = true
 
 [[source_url_analysis]]
 id = "P-TUNNEL-SERVICE"
@@ -1018,6 +1057,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*node\b'
 points = 90
 description = "Download piped to Node.js interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-RUBY"
@@ -1025,6 +1065,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*ruby\b'
 points = 90
 description = "Download piped to Ruby interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-PHP"
@@ -1032,6 +1073,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*php\b'
 points = 90
 description = "Download piped to PHP interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-LUA"
@@ -1039,6 +1081,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*lua\b'
 points = 90
 description = "Download piped to Lua interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-TCLSH"
@@ -1046,6 +1089,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*(tclsh|wish)\b'
 points = 90
 description = "Download piped to Tcl interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-RSCRIPT"
@@ -1053,6 +1097,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*Rscript\b'
 points = 90
 description = "Download piped to R interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-JULIA"
@@ -1060,6 +1105,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*julia\b'
 points = 90
 description = "Download piped to Julia interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-AWK"
@@ -1067,6 +1113,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*(g?awk|mawk|nawk)\b'
 points = 85
 description = "Download piped to Awk interpreter"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-JJS"
@@ -1074,6 +1121,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*(jjs|jrunscript|jshell)\b'
 points = 90
 description = "Download piped to Java Nashorn/JShell"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-KSH"
@@ -1081,6 +1129,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*ksh\b'
 points = 90
 description = "Download piped to Ksh shell"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-CSH"
@@ -1088,6 +1137,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*(csh|tcsh)\b'
 points = 90
 description = "Download piped to C shell"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-ZSH"
@@ -1095,6 +1145,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*zsh\b'
 points = 90
 description = "Download piped to Zsh shell"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-FISH"
@@ -1102,6 +1153,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*fish\b'
 points = 90
 description = "Download piped to Fish shell"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-PIPE-DASH"
@@ -1109,6 +1161,7 @@ pattern = '(curl|wget)\s[^|\n]*\|\s*dash\b'
 points = 90
 description = "Download piped to Dash shell"
 override_gate = true
+hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-ALT-PIPE-SHELL"
@@ -1916,10 +1969,27 @@ override_gate = true
 
 [[install_script_analysis]]
 id = "P-PY-SETUP-EXEC"
+# Context, not evidence and not a weakness. setup.py runs cmake, git, nm, gcc, `brew install`
+# and its own build scripts through subprocess as a matter of course: of 25 sampled lines from
+# packages minted on this rule alone, every one was a build step, and 29 of 520 packages
+# carrying it (5.6%) are OpenSSF-confirmed -- almost all with other evidence. A constant argv
+# is not a vulnerability either, so it is not reported as one. The hostile shapes are separate
+# rules (P-PY-SETUP-EVAL-DECODE, P-INSTALL-CURL, P-PY-SETUP-HOST-RECON).
 pattern = '(os\.system|subprocess\.(Popen|call|run|check_output|check_call))\s*\('
-points = 42
-description = "setup.py spawns a subprocess at install time (download-and-execute vector)"
+points = 25
+description = "setup.py spawns a subprocess at install time (build step; corroboration only)"
 override_gate = false
+
+[[install_script_analysis]]
+id = "P-PY-SETUP-HOST-RECON"
+ecosystems = ["pypi"]
+# setup.py asks the machine who and where it is. A build never needs the hostname or the
+# user name; an install-time beacon does. Measured 2026-10-18 over the stored P-PY-SETUP-EXEC
+# lines: 2 packages match and both are OpenSSF-confirmed.
+pattern = '(check_output|run|Popen|call|check_call)\s*\(\s*\[\s*["\x27](hostname|whoami)["\x27]'
+points = 60
+description = "setup.py runs hostname/whoami at install time (host fingerprinting)"
+override_gate = true
 
 [[install_script_analysis]]
 id = "P-PY-SETUP-EVAL-DECODE"
