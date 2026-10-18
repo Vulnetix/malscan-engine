@@ -739,9 +739,13 @@ override_gate = true
 
 [[install_script_analysis]]
 id = "P-INSTALL-PERSISTENCE"
-pattern = 'systemctl\s+enable|crontab|/etc/cron\.d/'
+# `systemctl enable` is gone from this rule: a package that ships a service enables it
+# (post_install() { systemctl enable --now foo.service }), and 211 AUR advisories rested on echoed
+# hints and a package enabling its own unit. Cron persistence is what remains; a hostile unit is
+# P-SYSTEMD-CREATE's.
+pattern = 'crontab|/etc/cron\.d/'
 points = 45
-description = "Persistence mechanism in install script"
+description = "Cron persistence in install script"
 override_gate = false
 
 [[install_script_analysis]]

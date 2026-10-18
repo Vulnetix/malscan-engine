@@ -305,7 +305,7 @@ func suppressLine(id, line string) bool {
 	case "PHP-ASSERT-VAR":
 		return phpAssertBooleanRe.MatchString(line)
 	}
-	return false
+	return suppressPackagingIdiom(id, line)
 }
 
 // phpAssertBooleanRe matches an assert() whose argument is plainly a boolean
