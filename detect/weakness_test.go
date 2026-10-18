@@ -41,6 +41,9 @@ var weaknessRules = []struct {
 	{"JL-BUILD-SHELL-INTERP", "julia", "install", "run(`sh -c \"make\"`)", "CWE-78"},
 	{"P-CARGO-BUILD-SHELL", "cargo", "install", `Command::new("sh").arg("-c").arg("make")`, "CWE-78"},
 	{"P-NUGET-MSBUILD-INLINE-EXEC", "nuget", "install", `<UsingTask TaskName="X" TaskFactory="CodeTaskFactory" AssemblyFile="a.dll"/>`, "CWE-94"},
+	{"PHP-CREATE-FUNCTION", "packagist", "pkg", "$f = create_function('', $code);", "CWE-95"},
+	{"PHP-ASSERT-VAR", "packagist", "pkg", "assert($code);", "CWE-95"},
+	{"P-CARGO-BUILD-DOWNLOAD", "cargo", "install", "let body = reqwest::blocking::get(url).unwrap();", "CWE-494"},
 }
 
 func detectOne(eco, section, line string) []Finding {

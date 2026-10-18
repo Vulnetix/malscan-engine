@@ -2205,6 +2205,12 @@ pattern = '(reqwest|ureq|hyper|isahc)::[^\n]{0,40}(get|post)\s*\('
 points = 45
 description = "build.rs downloads a remote resource at build time"
 override_gate = false
+# A weakness (CWE-494, download of code without an integrity check), not evidence: build scripts fetch
+# protoc, prebuilt native libraries and test data as a matter of course. What is DONE with the download is
+# judged by the execute and decode rules. 20 live cargo advisories rested on this alone.
+weakness = true
+cwe = "CWE-494"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[pkgbuild_analysis]]
 id = "P-RUST-INCLUDE-BYTES-DECODE"
@@ -2345,6 +2351,12 @@ pattern = '(^|[^A-Za-z0-9_>:$])assert\s*\(\s*\$'
 points = 45
 description = "PHP assert() on a variable used as a dynamic code-execution sink"
 override_gate = false
+# A weakness (CWE-95), not evidence: before PHP 8 assert($string) evaluated the string as code, which is a
+# real code-injection sink when the string is attacker-influenced, and a plain bug otherwise. 57 live
+# packagist advisories rested on this alone.
+weakness = true
+cwe = "CWE-95"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[pkgbuild_analysis]]
 id = "PHP-CREATE-FUNCTION"
@@ -2352,6 +2364,11 @@ pattern = 'create_function\s*\(\s*[^,]*,\s*\$'
 points = 45
 description = "PHP create_function() dynamic code construction (eval backdoor vector)"
 override_gate = false
+# A weakness (CWE-95), not evidence: create_function() is eval() in a trench coat (removed in PHP 8) and
+# old libraries use it with a code string built from a variable. 23 live packagist advisories rested on it.
+weakness = true
+cwe = "CWE-95"
+cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[pkgbuild_analysis]]
 id = "PHP-SHELL-EXEC-VAR"
