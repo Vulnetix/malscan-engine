@@ -327,3 +327,21 @@ func TestNohupAndEvalBase64InLibrarySource(t *testing.T) {
 		t.Error("eval of a base64 payload in npm source must still mint via P-JS-EVAL-DECODE")
 	}
 }
+
+// A Discord webhook is a 17-20 digit id and a ~68 character token. The docs placeholders that minted
+// pypi advisories (`webhooks/123456/abcdef`, `webhooks/xxxx.../xxxx...`) are not one.
+func TestDiscordWebhookNeedsARealWebhookShape(t *testing.T) {
+	for _, line := range []string{
+		`url = "https://discord.com/api/webhooks/123456/abcdef"`,
+		`"placeholder": "https://discord.com/api/webhooks/xxxxxxxxxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`,
+		`webhook = "https://discord.com/api/webhooks/${ID}/${TOKEN}"`,
+	} {
+		if libraryMints("pypi", line) {
+			t.Errorf("a Discord webhook placeholder minted malware: %q", line)
+		}
+	}
+	real := `WEBHOOK = "https://discord.com/api/webhooks/1547416857537945601/TgPFykvLraAjc6jAPKzekhmkUABmEEehsrKHIX8tG3urtKVl40uXyZabcdefghijklmnopqrstuvwxy"`
+	if !libraryMints("pypi", real) {
+		t.Errorf("a real-shaped webhook should still mint; findings=%v", ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: real})))
+	}
+}

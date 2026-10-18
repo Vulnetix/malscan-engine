@@ -173,7 +173,7 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-DISCORD-WEBHOOK"
-pattern = 'discord(app)?\.com/api/webhooks/'
+pattern = 'discord(?:app)?\.com/api/webhooks/[0-9]{17,20}/[A-Za-z0-9_-]{50,}'
 points = 70
 description = "Discord webhook URL (data exfiltration channel)"
 override_gate = false
@@ -945,7 +945,7 @@ override_gate = false
 
 [[source_url_analysis]]
 id = "P-DISCORD-WEBHOOK"
-pattern = 'discord(app)?\.com/api/webhooks/'
+pattern = 'discord(?:app)?\.com/api/webhooks/[0-9]{17,20}/[A-Za-z0-9_-]{50,}'
 points = 70
 description = "Discord webhook URL (data exfiltration channel)"
 override_gate = false
