@@ -56,6 +56,19 @@ func letterScript(r rune) string {
 	return ""
 }
 
+// confusableMix reports whether a label mixes Latin, Cyrillic and Greek, the scripts whose
+// letters are visually interchangeable. CJK, Arabic and Hangul beside Latin are ordinary
+// internationalised names (or prose that ran into a URL), not a spoof.
+func confusableMix(scripts map[string]bool) bool {
+	n := 0
+	for _, s := range []string{"Latin", "Cyrillic", "Greek"} {
+		if scripts[s] {
+			n++
+		}
+	}
+	return n > 1
+}
+
 func analyzeHomograph(ctx *PackageContext) []Finding {
 	var out []Finding
 	seenMixed, seenPuny := false, false
@@ -83,7 +96,11 @@ func analyzeHomograph(ctx *PackageContext) []Finding {
 						scripts[s] = true
 					}
 				}
-				if len(scripts) > 1 {
+				// Only scripts that can impersonate Latin letters make a spoof. Latin beside Han
+				// is what the host regex produces from `com（否则` -- a URL followed by CJK
+				// prose and a full-width bracket -- and 157 pypi/cargo/go/packagist/pubdev
+				// mints carried this rule with none OpenSSF-confirmed.
+				if len(scripts) > 1 && confusableMix(scripts) {
 					seenMixed = true
 					out = append(out, Finding{
 						ID: "P-HOMOGRAPH-MIXED-SCRIPT", Category: "source-url", Class: ClassEvidence,

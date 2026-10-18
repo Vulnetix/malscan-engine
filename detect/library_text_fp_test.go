@@ -147,3 +147,28 @@ func TestNpmAndRubygemsKeepTheseAsEvidenceInLibrarySource(t *testing.T) {
 		}
 	}
 }
+
+// Residuals of the live re-judge of single-rule pypi mints (2026-10-18), one real line each.
+func TestLongTailLibraryStringsDoNotMint(t *testing.T) {
+	for _, tc := range []struct{ eco, line string }{
+		{"pypi", `jwt_body_dict = eval(str(base64.urlsafe_b64decode(jwt_body), "utf-8"))`},
+		{"pypi", `suspicious_words = [b"eval(", b"os.system(", b"powershell", b"base64_decode"]`},
+		{"pypi", `"if curl -fsS http://127.0.0.1:8092/health >/dev/null 2>&1; then echo health-ok; exit 0; fi; "`},
+		{"pypi", `[ -d /mnt/sysroot/dev ] && mount -o bind /dev /mnt/sysroot/dev`},
+		{"pypi", `f"send_key_to_tmux: tmux send-keys {key} failed "`},
+		{"pypi", `save_ifs=$IFS`},
+		{"pypi", `'~/.mozilla/firefox',`},
+		{"pypi", `start_commands=[str(bore_bin), 'local', str(port), '--to', 'bore.pub'],`},
+		{"pypi", "see https://example.dev/docs com（否则 use the default）"},
+	} {
+		if libraryMints(tc.eco, tc.line) {
+			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line})))
+		}
+	}
+}
+
+func TestHomographNeedsConfusableScripts(t *testing.T) {
+	if libraryMints("pypi", "url = https://com（否则") {
+		t.Error("Latin beside Han is not a homograph spoof")
+	}
+}

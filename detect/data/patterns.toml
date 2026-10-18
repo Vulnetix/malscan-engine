@@ -62,6 +62,8 @@ pattern = '\beval\s*[\(\$"\x27\x60][^\n]{0,100}base64|base64[^\n]{0,100}(?:\|\s*
 points = 85
 description = "Base64-decoded payload executed via eval"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-BASE64"
@@ -111,6 +113,8 @@ pattern = '\.(mozilla|config/chromium|config/google-chrome|config/BraveSoftware)
 points = 70
 description = "Accessing browser profile data"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-GPG-ACCESS"
@@ -357,6 +361,8 @@ pattern = '(curl|wget|python[23]?|bash|sh)\s+.*>/dev/null.*&'
 points = 65
 description = "Network/shell command backgrounded with suppressed output"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 # System reconnaissance
 [[pkgbuild_analysis]]
@@ -374,6 +380,8 @@ pattern = '(\buname\s+-a|\bcat\s+/proc/cpuinfo|\blspci|\bip\s+addr\b|\bip\s+addr
 points = 40
 description = "System information gathering (reconnaissance)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 # Hex/octal obfuscation
 [[pkgbuild_analysis]]
@@ -452,6 +460,8 @@ pattern = '\$\{?IFS\}?'
 points = 60
 description = "$IFS variable used as command separator (shell obfuscation)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-ANSI-C-HEX"
@@ -955,6 +965,8 @@ pattern = '(ngrok\.io|serveo\.net|localtunnel\.me|localhost\.run)/'
 points = 55
 description = "Tunnel service URL (obfuscated endpoint)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[source_url_analysis]]
 id = "P-HTTP-SOURCE"
@@ -1305,6 +1317,8 @@ pattern = 'tmux\s.*(send-keys|send)\s'
 points = 50
 description = "tmux send-keys command injection"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-BUSYBOX-SHELL"
@@ -1849,6 +1863,8 @@ pattern = 'mount\s.*--bind\s|mount\s.*-o\s*bind'
 points = 55
 description = "Bind mount (filesystem overlay for privilege escalation)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-INSTALL-SUID"

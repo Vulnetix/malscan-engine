@@ -160,6 +160,16 @@ var genericServiceHosts = map[string]bool{
 	"hackerone.com": true, "bugcrowd.com": true,
 	"launchpad.net": true, "tuleap.org": true,
 
+	// ── Threat-intelligence services and public RPC endpoints ────────────────
+	// A malware-analysis tool names the feeds it queries (abuse.ch's MalwareBazaar, ThreatFox,
+	// YARAify, URLhaus: pypi's `malwarebazaar`-style CLIs), and a wallet library names public
+	// RPC relays. Both end up in a bad-domain feed because they are ABOUT, or abused by, the
+	// thing being reported -- naming them is not contacting a C2.
+	"abuse.ch": true, "bazaar.abuse.ch": true, "mb-api.abuse.ch": true, "threatfox.abuse.ch": true,
+	"threatfox-api.abuse.ch": true, "yaraify.abuse.ch": true, "yaraify-api.abuse.ch": true,
+	"urlhaus.abuse.ch": true, "urlhaus-api.abuse.ch": true, "feodotracker.abuse.ch": true,
+	"1rpc.io": true,
+
 	// ── Package registries ───────────────────────────────────────────────────
 	"registry.npmjs.org": true, "npmjs.com": true, "www.npmjs.com": true,
 	"npmjs.org": true, "registry.yarnpkg.com": true, "yarnpkg.com": true,
