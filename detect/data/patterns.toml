@@ -147,6 +147,8 @@ pattern = '(?:^|[^A-Za-z0-9_.-])crontab\s+[-<\w/.]|["\x27]crontab["\x27]\s*,\s*[
 points = 45
 description = "Creating cron job (persistence)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-LD-PRELOAD"
@@ -245,6 +247,8 @@ pattern = '(xclip|xsel|wl-paste)\s'
 points = 50
 description = "Clipboard access (possible credential theft)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-DISK-READ"
@@ -438,6 +442,8 @@ pattern = 'curl\s+[^;|&\n]*(-d\s+\$|--data[^;|&\n]*\$|-X\s+POST[^;|&\n]*\$)'
 points = 55
 description = "curl POST with variable data (possible data exfiltration)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 # Archive extract-and-execute
 [[pkgbuild_analysis]]
@@ -602,6 +608,8 @@ pattern = '\.config/systemd/user/'
 points = 50
 description = "Systemd user service creation (no root required)"
 override_gate = false
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-UDEV-RULE"

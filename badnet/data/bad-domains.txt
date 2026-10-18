@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13908
+# count: 13913
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -984,6 +984,7 @@ apeobservedoverlook.com
 apexcucumber.com
 apexdataserver4.sbs
 api.mineblack.lol
+api.recapcha.fun
 api.recapcha.space
 api.socialsearchconverter.com
 apieceskilful.com
@@ -2431,6 +2432,7 @@ cdn.anzho06.xyz
 cdn.cs-elect.ru
 cdn.file6.goodid.com
 cdn.monther.life
+cdn.wovplaying.help
 cdr.life
 cdt.omsules.life
 cdudeal.com
@@ -4176,6 +4178,7 @@ donggangnews.com
 donkeytourscroatia.com
 donorirreparable.com
 donsoft.xyz
+donutbasefinder.com
 donutcash.lol
 donutclients.st
 donutdupe.com
@@ -5603,6 +5606,7 @@ funmem.com
 funmempu.com
 funnelcominglamp.com
 funneldiy.com
+funnymap.net
 funnyoffer.com
 funnyvot.com
 furiousfar.com
@@ -6469,6 +6473,7 @@ hopss.com
 horacereciprocalvaccination.com
 horizontallypectoraltruthfully.com
 hormoneabsorbed.com
+horno-rafelet.es
 hornstaughtsession.com
 horny-neighbour.com
 hornycrawl.com
