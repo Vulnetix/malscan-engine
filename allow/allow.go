@@ -131,6 +131,12 @@ var exampleDomains = map[string]bool{
 	"foo.bar": true, "acme.com": true, "company.com": true, "host.com": true,
 	"server.com": true, "email.com": true, "mail.com": true, "sample.com": true,
 	"site.com": true, "url.com": true,
+	// "your…" placeholders: a template tells the reader to substitute their own. contextduty
+	// 1.0.0 was minted as malware on `SUPPORT_EMAIL = "admin@yourcompany.com"` alone.
+	"yourcompany.com": true, "yourcompany.org": true, "yourcompany.net": true, "yourcompany.io": true,
+	"your-company.com": true, "yourorg.com": true, "your-org.com": true, "yourapp.com": true,
+	"yoursite.com": true, "yourwebsite.com": true, "yourserver.com": true, "your-domain.com": true,
+	"yourdomain.org": true, "yourdomain.net": true,
 }
 
 // genericServiceHosts are legit infrastructure / registry / CDN / standards /

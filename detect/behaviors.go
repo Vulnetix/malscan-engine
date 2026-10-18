@@ -42,6 +42,20 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 	}
 	eco := strings.ToLower(ctx.Ecosystem)
 
+	// The three Python rules below are setup.py rules: each is documented, and named, for what
+	// setup.py does at install time. Run over the whole package they join two statements that
+	// have nothing to do with each other -- `importlib` in a docstring and a later `exec(` in
+	// another function (cxp, cat-agent), `~/.aws/credentials` read for AWS auth in one module
+	// and a request in another (puppetmaster-ai). Measured over stored pypi mints 2026-10-18:
+	// 2 of 1,483 packages carrying IMPORTLIB-EXEC and 5 of 497 carrying CRED-EXFIL are OpenSSF-
+	// confirmed (none for the .pth rule); only 1 confirmed package rests on these alone. The
+	// pypi processor passes setup.py as the install hook, so that is the scope. A caller that
+	// names no ecosystem keeps the old whole-content behaviour.
+	pyScope := combined
+	if eco == "pypi" || eco == "python" {
+		pyScope = hooks
+	}
+
 	// ── RubyGems: global Gem.post_install_hooks persistence ──────────────────
 	// A gem registering Gem.post_install_hooks (or Gem.pre_install_hooks) runs
 	// arbitrary code on EVERY future gem install once it is loaded. This is a
@@ -66,7 +80,7 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 	// content is establishing persistence. Benign .pth files only append paths
 	// (no "import"). Intent: persistence → ClassEvidence.
 	if eco == "pypi" || eco == "python" || eco == "" {
-		if pthExecutableWriteRE.MatchString(combined) {
+		if pthExecutableWriteRE.MatchString(pyScope) {
 			out = append(out, qualifiedEvidence(
 				"PY-PTH-AUTOIMPORT-PERSISTENCE",
 				"behavioral",
@@ -107,7 +121,7 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 	// credential path in setup.py is already strong; pairing it with a network
 	// call is exfiltration. Intent: exfiltration → ClassEvidence.
 	if eco == "pypi" || eco == "python" || eco == "" {
-		if pyCredFileRE.MatchString(combined) && pyNetEgressRE.MatchString(combined) {
+		if pyCredFileRE.MatchString(pyScope) && pyNetEgressRE.MatchString(pyScope) {
 			out = append(out, qualifiedEvidence(
 				"PY-SETUP-CRED-EXFIL",
 				"behavioral",
@@ -116,7 +130,7 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 		}
 		// setup.py dynamic module load + exec/compile: a common obfuscation TTP
 		// that hides the payload in a separately-fetched or embedded module.
-		if pyImportlibExecRE.MatchString(combined) || pyImportlibStagedRE.MatchString(combined) {
+		if pyImportlibExecRE.MatchString(pyScope) || pyImportlibStagedRE.MatchString(pyScope) {
 			out = append(out, qualifiedEvidence(
 				"PY-SETUP-IMPORTLIB-EXEC",
 				"behavioral",

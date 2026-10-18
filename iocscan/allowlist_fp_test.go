@@ -12,6 +12,7 @@ func TestIndicatorSetDropsBenign(t *testing.T) {
 		{Type: TypeDomain, Value: "html.spec.whatwg.org"},
 		{Type: TypeDomain, Value: "tidelift.com"},
 		{Type: TypeDomain, Value: "github.com"},
+		{Type: TypeDomain, Value: "yourcompany.com"}, // template placeholder
 		{Type: TypeIPv4, Value: "1.2.3.4"},
 		{Type: TypeIPv4, Value: "192.0.2.10"},
 		{Type: TypeDomain, Value: "evil-c2.io"},        // real → kept
@@ -21,7 +22,8 @@ func TestIndicatorSetDropsBenign(t *testing.T) {
 
 	if set.LookupDomain("html.spec.whatwg.org") != nil ||
 		set.LookupDomain("tidelift.com") != nil ||
-		set.LookupDomain("github.com") != nil {
+		set.LookupDomain("github.com") != nil ||
+		set.LookupDomain("yourcompany.com") != nil {
 		t.Error("benign domains must be dropped from the indicator set")
 	}
 	if set.LookupIP("1.2.3.4") != nil || set.LookupIP("192.0.2.10") != nil {
