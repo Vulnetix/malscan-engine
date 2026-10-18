@@ -8,13 +8,16 @@ id = "P-CURL-PIPE"
 # it is an install HINT, a help string or a bootstrap helper: 1 of 1,147 pypi packages
 # carrying it is OpenSSF-confirmed malicious (and that one has other evidence), and the
 # rescan of 4 withdrawn mints showed `curl ... | sh` inside a dict of per-OS install
-# commands, an error message and a docstring.
+# commands, an error message and a docstring. npm is included for this family only: 71 of the 74
+# live npm mints resting on it alone were `console.error("... curl ... | bash")` hints and per-OS
+# install dictionaries, and about 3 OpenSSF-confirmed npm packages rest on it alone; npm keeps the
+# other demoted strings as evidence (P-TELEGRAM-BOT 12 of 54 confirmed, P-PASSWD-READ 12 of 120).
 pattern = 'curl\s[^|\n]*\|\s*(ba)?sh'
 points = 90
 description = "curl output piped to shell (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE"
@@ -23,7 +26,7 @@ points = 90
 description = "wget output piped to shell (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-DEVTCP"
@@ -187,7 +190,7 @@ points = 90
 description = "curl output piped to Python interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-CURL-PIPE-PERL"
@@ -196,7 +199,7 @@ points = 90
 description = "curl output piped to Perl interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE-PYTHON"
@@ -205,7 +208,7 @@ points = 90
 description = "wget output piped to Python interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-PYTHON-INLINE"
@@ -704,14 +707,17 @@ override_gate = false
 # Install script patterns
 [[install_script_analysis]]
 id = "P-INSTALL-CURL"
-pattern = '(?:^|[^A-Za-z0-9_])curl\s'
+# `[ \t]`, not `\s`: `\s` also matched the newline after a module path, so four go mirrors of the curl
+# project itself (module github.com/curl/curl) were minted as malware. A command has its arguments on
+# the same line.
+pattern = '(?:^|[^A-Za-z0-9_])curl[ \t]'
 points = 45
 description = "curl in install script (should not download during install)"
 override_gate = false
 
 [[install_script_analysis]]
 id = "P-INSTALL-WGET"
-pattern = '(?:^|[^A-Za-z0-9_])wget\s'
+pattern = '(?:^|[^A-Za-z0-9_])wget[ \t]'
 points = 45
 description = "wget in install script (should not download during install)"
 override_gate = false

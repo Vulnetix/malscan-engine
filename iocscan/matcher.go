@@ -85,7 +85,7 @@ func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 				Indicator:      mm.ind,
 				FilePath:       filePath,
 				RelPath:        relPath,
-				Class:          worstClass(class, indicatorClassFloor(mm.ind)),
+				Class:          worstClass(worstClass(class, indicatorClassFloor(mm.ind)), codeTokenClass(mm)),
 				LineNumber:     i + 1,
 				ColStart:       mm.col,
 				ColEnd:         mm.col + len(mm.value),
@@ -148,6 +148,9 @@ type lineMatch struct {
 	value string
 	col   int
 	ind   *Indicator
+	// codeToken marks a bare domain that is an unquoted identifier chain in code
+	// (`this.info = payload.info;`), not a host the code names.
+	codeToken bool
 }
 
 var (
@@ -175,7 +178,9 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 	}
 
 	// URLs (and the domain inside them).
+	var urlSpans [][]int
 	for _, loc := range urlRe.FindAllStringIndex(s, -1) {
+		urlSpans = append(urlSpans, loc)
 		u := s[loc[0]:loc[1]]
 		if ind := m.set.LookupURL(u); ind != nil {
 			add(TypeURL, u, loc[0], ind)
@@ -191,11 +196,16 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 		}
 	}
 
-	// Bare domains.
+	// Bare domains. One that lies inside a URL is that URL's host (handled above) or a path
+	// component such as `update.zip` in https://example.com/update.zip, which is a file name.
 	for _, loc := range domainRe.FindAllStringIndex(s, -1) {
+		if insideSpan(urlSpans, loc[0]) {
+			continue
+		}
 		dom := strings.TrimSuffix(s[loc[0]:loc[1]], ".")
 		if ind := m.set.LookupDomain(dom); ind != nil {
 			add(TypeDomain, dom, loc[0], ind)
+			matches[len(matches)-1].codeToken = looksLikeCodeToken(s, loc[0])
 		}
 	}
 
@@ -764,4 +774,55 @@ func ipv4InVersionField(s string, start int) bool {
 		}
 	}
 	return false
+}
+
+func insideSpan(spans [][]int, pos int) bool {
+	for _, sp := range spans {
+		if pos >= sp[0] && pos < sp[1] {
+			return true
+		}
+	}
+	return false
+}
+
+// looksLikeCodeToken reports whether the bare domain at col is an unquoted identifier chain in a
+// line of code: `const info = payload.info;`, `if (!x && payload.info == null)`. `info`, `server`
+// and `zip` are real top-level domains, so `payload.info` is also a host name; but a host a program
+// talks to is a string, a URL or a command argument, and an assignment, call or block around an
+// UNQUOTED dotted name is member access. Measured over the npm mints that still carried
+// IOC-STIX-MATCH on 2026-10-18: 8 of 10 were `payload.info`. Quoted names and any line with a URL
+// are never code tokens.
+func looksLikeCodeToken(s string, col int) bool {
+	if strings.Contains(s, "://") {
+		return false
+	}
+	// `HOST=evil.example` (no space) is a shell or env assignment of a value, not member access.
+	if col > 0 && s[col-1] == '=' {
+		return false
+	}
+	var dq, sq, bq int
+	for i := 0; i < col && i < len(s); i++ {
+		if i > 0 && s[i-1] == '\\' {
+			continue
+		}
+		switch s[i] {
+		case '"':
+			dq++
+		case '\'':
+			sq++
+		case '`':
+			bq++
+		}
+	}
+	if dq%2 == 1 || sq%2 == 1 || bq%2 == 1 {
+		return false
+	}
+	return strings.ContainsAny(s, "=(;{")
+}
+
+func codeTokenClass(mm lineMatch) detect.Class {
+	if mm.codeToken {
+		return detect.ClassContext
+	}
+	return ""
 }

