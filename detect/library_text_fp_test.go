@@ -300,3 +300,30 @@ func TestDiffNetworkNoteNeedsAWordAndNeverMintsAlone(t *testing.T) {
 		t.Errorf("the diff note alone minted malware; findings=%v", ids(f))
 	}
 }
+
+// Residuals of the 2026-10-19 post-deploy check. G-DC-SHELL matched any "dc " followed later by "!";
+// nohup-with-& is a service launcher in a script; P-EVAL-BASE64 is 2 of 191 npm packages confirmed.
+func TestDcShellNeedsTheGTFOBinsForm(t *testing.T) {
+	for _, line := range []string{`# the dc component of the signal, then the ! operator`, `echo "dc offset removed!"`} {
+		if libraryMints("npm", line) {
+			t.Errorf("prose minted G-DC-SHELL: %q", line)
+		}
+	}
+	if !libraryMintsExec("dc -e '!/bin/sh'") {
+		t.Error("the GTFOBins dc shell escape must still mint")
+	}
+}
+
+func libraryMintsExec(src string) bool {
+	return CombinedVerdict(Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", PkgbuildContent: src, PkgbuildExecutes: true})).Malicious
+}
+
+func TestNohupAndEvalBase64InLibrarySource(t *testing.T) {
+	if libraryMints("pypi", `subprocess.Popen("nohup ./serve --port 8080 &", shell=True)`) {
+		t.Error("a nohup launcher in pypi library source minted malware")
+	}
+	// The generic rule is demoted for npm; the npm-specific P-JS-EVAL-DECODE keeps the hostile shape.
+	if !libraryMints("npm", `const s = 'eval(Buffer.from(blob, "base64").toString()) // base64 then eval(x)';`) {
+		t.Error("eval of a base64 payload in npm source must still mint via P-JS-EVAL-DECODE")
+	}
+}

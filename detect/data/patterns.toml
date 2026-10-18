@@ -66,7 +66,7 @@ points = 85
 description = "Base64-decoded payload executed via eval"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-BASE64"
@@ -366,6 +366,10 @@ pattern = 'nohup\s+\S+.*&'
 points = 55
 description = "nohup with backgrounding (persistent hidden process)"
 override_gate = false
+# hook_only on the registries where it was measured as noise: pypi 3 of 126 packages carrying it are
+# OpenSSF-confirmed. npm keeps it (11 of 44).
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-DEVNULL-BACKGROUND"
@@ -1734,7 +1738,9 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-DC-SHELL"
-pattern = '\bdc\s.*[!]'
+# The GTFOBins form is `dc -e '!/bin/sh'`. `\bdc\s.*[!]` matched any "dc " with a "!" later on the line
+# (prose, comments, "DC ... !"): 0 of 37 npm and 0 of 20 pypi packages carrying it are OpenSSF-confirmed.
+pattern = '\bdc\s+-e\s+["\x27]?!'
 points = 55
 description = "dc calculator shell escape (! command)"
 override_gate = false
