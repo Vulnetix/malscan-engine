@@ -205,7 +205,7 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 		dom := strings.TrimSuffix(s[loc[0]:loc[1]], ".")
 		if ind := m.set.LookupDomain(dom); ind != nil {
 			add(TypeDomain, dom, loc[0], ind)
-			matches[len(matches)-1].codeToken = looksLikeCodeToken(s, loc[0])
+			matches[len(matches)-1].codeToken = looksLikeCodeToken(s, loc[0]) || continuesAsMemberChain(s, loc[1])
 		}
 	}
 
@@ -825,4 +825,23 @@ func codeTokenClass(mm lineMatch) detect.Class {
 		return detect.ClassContext
 	}
 	return ""
+}
+
+// continuesAsMemberChain reports whether the text right after a bare-domain match carries on as an
+// identifier chain: `payload.info.total_token_usage`, `payload.info(`, `payload.info_`. A hostname
+// does not continue past its own last label (the domain pattern would have taken the next label),
+// so a match followed by `.name`, `_` or `(` is member access that happens to end in a TLD
+// (.info, .server, .zip). It needs no assignment on the line, which is what the other test relies on.
+func continuesAsMemberChain(s string, end int) bool {
+	if end >= len(s) {
+		return false
+	}
+	switch c := s[end]; {
+	case c == '_' || c == '(':
+		return true
+	case c == '.' && end+1 < len(s):
+		n := s[end+1]
+		return n == '_' || (n >= 'a' && n <= 'z') || (n >= 'A' && n <= 'Z')
+	}
+	return false
 }

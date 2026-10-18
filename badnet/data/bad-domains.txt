@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13915
+# count: 13917
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -2427,6 +2427,7 @@ cdbjehadcd3.com
 cdbxemdoq.toofan90bet.com
 cdctvukr.taktikkbet.com
 cde.monther.life
+cdk.monther.life
 cdmke7zf.sky7bet.casino
 cdn.anzho06.xyz
 cdn.cs-elect.ru
@@ -13769,6 +13770,7 @@ ynjkdl.com
 ynteevb.1xvip.xyz
 ynzpk.varzeshlife.ir
 yogafitness.org
+yokobd.com
 yolkclknu.com
 yolkdirxl.com
 yopcgames.com

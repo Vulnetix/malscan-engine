@@ -75,3 +75,27 @@ func TestFileNameInAUrlPathIsNotAHost(t *testing.T) {
 		t.Errorf("update.zip in a URL path matched: %v", classesOf(ev))
 	}
 }
+
+func TestMemberChainWithoutAnAssignmentIsNotAHost(t *testing.T) {
+	m := NewMatcher(codeTokenSet(), 0)
+	for _, line := range []string{
+		"        event_msg.payload.info.total_token_usage.total_tokens",
+		"    payload.info.last_token_usage,",
+		"foo(payload.info_data)",
+	} {
+		for _, c := range classesOf(m.MatchText("src/a.py", line+"\n")) {
+			if c == detect.ClassEvidence {
+				t.Errorf("member chain %q read as a known-bad host", line)
+			}
+		}
+	}
+	found := false
+	for _, c := range classesOf(m.MatchText("src/a.sh", "ping payload.info\n")) {
+		if c == detect.ClassEvidence {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("a host as a command argument must stay evidence")
+	}
+}

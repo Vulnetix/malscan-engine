@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 482
+# count: 487
 2001:12d0:8020::42
 2001:1308:2907:d000:569f:35ff:fe13:3f22
 2001:19f0:6c01:2a94:5400:6ff:fe76:f1ba
@@ -84,6 +84,7 @@
 2408:8248:3c01:6bc0:8d05:1603:fa5d:9c4b
 240e:c2:1800:84:0:1:3:2
 2600:1f16:cf2:6d00:778f:1bfc:8c79:4f26
+2600:3c02::2000:76ff:fe8b:1c89
 2600:3c02::f03c:92ff:febe:ff23
 2600:3c15::2000:f8ff:feb0:5d3d
 2600:4040:b3f1:7b00:cf32:3bff:5623:e046
@@ -139,6 +140,7 @@
 2604:a880:800:14:0:3:603d:a000
 2604:a880:800:14:0:3:603d:e000
 2604:a880:800:14:0:3:934d:f000
+2604:a880:800:14:0:3:9351:9000
 2604:a880:800:c1::212:3001
 2605:7980:0:615f::1
 2605:7980:0:61c4::1
@@ -235,6 +237,7 @@
 2a02:4780:63:eb7c::1
 2a02:4780:6:2086:0:317e:f624:1
 2a02:4780:75:4739::1
+2a02:4780:75:578c::1
 2a02:4780:75:be9f::1
 2a02:4780:75:cc05::1
 2a02:4780:75:d5f::1
@@ -335,6 +338,7 @@
 2a05:1500:801::6fff:fe0f:c
 2a05:4140:3::2ecd
 2a05:4140:3::37cd
+2a05:4140:54:0:f903:9c2:e507:e332
 2a05:541:174:e::1
 2a05:d018:1d9d:e702:e7ba:e12d:e7b9:7d6f
 2a05:d018:b43:e401:a90d:1ecc:5e7e:a73d
@@ -450,6 +454,7 @@
 2a0b:64c0:1::31c
 2a0b:8bc0:2:1565::1
 2a0b:8bc0:2:2034::1
+2a0b:8bc0:2:2433::1
 2a0b:8bc0:2:2831::1
 2a0b:8bc0:2:300f::1
 2a0b:8bc0:2:7640::1
