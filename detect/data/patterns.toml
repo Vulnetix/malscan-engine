@@ -14,6 +14,7 @@ points = 90
 description = "curl output piped to shell (download-and-execute)"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE"
@@ -22,6 +23,7 @@ points = 90
 description = "wget output piped to shell (download-and-execute)"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-DEVTCP"
@@ -101,6 +103,7 @@ points = 75
 description = "Accessing SSH keys"
 override_gate = false
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-BROWSER-DATA"
@@ -157,6 +160,7 @@ points = 60
 description = "Reading system password files"
 override_gate = false
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-DISCORD-WEBHOOK"
@@ -179,6 +183,7 @@ points = 90
 description = "curl output piped to Python interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-CURL-PIPE-PERL"
@@ -187,6 +192,7 @@ points = 90
 description = "curl output piped to Perl interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE-PYTHON"
@@ -195,6 +201,7 @@ points = 90
 description = "wget output piped to Python interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[pkgbuild_analysis]]
 id = "P-PYTHON-INLINE"
@@ -928,6 +935,7 @@ points = 65
 description = "Telegram bot API URL (data exfiltration channel)"
 override_gate = false
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[source_url_analysis]]
 id = "P-TELEGRAM-BOT-TOKEN"
@@ -1058,6 +1066,7 @@ points = 90
 description = "Download piped to Node.js interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-RUBY"
@@ -1066,6 +1075,7 @@ points = 90
 description = "Download piped to Ruby interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-PHP"
@@ -1074,6 +1084,7 @@ points = 90
 description = "Download piped to PHP interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-LUA"
@@ -1082,6 +1093,7 @@ points = 90
 description = "Download piped to Lua interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-TCLSH"
@@ -1090,6 +1102,7 @@ points = 90
 description = "Download piped to Tcl interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-RSCRIPT"
@@ -1098,6 +1111,7 @@ points = 90
 description = "Download piped to R interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-JULIA"
@@ -1106,6 +1120,7 @@ points = 90
 description = "Download piped to Julia interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-AWK"
@@ -1114,6 +1129,7 @@ points = 85
 description = "Download piped to Awk interpreter"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-JJS"
@@ -1122,6 +1138,7 @@ points = 90
 description = "Download piped to Java Nashorn/JShell"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-KSH"
@@ -1130,6 +1147,7 @@ points = 90
 description = "Download piped to Ksh shell"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-CSH"
@@ -1138,6 +1156,7 @@ points = 90
 description = "Download piped to C shell"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-ZSH"
@@ -1146,6 +1165,7 @@ points = 90
 description = "Download piped to Zsh shell"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-FISH"
@@ -1154,6 +1174,7 @@ points = 90
 description = "Download piped to Fish shell"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-DASH"
@@ -1162,6 +1183,7 @@ points = 90
 description = "Download piped to Dash shell"
 override_gate = true
 hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
 
 [[gtfobins_analysis]]
 id = "G-ALT-PIPE-SHELL"

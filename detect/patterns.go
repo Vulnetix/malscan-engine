@@ -31,6 +31,11 @@ type patternRule struct {
 	// curl|sh is the exception, on measurement: in a library's runtime source it is an
 	// install hint or a help string (1 of 1,147 pypi packages carrying it is OpenSSF-confirmed).
 	HookOnly bool `toml:"hook_only"`
+	// HookOnlyEcosystems narrows HookOnly to the registries where the demotion was measured. On
+	// npm and rubygems the same strings are where the malware sits (npm P-TELEGRAM-BOT 12 of 54
+	// packages OpenSSF-confirmed, G-PIPE-NODE 19 of 26), so a rule demoted for pypi must stay
+	// evidence there. Empty means every ecosystem; an unnamed ecosystem is never demoted.
+	HookOnlyEcosystems []string `toml:"hook_only_ecosystems"`
 	// PkgbuildOnly marks a rule that is only meaningful for Arch-PKGBUILD source
 	// hygiene (plain-HTTP source, raw-IP source URL). It is skipped entirely when
 	// the matched content is neither a PKGBUILD nor an auto-execution surface, so
@@ -63,6 +68,7 @@ type compiledPattern struct {
 	description  string
 	overrideGate bool
 	hookOnly     bool
+	hookOnlyEcos map[string]bool // non-empty narrows hookOnly to these ecosystems
 	pkgbuildOnly bool
 	weakness     bool
 	cwe          string
@@ -128,7 +134,7 @@ func loadPatterns() {
 				patternsBySection[section] = append(patternsBySection[section], compiledPattern{
 					id: r.ID, re: re, points: r.Points,
 					description: r.Description, overrideGate: r.OverrideGate,
-					hookOnly: r.HookOnly, pkgbuildOnly: r.PkgbuildOnly,
+					hookOnly: r.HookOnly, hookOnlyEcos: ecoSet(r.HookOnlyEcosystems), pkgbuildOnly: r.PkgbuildOnly,
 					weakness: r.Weakness, cwe: r.CWE, cvss: r.CVSS,
 					ecosystems: ecos,
 				})
@@ -209,7 +215,7 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 			if !p.overrideGate && p.points < evidenceThreshold {
 				class = ClassContext
 			}
-			if p.hookOnly && !inHookSurface {
+			if p.demotedOutsideHooks(eco) && !inHookSurface {
 				// Dual-use command outside an auto-exec surface. A low-weight
 				// (sub-evidence) signal there is pure corroboration noise — drop it;
 				// a higher-weight one is still recorded as ClassContext.
@@ -445,4 +451,28 @@ func suppressVendorInstaller(line string) bool {
 		}
 	}
 	return true
+}
+
+// ecoSet lower-cases a list of ecosystems into a lookup set; nil for an empty list.
+func ecoSet(list []string) map[string]bool {
+	if len(list) == 0 {
+		return nil
+	}
+	m := make(map[string]bool, len(list))
+	for _, e := range list {
+		m[strings.ToLower(strings.TrimSpace(e))] = true
+	}
+	return m
+}
+
+// demotedOutsideHooks reports whether a hook_only rule is demoted for this ecosystem when its
+// hit lies outside an auto-execution surface.
+func (p compiledPattern) demotedOutsideHooks(eco string) bool {
+	if !p.hookOnly {
+		return false
+	}
+	if len(p.hookOnlyEcos) == 0 {
+		return true
+	}
+	return p.hookOnlyEcos[strings.ToLower(strings.TrimSpace(eco))]
 }

