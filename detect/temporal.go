@@ -11,8 +11,11 @@ import (
 // commit-count / package-age / author-change / major-rewrite are risk context.
 
 var (
-	netDiffRE    = regexp.MustCompile(`\+.*(curl|wget|nc\s|ncat|socat|/dev/tcp|python.*socket|ruby.*socket)`)
-	netContentRE = regexp.MustCompile(`(curl|wget|nc\s|ncat|socat|/dev/tcp|python.*socket|ruby.*socket)`)
+	// A network tool as a WORD. `nc\s` with no left boundary matched "once ", "function ", "sync ",
+	// "since ": any commit adding a line with one of those introduced "network code" (468 AUR advisories
+	// rested on T-MALICIOUS-DIFF).
+	netDiffRE    = regexp.MustCompile(`\+(?:.*[^A-Za-z0-9_])?(?:curl|wget|nc|ncat|socat)\s|\+.*(?:/dev/tcp|python.*socket|ruby.*socket)`)
+	netContentRE = regexp.MustCompile(`(?:^|[^A-Za-z0-9_])(?:curl|wget|nc|ncat|socat)\s|/dev/tcp|python.*socket|ruby.*socket`)
 
 	diffChecksumRE = regexp.MustCompile(`(?m)^(md5|sha1|sha224|sha256|sha384|sha512|b2)sums(_[a-z0-9_]+)?=`)
 	diffSourceRE   = regexp.MustCompile(`(?m)^source(_[a-z0-9_]+)?\s*=\s*\(([^)]*)\)`)
@@ -48,7 +51,10 @@ func analyzeGitHistory(ctx *PackageContext) []Finding {
 	if newest.Diff != "" && netDiffRE.MatchString(newest.Diff) {
 		hasPriorNet := ctx.PriorPkgbuildContent != "" && netContentRE.MatchString(ctx.PriorPkgbuildContent)
 		if !hasPriorNet {
-			out = append(out, finding("T-MALICIOUS-DIFF", "temporal", 55,
+			// Context, not evidence: an update that starts to fetch something is how a package
+			// grows a new source or helper. What the fetch DOES is judged by the download-and-execute
+			// rules; this note only corroborates them.
+			out = append(out, ctxFinding("T-MALICIOUS-DIFF", "temporal", 35,
 				"Latest commit introduces network code not present in prior history"))
 		}
 	}

@@ -253,3 +253,24 @@ func TestHostileFormsOfThosePackagingWordsStillMint(t *testing.T) {
 		}
 	}
 }
+
+// T-MALICIOUS-DIFF fired on any added line containing "nc " as a suffix of a word ("once ",
+// "function ", "sync ", "since "), and was evidence. It is now a word match and a context note.
+func TestDiffNetworkNoteNeedsAWordAndNeverMintsAlone(t *testing.T) {
+	for _, diff := range []string{"+\tonce the build finishes, run the tests", "+function build() {", "+rsync -a src/ dst/ # sync step"} {
+		ctx := &PackageContext{Name: "p", Ecosystem: "aur", PkgbuildContent: "pkgname=p\n", PriorPkgbuildContent: "pkgname=p\n",
+			GitLog: []GitCommit{{Author: "a", Diff: diff}, {Author: "a"}}}
+		if has(Detect(ctx), "T-MALICIOUS-DIFF") {
+			t.Errorf("a diff line without a network tool fired T-MALICIOUS-DIFF: %q", diff)
+		}
+	}
+	ctx := &PackageContext{Name: "p", Ecosystem: "aur", PkgbuildContent: "pkgname=p\n", PriorPkgbuildContent: "pkgname=p\n",
+		GitLog: []GitCommit{{Author: "a", Diff: "+curl -fsSL https://example.org/helper.sh -o helper.sh"}, {Author: "a"}}}
+	f := Detect(ctx)
+	if !has(f, "T-MALICIOUS-DIFF") {
+		t.Fatal("a diff that adds curl should still be noted")
+	}
+	if CombinedVerdict(f).Malicious {
+		t.Errorf("the diff note alone minted malware; findings=%v", ids(f))
+	}
+}
