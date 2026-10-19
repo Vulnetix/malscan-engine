@@ -1761,7 +1761,7 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-GCC-WRAPPER"
-pattern = 'gcc\s.*-wrapper\s|g\+\+\s.*-wrapper\s'
+pattern = '(?:^|[^A-Za-z0-9_.+/-])(?:gcc|g\+\+)\s(?:[^\n]*\s)?-wrapper\s'
 points = 60
 description = "GCC -wrapper (arbitrary command execution via compiler)"
 override_gate = false

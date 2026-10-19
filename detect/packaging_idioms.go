@@ -23,7 +23,7 @@ import "regexp"
 var stagingRootRE = regexp.MustCompile(`\$\{?pkgdir\}?`)
 
 // splitPackageEvalRE is the makepkg split-package declaration.
-var splitPackageEvalRE = regexp.MustCompile(`\beval\s+"package_`)
+var splitPackageEvalRE = regexp.MustCompile(`\beval\s+"(?:package_|\$\(declare\s+-f\s+package)`)
 
 // pythonQueryRE starts a `python -c` snippet that asks the interpreter about itself; it only
 // counts when pythonHostileRE finds nothing capable anywhere on the line.
@@ -39,7 +39,7 @@ var echoedMessageRE = regexp.MustCompile(`^\s*(?:sudo\s+)?(?:echo|printf|msg2?|p
 // suppressPackagingIdiom reports whether rule id's match on line is a packaging idiom.
 func suppressPackagingIdiom(id, line string) bool {
 	switch id {
-	case "P-SUID-BIT", "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE":
+	case "P-SUID-BIT", "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE", "P-PACMAN-HOOK":
 		return stagingRootRE.MatchString(line)
 	case "P-EVAL-VAR":
 		return splitPackageEvalRE.MatchString(line)

