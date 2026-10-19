@@ -952,7 +952,7 @@ override_gate = false
 
 [[source_url_analysis]]
 id = "P-PASTEBIN"
-pattern = '(pastebin\.com|paste\.ee|hastebin\.com|ptpb\.pw|ix\.io)/'
+pattern = '(?:^|[^A-Za-z0-9.-])(?:www\.)?(?:pastebin\.com|paste\.ee|hastebin\.com|ptpb\.pw|ix\.io)/'
 points = 50
 description = "Source from paste service (untrusted, mutable content)"
 override_gate = false
@@ -1013,7 +1013,10 @@ pkgbuild_only = true
 
 [[source_url_analysis]]
 id = "P-FILEHOST-SOURCE"
-pattern = '(anonfiles\.com|file\.io|transfer\.sh|tmpfiles\.org|gofile\.io|pixeldrain\.com|mediafire\.com)'
+# Host boundaries on both sides. Without them `profile.iothings.site` contained file.io,
+# `state_transfer.shallow_clone` contained transfer.sh and `wsidicom.file.io.frame_index` was a hit:
+# 10 pypi and 4 pub.dev advisories were still resting on such lines.
+pattern = '(?:^|[^A-Za-z0-9.-])(?:www\.)?(?:anonfiles\.com|file\.io|transfer\.sh|tmpfiles\.org|gofile\.io|pixeldrain\.com|mediafire\.com)(?:[^A-Za-z0-9_.-]|\.[^A-Za-z_]|\.$|$)'
 points = 45
 description = "Source from ephemeral/anonymous file hosting (untrusted, mutable content)"
 override_gate = false

