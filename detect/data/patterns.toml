@@ -17,7 +17,7 @@ points = 90
 description = "curl output piped to shell (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE"
@@ -26,7 +26,7 @@ points = 90
 description = "wget output piped to shell (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-DEVTCP"
@@ -66,7 +66,7 @@ points = 85
 description = "Base64-decoded payload executed via eval"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-BASE64"
@@ -108,7 +108,7 @@ points = 75
 description = "Accessing SSH keys"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-BROWSER-DATA"
@@ -117,7 +117,7 @@ points = 70
 description = "Accessing browser profile data"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-GPG-ACCESS"
@@ -148,7 +148,7 @@ points = 45
 description = "Creating cron job (persistence)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-LD-PRELOAD"
@@ -169,7 +169,7 @@ points = 60
 description = "Reading system password files"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-DISCORD-WEBHOOK"
@@ -186,7 +186,7 @@ points = 60
 # OpenSSF-confirmed share of the packages carrying it: pypi 1 of 123, npm 1 of 83 (rubygems 3 of 10 and
 # nuget are left as evidence). Live packagist mints were bit.ly clients and doc links.
 hook_only = true
-hook_only_ecosystems = ["pypi", "npm", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "npm", "cargo", "go", "packagist", "pubdev", "pub"]
 description = "URL shortener (hiding real destination)"
 override_gate = false
 
@@ -197,7 +197,7 @@ points = 90
 description = "curl output piped to Python interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-CURL-PIPE-PERL"
@@ -206,7 +206,7 @@ points = 90
 description = "curl output piped to Perl interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-WGET-PIPE-PYTHON"
@@ -215,7 +215,7 @@ points = 90
 description = "wget output piped to Python interpreter (download-and-execute)"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "npm"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
 
 [[pkgbuild_analysis]]
 id = "P-PYTHON-INLINE"
@@ -253,7 +253,7 @@ points = 50
 description = "Clipboard access (possible credential theft)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-DISK-READ"
@@ -369,7 +369,7 @@ override_gate = false
 # hook_only on the registries where it was measured as noise: pypi 3 of 126 packages carrying it are
 # OpenSSF-confirmed. npm keeps it (11 of 44).
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-DEVNULL-BACKGROUND"
@@ -378,7 +378,7 @@ points = 65
 description = "Network/shell command backgrounded with suppressed output"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 # System reconnaissance
 [[pkgbuild_analysis]]
@@ -397,7 +397,7 @@ points = 40
 description = "System information gathering (reconnaissance)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 # Hex/octal obfuscation
 [[pkgbuild_analysis]]
@@ -452,7 +452,7 @@ points = 55
 description = "curl POST with variable data (possible data exfiltration)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 # Archive extract-and-execute
 [[pkgbuild_analysis]]
@@ -479,7 +479,7 @@ points = 60
 description = "$IFS variable used as command separator (shell obfuscation)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-ANSI-C-HEX"
@@ -618,7 +618,7 @@ points = 50
 description = "Systemd user service creation (no root required)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-UDEV-RULE"
@@ -939,7 +939,7 @@ id = "P-URL-SHORTENER"
 pattern = '(?:^|[^A-Za-z0-9.-])(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
 points = 60
 hook_only = true
-hook_only_ecosystems = ["pypi", "npm", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "npm", "cargo", "go", "packagist", "pubdev", "pub"]
 description = "Source URL uses URL shortener (hiding real destination)"
 override_gate = false
 
@@ -974,7 +974,7 @@ points = 65
 description = "Telegram bot API URL (data exfiltration channel)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[source_url_analysis]]
 id = "P-TELEGRAM-BOT-TOKEN"
@@ -992,7 +992,7 @@ override_gate = true
 # LEAKED credential, which is not an exfiltration. npm keeps it as evidence (12 of 54 packages
 # carrying the base rule are OpenSSF-confirmed).
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[source_url_analysis]]
 id = "P-TUNNEL-SERVICE"
@@ -1001,7 +1001,7 @@ points = 55
 description = "Tunnel service URL (obfuscated endpoint)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[source_url_analysis]]
 id = "P-HTTP-SOURCE"
@@ -1113,7 +1113,7 @@ points = 90
 description = "Download piped to Node.js interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-RUBY"
@@ -1122,7 +1122,7 @@ points = 90
 description = "Download piped to Ruby interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-PHP"
@@ -1131,7 +1131,7 @@ points = 90
 description = "Download piped to PHP interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-LUA"
@@ -1140,7 +1140,7 @@ points = 90
 description = "Download piped to Lua interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-TCLSH"
@@ -1149,7 +1149,7 @@ points = 90
 description = "Download piped to Tcl interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-RSCRIPT"
@@ -1158,7 +1158,7 @@ points = 90
 description = "Download piped to R interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-JULIA"
@@ -1167,7 +1167,7 @@ points = 90
 description = "Download piped to Julia interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-AWK"
@@ -1176,7 +1176,7 @@ points = 85
 description = "Download piped to Awk interpreter"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-JJS"
@@ -1185,7 +1185,7 @@ points = 90
 description = "Download piped to Java Nashorn/JShell"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-KSH"
@@ -1194,7 +1194,7 @@ points = 90
 description = "Download piped to Ksh shell"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-CSH"
@@ -1203,7 +1203,7 @@ points = 90
 description = "Download piped to C shell"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-ZSH"
@@ -1212,7 +1212,7 @@ points = 90
 description = "Download piped to Zsh shell"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-FISH"
@@ -1221,7 +1221,7 @@ points = 90
 description = "Download piped to Fish shell"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-PIPE-DASH"
@@ -1230,7 +1230,7 @@ points = 90
 description = "Download piped to Dash shell"
 override_gate = true
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-ALT-PIPE-SHELL"
@@ -1353,7 +1353,7 @@ points = 50
 description = "tmux send-keys command injection"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-BUSYBOX-SHELL"
@@ -1901,7 +1901,7 @@ points = 55
 description = "Bind mount (filesystem overlay for privilege escalation)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev"]
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-INSTALL-SUID"

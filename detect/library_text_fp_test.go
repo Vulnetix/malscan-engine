@@ -350,3 +350,18 @@ func TestDiscordWebhookNeedsARealWebhookShape(t *testing.T) {
 		t.Errorf("a real-shaped webhook should still mint; findings=%v", ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: real})))
 	}
 }
+
+// pub.dev's ecosystem string in the engine input is "pub" (internal/pubdev.Ecosystem), not "pubdev".
+// Every library-text demotion listed "pubdev", so none applied to pub.dev packages: 109 of 219 advisories
+// kept resting on `../../etc/passwd` in a path-traversal test, `curl ... | bash` in an install hint and so on.
+func TestPubDevLibraryTextIsDemotedUnderItsRealEcosystemName(t *testing.T) {
+	for _, line := range []string{
+		`'../../etc/passwd',`,
+		`const standaloneInstallCommand = 'curl -sL https://firebase.tools | bash';`,
+		`final u = 'https://bit.ly/abc';`,
+	} {
+		if libraryMints("pub", line) {
+			t.Errorf("pub: library line minted malware: %q", line)
+		}
+	}
+}
