@@ -196,6 +196,15 @@ const evidenceThreshold = 40
 // PkgbuildContent the caller flagged PkgbuildExecutes). hook_only patterns found
 // outside such a surface are demoted to ClassContext corroboration.
 func matchSection(content, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
+	return matchSectionView(content, content, section, category, idPrefix, inHookSurface, eco, findings)
+}
+
+// matchSectionView is matchSection with a second, narrower view of the same content: the text
+// that can act, as opposed to data that merely names an action (pythonLibraryViews' execView,
+// where lines that are elements of a string-literal list are blanked). A hit that matches
+// content but not execView is recorded as ClassContext. override_gate rules that are hostile
+// on every surface for this ecosystem (not demoted by hook_only) ignore execView.
+func matchSectionView(content, execView, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
 	loadPatterns()
 	pkgbuildLike := inHookSurface || looksLikePkgbuild(content)
 	for _, p := range patternsBySection[section] {
@@ -222,6 +231,11 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 				if p.points < evidenceThreshold {
 					continue
 				}
+				class = ClassContext
+			}
+			if class == ClassEvidence && execView != content && !(p.overrideGate && !p.demotedOutsideHooks(eco)) &&
+				!p.re.MatchString(execView) {
+				// The rule matches only data: a deny-list, a keyword list, test vectors.
 				class = ClassContext
 			}
 			line, keep := reportableLine(p.id, content, p.re)
@@ -304,8 +318,31 @@ func suppressLine(id, line string) bool {
 		return phpFunctionDeclRe.MatchString(line)
 	case "PHP-ASSERT-VAR":
 		return phpAssertBooleanRe.MatchString(line)
+	case "P-CRYPTO-WALLET":
+		return suppressKnownConstantWallet(line)
 	}
 	return suppressPackagingIdiom(id, line)
+}
+
+// walletTokenRe is P-CRYPTO-WALLET's own pattern, used to pull every wallet-shaped token off a line.
+var walletTokenRe = regexp.MustCompile(`\b4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}\b|\bbc1[02-9ac-hj-np-z]{39,59}\b|\b0x[0-9a-fA-F]{40}\b`)
+
+// suppressKnownConstantWallet drops a P-CRYPTO-WALLET line whose every wallet-shaped token is a
+// well-known public constant (allow.KnownConstant): the EVM zero and burn addresses, a canonical
+// stablecoin contract. A DeFi or wallet library names these to compare against or to talk to the
+// token; none is a destination an attacker controls. A line that also carries any other address
+// keeps the finding, and a line with no extractable token is never suppressed.
+func suppressKnownConstantWallet(line string) bool {
+	toks := walletTokenRe.FindAllString(line, -1)
+	if len(toks) == 0 {
+		return false
+	}
+	for _, t := range toks {
+		if _, ok := allow.KnownConstant(t); !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // phpAssertBooleanRe matches an assert() whose argument is plainly a boolean

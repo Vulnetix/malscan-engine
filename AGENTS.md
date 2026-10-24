@@ -87,6 +87,19 @@ and gated via `config.EcosystemConfig.Enabled`.
    only in an auto-execution surface (install hook, or `PkgbuildContent` with
    `PkgbuildExecutes=true`); elsewhere it is corroboration (`ClassContext`).
    `override_gate` rules (reverse/bind shells, `curl|sh`) mint on any surface.
+   - **Python library text** (`detect/pyview.go`): for pypi `PkgbuildContent`
+     with `PkgbuildExecutes=false`, `.py` members other than `setup.py` are read
+     with docstrings and `#` comments blanked (offsets and line count kept; not
+     when the member reads `__doc__`; never f-strings). Lines that are wholly an
+     element of an assigned string-literal list/tuple/set (≥2 strings, no argv
+     token such as `sh`/`-c`, never a positional call argument) are context only.
+   - **Fidelity** (`Verdict.HighFidelity`): a malicious verdict whose basis is a
+     single evidence id from library content (`Finding.Surface == "library"`)
+     with no install-script hit is low-fidelity. It still mints; downstream it is
+     excluded from automatic approval. It never changes `Malicious`.
+   - **Public constants** (`allow/constants.go`): EVM zero/burn addresses,
+     canonical USDC/USDT contracts and the secp256k1 n/p are never a wallet
+     (`P-CRYPTO-WALLET` suppression, `allow.Benign("wallet", …)`).
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

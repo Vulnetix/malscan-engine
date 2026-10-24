@@ -1018,6 +1018,11 @@ id = "P-FILEHOST-SOURCE"
 # 10 pypi and 4 pub.dev advisories were still resting on such lines.
 pattern = '(?:^|[^A-Za-z0-9.-])(?:www\.)?(?:anonfiles\.com|file\.io|transfer\.sh|tmpfiles\.org|gofile\.io|pixeldrain\.com|mediafire\.com)(?:[^A-Za-z0-9_.-]|\.[^A-Za-z_]|\.$|$)'
 points = 45
+# In a library's runtime source a file-host NAME is data: varden's `risky_domains = ['pastebin',
+# 'ngrok', 'transfer.sh', ...]` feeds a risk score, it downloads nothing (audited pypi FP, 2026-10).
+# Evidence only where it runs unattended: an install hook or an executing PKGBUILD.
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 description = "Source from ephemeral/anonymous file hosting (untrusted, mutable content)"
 override_gate = false
 
@@ -1283,6 +1288,11 @@ override_gate = false
 id = "G-NSENTER"
 pattern = 'nsenter\s.*(-t|--target)\s'
 points = 55
+# Container and network tooling builds `nsenter -t $TPID -n ip addr add ...` to configure a
+# namespace it created; in library source that is the tool's job, not an escape. Evidence only
+# where it runs unattended (install hook, executing PKGBUILD). Audited pypi FP, 2026-10.
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 description = "nsenter namespace entry (container escape / privilege escalation)"
 override_gate = false
 
@@ -1714,6 +1724,10 @@ override_gate = false
 id = "G-XARGS-SHELL"
 pattern = 'xargs\s+.*\b(sh|bash|dash|zsh|ksh)\b\s+-c\s'
 points = 60
+# `... | xargs -I{} sh -c '...'` is an ordinary shell idiom in a library's helper scripts, test
+# vectors and command builders. Evidence only in an auto-execution surface. Audited pypi FP, 2026-10.
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 description = "xargs executing shell with -c (command injection vector)"
 override_gate = false
 

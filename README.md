@@ -98,6 +98,13 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   in combination with at least one other distinct trigger (new reporter /
   maintainer / contributor, or a changed maintainer/contributor email). Entropy
   alone never mints; metadata-only combinations never mint.
+- Surface decides dual-use: `hook_only` rules (per `hook_only_ecosystems`) are
+  evidence only in an install hook or an executing recipe. For a pypi library's
+  `.py` sources, docstrings and comments are not read and string-literal data
+  lists (deny-lists, test vectors) are context only.
+- `Verdict.HighFidelity` is false when the only evidence is one indicator in
+  non-executing library content (`Finding.Surface == "library"`) with no
+  install-script hit. It qualifies the verdict; it never changes it.
 
 ## STIX IOC filesystem scan (`iocscan`)
 

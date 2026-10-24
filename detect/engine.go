@@ -1,6 +1,9 @@
 package detect
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // nowUnix returns the current unix time in seconds. It is a package var so
 // tests can pin "now" for age-based detectors.
@@ -24,21 +27,40 @@ func Detect(ctx *PackageContext) []Finding {
 	loadPatterns()
 	var f []Finding
 
+	// A pypi package's runtime source is read without its docstrings and comments, and data
+	// literals (deny-lists, keyword lists, test vectors) are context, not evidence. See
+	// pythonLibraryViews. The install surface (setup.py) is never rewritten.
+	pkgView := ctx.PkgbuildContent
+	if isPythonLibrary(ctx) {
+		docView, execView := pythonLibraryViews(ctx.PkgbuildContent)
+		lib := *ctx
+		lib.PkgbuildContent = docView
+		ctx = &lib
+		pkgView = execView
+	}
+
+	pkgSurface := SurfaceLibrary
+	if ctx.PkgbuildExecutes {
+		pkgSurface = SurfaceBuild
+	}
 	if ctx.PkgbuildContent != "" {
+		n := len(f)
 		if ctx.capEnabled(CapManifestPatterns) {
-			f = matchSection(ctx.PkgbuildContent, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapSourceURLPatterns) {
-			f = matchSection(ctx.PkgbuildContent, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapGTFObins) {
-			f = matchSection(ctx.PkgbuildContent, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapShellObfuscation) {
 			f = append(f, analyzeShell(ctx.PkgbuildContent, "", "")...)
 		}
+		setSurface(f[n:], pkgSurface)
 	}
 	if ctx.InstallScriptContent != "" && ctx.capEnabled(CapInstallScript) {
+		n := len(f)
 		f = matchSection(ctx.InstallScriptContent, "install_script_analysis", "install", "", true, ctx.Ecosystem, f)
 		if ctx.capEnabled(CapGTFObins) {
 			f = matchSection(ctx.InstallScriptContent, "gtfobins_analysis", "gtfobins", "IS-", true, ctx.Ecosystem, f)
@@ -46,6 +68,7 @@ func Detect(ctx *PackageContext) []Finding {
 		if ctx.capEnabled(CapShellObfuscation) {
 			f = append(f, analyzeShell(ctx.InstallScriptContent, "IS-", "(in install script)")...)
 		}
+		setSurface(f[n:], SurfaceInstall)
 	}
 
 	if ctx.capEnabled(CapOnionC2) {
@@ -89,6 +112,22 @@ func Detect(ctx *PackageContext) []Finding {
 	}
 
 	return f
+}
+
+// isPythonLibrary reports whether PkgbuildContent is a pypi package's runtime source (not an
+// executing recipe), the content pythonLibraryViews may rewrite.
+func isPythonLibrary(ctx *PackageContext) bool {
+	return !ctx.PkgbuildExecutes && ctx.PkgbuildContent != "" &&
+		strings.EqualFold(strings.TrimSpace(ctx.Ecosystem), "pypi")
+}
+
+// setSurface stamps a surface on findings a detector did not stamp itself.
+func setSurface(fs []Finding, surface string) {
+	for i := range fs {
+		if fs[i].Surface == "" {
+			fs[i].Surface = surface
+		}
+	}
 }
 
 // Evidence returns only the ClassEvidence findings from a Detect result.
@@ -154,6 +193,32 @@ type Verdict struct {
 	Malicious bool
 	Path      string   // "" | "evidence" | "payload+identity"
 	Reasons   []string // human-readable compounding indicators (trigger ids/descriptions)
+
+	// HighFidelity qualifies a malicious verdict; it never changes it. It is false when the
+	// whole basis is a single evidence finding in non-executing library content
+	// (Surface == SurfaceLibrary) with no install-script hit of any non-context class: one
+	// string in a package's runtime source, which is where the audited false positives sit.
+	// Downstream it gates automatic approval (vdb-manager requireHighFidelity); a
+	// low-fidelity mint still mints and goes to human review. Always false when not malicious.
+	HighFidelity bool
+}
+
+// highFidelity applies the Verdict.HighFidelity rule to an evidence verdict's findings.
+// Indicators are counted by id: one rule declared in two sections (P-DISCORD-WEBHOOK is both a
+// manifest and a source-url rule) is still one indicator.
+func highFidelity(findings []Finding) bool {
+	ids := map[string]bool{}
+	allLibrary := true
+	for _, f := range findings {
+		if f.Surface == SurfaceInstall && f.Class != ClassContext {
+			return true // the install surface corroborates
+		}
+		if f.Class == ClassEvidence {
+			ids[f.ID] = true
+			allLibrary = allLibrary && f.Surface == SurfaceLibrary
+		}
+	}
+	return !(len(ids) == 1 && allLibrary)
 }
 
 // CombinedVerdict applies the combination gate and explains the result.
@@ -184,7 +249,7 @@ func CombinedVerdict(findings []Finding) Verdict {
 	// P0 — any factual evidence.
 	for _, f := range findings {
 		if f.Class == ClassEvidence {
-			return Verdict{true, "evidence", []string{describe(f)}}
+			return Verdict{Malicious: true, Path: "evidence", Reasons: []string{describe(f)}, HighFidelity: highFidelity(findings)}
 		}
 	}
 
@@ -223,11 +288,11 @@ func CombinedVerdict(findings []Finding) Verdict {
 		for _, r := range families {
 			reasons = append(reasons, r)
 		}
-		return Verdict{true, "payload+identity", reasons}
+		return Verdict{Malicious: true, Path: "payload+identity", Reasons: reasons, HighFidelity: true}
 	}
 	// P-none — evidence-free: a payload alone (legit embedded blob), or any
 	// ownership/identity/reputation signal(s) with no payload. Correlation only.
-	return Verdict{false, "", nil}
+	return Verdict{Malicious: false}
 }
 
 // describe yields a short reason string for a finding (id + description).

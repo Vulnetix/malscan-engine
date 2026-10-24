@@ -143,7 +143,22 @@ type Finding struct {
 	// CVSSVector scores a ClassWeakness finding, taken from the rule that fired.
 	// Empty for every other class: only a weakness is reported as a vulnerability.
 	CVSSVector string
+
+	// Surface is where the matched content came from, for the content detectors that
+	// know: SurfaceLibrary (PkgbuildContent the caller did not flag as executing — a
+	// package's runtime source), SurfaceBuild (PkgbuildContent with PkgbuildExecutes)
+	// or SurfaceInstall (InstallScriptContent). Empty for detectors that read several
+	// sources or none (metadata, history, behaviours). It never changes the Class; it
+	// feeds Verdict.HighFidelity.
+	Surface string
 }
+
+// Finding.Surface values.
+const (
+	SurfaceLibrary = "library"
+	SurfaceBuild   = "build"
+	SurfaceInstall = "install"
+)
 
 // PackageContext carries all data a detector needs. Originally modelled on
 // traur's PackageContext (src/shared/models.go), it is now ecosystem-agnostic:

