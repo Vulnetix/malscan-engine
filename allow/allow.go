@@ -544,7 +544,9 @@ func VersionLikeIP(ip string) bool {
 //   - exfil-endpoint / c2 — already classified malicious by the producer; an
 //     exfil channel on an otherwise-reputable host (e.g. discord.com/api/webhooks)
 //     must never be dropped just because the bare host is reputable.
-//   - wallet / file-hash / install-command — these have no host component.
+//   - file-hash / install-command — these have no host component.
+//   - wallet — kept, except a well-known public constant (KnownConstant: the EVM
+//     zero/burn addresses, canonical stablecoin contracts, secp256k1 parameters).
 //
 // Unknown kinds are conservatively kept (return false).
 func Benign(kind, value string) bool {
@@ -555,6 +557,9 @@ func Benign(kind, value string) bool {
 		return Domain(value)
 	case "email":
 		return Domain(hostOf(value))
+	case "wallet":
+		_, ok := KnownConstant(value)
+		return ok
 	}
 	return false
 }

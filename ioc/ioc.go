@@ -72,8 +72,9 @@ func ExtractIOCs(repo *RepoData) []IOC {
 		// Drop benign indicators (reserved/placeholder IPs, registry/CDN/standards/
 		// docs domains) so they never become IOCs — this is what stops legit spec
 		// links and funding URLs in package source from polluting the STIX feed.
-		// Wallet / file-hash / install-command types are unknown to allow.Benign and
-		// are always kept.
+		// File-hash / install-command types are unknown to allow.Benign and are
+		// always kept; a wallet is kept unless it is a well-known public constant
+		// (zero/burn address, canonical stablecoin contract).
 		if allow.Benign(typ, val) {
 			return
 		}

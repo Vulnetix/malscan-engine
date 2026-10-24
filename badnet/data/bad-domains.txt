@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13919
+# count: 13927
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -2582,6 +2582,7 @@ cheetoclient.com
 chef-infra-windows-automation-toolkit.github.io
 chefradiatorabide.com
 cheguanli.com
+chelsieminissale.github.io
 chemistwarehouse.com
 chengsgardenct.com
 chequetolerate.com
@@ -6658,6 +6659,7 @@ i6s46ndy.site-takhtenard-sharti-betland.com
 i80auto.com
 iau-iraq.org
 ibai.fileboroo.com
+ibarrareal.es
 ibetin.com
 ibidasjohnnraplc.com
 ibqln4rdirt.com
@@ -7061,6 +7063,7 @@ isoroms.com
 isrjnxfeb.fg777kito.com
 isseg.com
 issuesnotablelook.com
+istatlmenus.com
 itale-post.com
 italian.ltd
 italianadherencemarch.com
@@ -8009,6 +8012,7 @@ macaroniambiguity.com
 machinegunbrokers.com
 machineryblunderillusive.com
 machinesalaver.net
+macperformancetools.com
 macsoftwarez.com
 madadoptedgluttony.com
 maddenbride.com
@@ -8148,6 +8152,7 @@ martted.com
 maruces.com
 marvellousnoblesanteroom.com
 marvellouspeaches.com
+marymitchelle554.github.io
 mascaradash.com
 mascaraoathdisappearance.com
 masculinebandsflashlight.com
@@ -10411,6 +10416,7 @@ red12flyw2.site
 redanemone.xyz
 redddit.com
 reddingjetboattours.com
+reddt.com
 reddtit.com
 reddtt.com
 redefinelive.com
@@ -10698,6 +10704,7 @@ rpcs4.com
 rpcs5.com
 rpdmkrclk.com
 rreallifecam.com
+rreddit.com
 rspo.info
 rtbfactory.com
 rtbrenab.net
@@ -11814,6 +11821,7 @@ swarovskifactoryoutlet.com
 swarovskiphilippines.com
 swarovskisaleoutlet.com
 swarovskiusa.com
+swarveuncity.com
 swaycladstop.xyz
 swayoralnear.xyz
 sweedbank-help.com
