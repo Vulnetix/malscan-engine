@@ -5,7 +5,7 @@ import "testing"
 func TestInstallerHost(t *testing.T) {
 	yes := []string{
 		"astral.sh", "docs.astral.sh", "sh.rustup.rs", "ollama.com", "bun.sh", "get.docker.com",
-		"deno.land", "pixi.sh",
+		"deno.land", "pixi.sh", "install.determinate.systems", "get.pulumi.com", "get.acme.sh", "rv.dev",
 		"ASTRAL.SH", " astral.sh ",
 	}
 	for _, h := range yes {

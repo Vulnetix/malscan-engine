@@ -26,6 +26,12 @@ var installerHosts = map[string]bool{
 	"get.k3s.io": true, "pyenv.run": true, "mise.run": true, "elan.lean-lang.org": true,
 	"get.nextflow.io": true, "install.python-poetry.org": true, "claude.ai": true,
 	"cursor.com": true, "opencode.ai": true, "codecov.io": true, "get.maestro.mobile.dev": true,
+	// Added after the 2026-10-25 audit of 18,715 malware mints: each appeared only in withdrawn mints
+	// (27 records in all, 0 kept), as the vendor's documented `curl | sh` or `source <(curl …)` line.
+	// in-1.cc is the YAMLScript author's installer host.
+	"install.determinate.systems": true, "get.pulumi.com": true, "firebase.tools": true,
+	"get.acme.sh": true, "get-ghcup.haskell.org": true, "foundry.paradigm.xyz": true,
+	"install.julialang.org": true, "aspire.dev": true, "rv.dev": true, "in-1.cc": true,
 }
 
 // InstallerHost reports whether host is a vendor's canonical install endpoint. Subdomains of
