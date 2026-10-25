@@ -15,6 +15,11 @@ import (
 // uploads Windows credentials.
 var npmHookNodeRe = regexp.MustCompile(`\bnode(?:\.exe)?[ \t]+(?:-[-\w]+(?:=\S+)?[ \t]+)*["']?((?:\./)?[\w@./-]+\.[cm]?js)\b`)
 
+// npmHookImportRe is a local module an inline hook loads: `node -e "import('./src/agent.js').then(…)"`,
+// `node -e "require('./lib/setup')"`. iobend 2.6.4 (GCVE-110-NPM-2026-033894, kept as malware in the
+// 2026-10-25 audit) installs a login-persistent agent daemon this way, from src/services/agentDaemon.js.
+var npmHookImportRe = regexp.MustCompile("\\b(?:import|require)\\(\\s*\\\\?[\"'`]((?:\\.{1,2}/)[\\w@./-]+?)(?:\\.([cm]?js))?\\\\?[\"'`]")
+
 var (
 	npmScriptKeyRe  = regexp.MustCompile(`^[\w:-]+$`)
 	npmInstallHooks = map[string]bool{"preinstall": true, "install": true, "postinstall": true}
@@ -33,8 +38,18 @@ func npmHookFiles(ctx *PackageContext) string {
 	want := map[string]bool{}
 	// Only the install hooks run when a consumer installs from the registry; prepare and
 	// prepublish run in the package's own checkout.
-	for _, m := range npmHookNodeRe.FindAllStringSubmatch(npmInstallLines(ctx.InstallScriptContent), -1) {
+	install := npmInstallLines(ctx.InstallScriptContent)
+	for _, m := range npmHookNodeRe.FindAllStringSubmatch(install, -1) {
 		want[path.Clean(m[1])] = true
+	}
+	for _, m := range npmHookImportRe.FindAllStringSubmatch(install, -1) {
+		if m[2] != "" {
+			want[path.Clean(m[1]+"."+m[2])] = true
+			continue
+		}
+		for _, ext := range []string{".js", ".cjs", ".mjs", "/index.js"} {
+			want[path.Clean(m[1]+ext)] = true
+		}
 	}
 	if len(want) == 0 {
 		return ""

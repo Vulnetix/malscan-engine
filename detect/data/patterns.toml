@@ -237,6 +237,18 @@ description = "Discord webhook URL (data exfiltration channel)"
 override_gate = false
 
 [[pkgbuild_analysis]]
+id = "P-SCHTASKS-PERSIST"
+# A Windows scheduled task created to run at every logon or boot: persistence. iobend 2.6.4
+# (GCVE-110-NPM-2026-033894, kept as malware in the 2026-10-25 audit) creates one from its
+# postinstall to start an agent daemon that runs server-sent commands. hook_only: management tools
+# create scheduled tasks when the user asks.
+pattern = '(?i)schtasks(?:\.exe)?[ \t]+/create\b[^\n]{0,400}/sc[ \t]+(?:onlogon|onstart)\b'
+points = 70
+description = "Creates a Windows scheduled task that runs at every logon or boot (persistence)"
+override_gate = false
+hook_only = true
+
+[[pkgbuild_analysis]]
 id = "P-UAC-BYPASS"
 # The ms-settings registry hijack (HKCU\Software\Classes\ms-settings\Shell\Open\command plus
 # DelegateExecute, then fodhelper.exe) and the other auto-elevating binaries: a UAC bypass. The npm
