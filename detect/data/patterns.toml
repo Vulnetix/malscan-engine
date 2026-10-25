@@ -519,14 +519,29 @@ override_gate = false
 # Kernel module / rootkit
 [[pkgbuild_analysis]]
 id = "P-KERNEL-MODULE-LOAD"
-pattern = '(insmod|modprobe)\s+[^-]'
+# `modprobe <name>` loads a module the kernel already ships: kvm, tun, br_netfilter, overlay,
+# tcp_bbr, uinput, v4l2loopback. The 2026-10 audit found 121 of 135 withdrawn lines firing on
+# exactly that (container runtimes, VPN and device tools, help text), plus `nvidia-modprobe` and a
+# go.mod `pault.ag/go/modprobe` line (no left boundary) and `\s` joining lines. A rootkit has to
+# bring its own module: `insmod <file>.ko`, or a .ko written into /lib/modules (P-KERNEL-MODULE-WRITE)
+# then `depmod; modprobe`. The rule now needs insmod of a .ko file at command position, or modprobe
+# after depmod on the same line. Replay: withdrawn 121 -> 2 (rootkit test vectors); the one
+# verified-malware line, a "(modprobe tun)" hint, is lost.
+pattern = '(?:^|[ \t;&|("\x27`=]|/s?bin/)insmod[ \t]+[^\s-]\S*\.ko(?:\.(?:xz|gz|zst))?\b|\bdepmod\b[^\n]{0,100}?(?:^|[ \t;&|("\x27`=]|/s?bin/)modprobe[ \t]+[^\s-]'
 points = 50
 description = "Kernel module loading (potential rootkit)"
 override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-KERNEL-MODULE-WRITE"
-pattern = '/lib/modules/|/etc/modules-load\.d/'
+# A write, into the real tree. The bare path matched reads (`ls -dt /usr/lib/modules/*lts*`,
+# `format!("/lib/modules/{}/kernel/...")`), relative trees inside a source archive
+# (`vmware-vmx/lib/modules/source/x.tar`, `${srcdir}/lib/modules`) and `--with-linux=` build flags:
+# 61 of 99 withdrawn lines fired (2026-10 audit). Now a `>`/`>>`/`tee` redirect or a
+# cp/mv/install/ln/rsync whose target starts at /lib/modules, /usr/lib/modules or
+# /etc/modules-load.d. Replay: withdrawn 61 -> 6 (modules-load.d entries written by k8s and
+# device setup scripts).
+pattern = '(?:(?:>>?|\btee(?:[ \t]+-a)?)[ \t]*["\x27]?|\b(?:cp|mv|install|ln|rsync)[ \t][^|;&\n]{0,200}?[ \t"\x27=])(?:/usr)?(?:/lib/modules/|/etc/modules-load\.d/)'
 points = 45
 description = "Writing to kernel module directories"
 override_gate = false
