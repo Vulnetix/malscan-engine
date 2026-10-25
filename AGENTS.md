@@ -190,6 +190,16 @@ and gated via `config.EcosystemConfig.Enabled`.
      `homebrewExecView`: caveats, `test do` and message text; `installTopLevelCommands`: commands
      outside every .install hook). The shell judgements apply only to shell recipes (AUR,
      APKBUILD), never to a quoted npm or Ruby command string.
+   - **Injection and persistence rules need the act, not the name.** `P-LD-PRELOAD` needs
+     LD_PRELOAD set at command position to a library in /tmp, /var/tmp, /dev/shm or $TMPDIR (a
+     sanitizer, fakeroot or jemalloc preload is not injection). `P-PROMPT-COMMAND` and
+     `P-ALIAS-OVERRIDE` need the hook or alias written into a shell rc file on the same line, or a
+     body that fetches or decodes; a printed shell-integration snippet is a feature.
+     `P-XDG-AUTOSTART` needs a write (redirect, `tee`, cp/mv/install/ln, a write call) into
+     `.config/autostart`; `P-UDEV-RULE` needs `RUN+=` with the rules path. `P-AT-JOB` needs the
+     job's input on the line (a pipe into `at TIME`, `at -f`, a heredoc or `<`, an argv list).
+     `G-SYSTEMD-RUN` needs a shell (`-t`/`--pty`, `sh -i`) or a payload (curl/wget/nc/socat,
+     /dev/tcp, `base64 -d`, a program in /tmp) in the transient unit.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

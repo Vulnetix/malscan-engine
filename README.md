@@ -112,7 +112,10 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   whole.
 - Shell and command rules match the act, not the words: a credential path needs a read of
   it on the same line, a sudoers path needs a write, and command names need a token
-  boundary on one line.
+  boundary on one line. Injection and persistence rules need the act: LD_PRELOAD pointed at a
+  world-writable directory, a PROMPT_COMMAND or alias written into a shell rc file, a write into
+  `.config/autostart`, a udev rule with `RUN+=`, an `at` job given its input, a shell or payload
+  under `systemd-run`.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.

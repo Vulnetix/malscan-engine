@@ -193,7 +193,16 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-LD-PRELOAD"
-pattern = 'LD_PRELOAD\s*='
+# Preloading a library is how sanitizers, fakeroot, jemalloc, Termux and GPU shims run:
+# `LD_PRELOAD=$(gcc -print-file-name=libasan.so)`, `export LD_PRELOAD=/usr/lib/libfakeroot/...`,
+# `cmd.Env = append(os.Environ(), "LD_PRELOAD=")`, and env deny-lists in sandboxes. The 2026-10 audit
+# replayed 98 withdrawn lines (no verified malware) and 97 fired. The rule now needs the injection
+# shape: LD_PRELOAD set at command position (line start, after `;` `&` `|` `$(` or a backquote,
+# behind export/env, inside a `-c "..."`, an argv `"-c", "..."` or a system/exec/spawn/run call
+# string) to a library in a
+# world-writable directory (/tmp, /var/tmp, /dev/shm, $TMPDIR). Replay: withdrawn 97 -> 2 (library 94 -> 2), both an strace line in a detector's
+# test table that shows the exact shape.
+pattern = '(?m)(?:^|[;&|`]|\$\(|\b(?:system|exec\w*|popen|spawn\w*|run|call|check_output|Popen|Command)\s*\(\s*\[?\s*["\x27`]|-c\s+["\x27]|-c["\x27]\s*,\s*["\x27`])[ \t]*(?:(?:export|env)[ \t]+(?:-\S+[ \t]+)*(?:[A-Za-z_]\w*=\S*[ \t]+)*)?LD_PRELOAD[ \t]*=[ \t]*["\x27]?(?:/tmp/|/var/tmp/|/dev/shm/|\$\{?TMPDIR\}?/)'
 points = 60
 description = "LD_PRELOAD injection"
 override_gate = false
@@ -732,7 +741,13 @@ override_gate = false
 # Persistence mechanisms
 [[pkgbuild_analysis]]
 id = "P-XDG-AUTOSTART"
-pattern = '\.config/autostart'
+# A write into the directory, not its name. The bare path matched persistence deny-lists
+# (`".config/autostart", ".config/systemd/user"`), detector regexes, docs ("creates an XDG autostart
+# entry in `~/.config/autostart/`"), `os.path.expanduser("~/.config/autostart")` and `mkdir -p`.
+# The rule now needs a `>`/`>>`/`tee` redirect, cp/mv/install/ln, or a write/copy call naming the
+# path on the same line. Replay: withdrawn 44 -> 0 (library replay 42 -> 0); no verified-malware
+# line carried it.
+pattern = '(?:>>?[ \t]*|\btee(?:[ \t]+-a)?[ \t]+|\b(?:cp|mv|install|ln)[ \t]+(?:-\S+[ \t]+)*[^\s;&|]+[ \t]+|\b(?:writeFile\w*|WriteFile|write_text|file_put_contents|copyfile|copy2?|appendFile\w*)\s*\([^\n]{0,80}?)["\x27]?[^\s"\x27;&|]*\.config/autostart\b'
 points = 55
 description = "XDG autostart entry creation"
 override_gate = false
@@ -748,7 +763,12 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-UDEV-RULE"
-pattern = '/etc/udev/rules\.d/'
+# A udev rule that runs something. Hardware tools install permission rules (`SUBSYSTEM=="usb",
+# MODE="0666"` piped to `sudo tee /etc/udev/rules.d/99-x.rules`), name the path in constants and
+# say so in docs; none of that executes a program. Udev persistence is a rule with `RUN+=`. The rule
+# now needs `RUN=`/`RUN+=` and /etc/udev/rules.d/ on the same line. Replay: withdrawn 52 -> 0
+# (library 50 -> 0); no verified-malware line carried it.
+pattern = 'RUN\+?=[^\n]{0,300}?/etc/udev/rules\.d/|/etc/udev/rules\.d/[^\n]{0,300}?RUN\+?='
 points = 45
 description = "Udev rule creation"
 override_gate = false
@@ -768,14 +788,29 @@ id = "P-AT-JOB"
 # separator class instead — the same technique PHP-SHELL-EXEC-VAR relies on. The
 # class is the shell contexts a command can actually begin in: line start,
 # `;` `&&` `||` `|`, a subshell or brace group, and a backquote.
-pattern = '(^|[;&|(){}\n`])[ \t]*at[ \t]+(now|midnight|noon|teatime|\d{1,2}:\d{2})'
+#
+# Command position was not enough: prose and docstrings put "at 09:02", "at midnight" at the start
+# of a line, and `{lonk} at 08:00` follows a brace. The 2026-10 audit found 48 of 342 withdrawn lines
+# still firing. `at` reads its job from stdin or a file, so the rule now needs that input on the
+# line: a pipe into `at TIME`, `at -f FILE`, a heredoc or `<` redirect after the time, or an argv
+# list `["at", "now"|"-f"|TIME]`. Replay: withdrawn 48 -> 2 (both `| at now` test vectors); the 3
+# verified-malware lines lost are prose ("Get today's date at midnight", "publish daily at 16:15").
+pattern = '\|[ \t]*at[ \t]+(?:-[qmMv]\S*[ \t]+)*(?:now|midnight|noon|teatime|\d{1,2}:\d{2})\b|(?:^|[;&|(){}\n`])[ \t]*at[ \t]+(?:-[qmMv]\S*[ \t]+)*-f[ \t]+\S+|(?:^|[;&|(){}\n`])[ \t]*at[ \t]+(?:-[qmMv]\S*[ \t]+)*(?:now|midnight|noon|teatime|\d{1,2}:\d{2})\b[^\n]{0,60}?(?:<<|<[ \t]*\S|[ \t]-f[ \t])|["\x27]at["\x27][ \t]*,[ \t]*["\x27](?:-f|now|midnight|noon|teatime|\d{1,2}:\d{2})'
 points = 60
 description = "at job scheduling (deferred execution)"
 override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-PROMPT-COMMAND"
-pattern = 'PROMPT_COMMAND\s*='
+# Shell integration is a feature: terminals, prompt tools and agent shells print or source a
+# `PROMPT_COMMAND="__x_precmd${PROMPT_COMMAND:+;$PROMPT_COMMAND}"` hook, and pty drivers clear it
+# (`export PS1= PROMPT_COMMAND=`). The 2026-10 audit found 76 of 77 withdrawn lines firing on the
+# assignment alone. The rule now needs the package to write it into a shell rc file on the same line
+# (`>>`/`>`/`tee` or a write call into .bashrc, .zshrc, .profile, /etc/profile, /etc/bash.bashrc), or
+# a hook that fetches or decodes (curl, wget, nc, socat, /dev/tcp, base64 -d). Replay: withdrawn
+# 76 -> 1 (a `PROMPT_COMMAND='curl ...'` test payload). The one verified-malware line lost is iobend's
+# hook text, `PROMPT_COMMAND="_iobend_autoload_hook;$PROMPT_COMMAND"`; its act is the postinstall daemon.
+pattern = 'PROMPT_COMMAND[^\n]{0,300}?(?:>>?[ \t]*|\btee(?:[ \t]+-a)?[ \t]+|\b(?:appendFile\w*|writeFile\w*|write_text|file_put_contents|open)\s*\([^\n]{0,80}?)["\x27]?(?:[^\s"\x27;&|]*\.(?:bashrc|bash_profile|bash_login|zshrc|zprofile|profile)\b|/etc/(?:profile|bash\.bashrc|zsh/zshrc)\b)|(?:>>?[ \t]*|\btee(?:[ \t]+-a)?[ \t]+|\b(?:appendFile\w*|writeFile\w*|write_text|file_put_contents|open)\s*\([^\n]{0,80}?)["\x27]?(?:[^\s"\x27;&|]*\.(?:bashrc|bash_profile|bash_login|zshrc|zprofile|profile)\b|/etc/(?:profile|bash\.bashrc|zsh/zshrc)\b)[^\n]{0,300}?PROMPT_COMMAND|PROMPT_COMMAND[ \t]*=[^\n]{0,200}?(?:\b(?:curl|wget|nc|ncat|socat)[ \t]|/dev/tcp/|base64[ \t]+(?:-d|--decode))'
 points = 65
 description = "PROMPT_COMMAND injection (runs on every prompt)"
 override_gate = false
@@ -849,7 +884,12 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-ALIAS-OVERRIDE"
-pattern = 'alias\s+(ls|cat|cd|rm|mv|cp|sudo|su|passwd|login|ssh)='
+# Same shape as P-PROMPT-COMMAND: `alias ls='ls --color=auto'` in a printed snippet, a test fixture
+# or a dotfile template is not an override of anyone's shell. The 2026-10 audit found all 16
+# withdrawn lines firing. The rule now needs the alias written into a shell rc file on the same line,
+# or an alias body that fetches or decodes. Replay: withdrawn 16 -> 2, both hostile test vectors
+# (`alias ls='curl ...'` and `echo 'alias ls=rm' >> ~/.bashrc`).
+pattern = '\balias[ \t]+(?:ls|cat|cd|rm|mv|cp|sudo|su|passwd|login|ssh)=[^\n]{0,300}?(?:>>?[ \t]*|\btee(?:[ \t]+-a)?[ \t]+|\b(?:appendFile\w*|writeFile\w*|write_text|file_put_contents|open)\s*\([^\n]{0,80}?)["\x27]?(?:[^\s"\x27;&|]*\.(?:bashrc|bash_profile|bash_login|zshrc|zprofile|profile)\b|/etc/(?:profile|bash\.bashrc|zsh/zshrc)\b)|(?:>>?[ \t]*|\btee(?:[ \t]+-a)?[ \t]+|\b(?:appendFile\w*|writeFile\w*|write_text|file_put_contents|open)\s*\([^\n]{0,80}?)["\x27]?(?:[^\s"\x27;&|]*\.(?:bashrc|bash_profile|bash_login|zshrc|zprofile|profile)\b|/etc/(?:profile|bash\.bashrc|zsh/zshrc)\b)[^\n]{0,300}?\balias[ \t]+(?:ls|cat|cd|rm|mv|cp|sudo|su|passwd|login|ssh)=|\balias[ \t]+(?:ls|cat|cd|rm|mv|cp|sudo|su|passwd|login|ssh)=[^\n]{0,200}?(?:\b(?:curl|wget|nc|ncat|socat)[ \t]|/dev/tcp/|base64[ \t]+(?:-d|--decode))'
 points = 65
 description = "Alias override of common system commands"
 override_gate = false
@@ -1566,7 +1606,13 @@ hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-SYSTEMD-RUN"
-pattern = 'systemd-run\s'
+# systemd-run is how sandboxes and build tools get a cgroup (`systemd-run --user --scope -p
+# MemoryMax=...`), and the name fills their docs, errors and skip messages. The 2026-10 audit found
+# 59 of 67 withdrawn lines firing on the word. The GTFOBins shape is a shell or a payload in the
+# transient unit: `systemd-run -t /bin/sh` (or --pty), an interactive `sh -i`, curl/wget/nc/socat,
+# /dev/tcp, `base64 -d`, or a program run from /tmp, /var/tmp or /dev/shm. Replay: withdrawn
+# 59 -> 0 (library 55 -> 0); no verified-malware line carried it.
+pattern = '(?m)\bsystemd-run\b[^\n|;&]{0,200}?(?:[ \t]-(?:t|-pty)\b[^\n|;&]{0,120}?[ \t/](?:ba|z|da|k)?sh(?:[ \t]*$|[ \t]+-[il]\b|["\x27`)])|[ \t/](?:ba|z|da|k)?sh[ \t]+-i\b|\b(?:curl|wget|nc|ncat|socat)[ \t]|/dev/tcp/|base64[ \t]+(?:-d|--decode)|[ \t]/(?:tmp|var/tmp|dev/shm)/\S)'
 points = 55
 description = "systemd-run transient service execution"
 override_gate = false

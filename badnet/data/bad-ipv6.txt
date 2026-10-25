@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 512
+# count: 519
 2001:12d0:8020::42
 2001:1308:2907:d000:569f:35ff:fe13:3f22
 2001:19f0:6c01:2a94:5400:6ff:fe76:f1ba
@@ -182,9 +182,16 @@
 2607:f8b0:4864:20::b146
 2607:f8b0:4864:20::b147
 2607:f8b0:4864:20::f46
+2607:f8b0:4864:34::a
+2607:f8b0:4864:39::6
+2607:f8b0:4864:39::8
+2607:f8b0:4864:41::1
+2607:f8b0:4864:41::5
+2607:f8b0:4864:41::9
 2804:1690:1:0:20c:29ff:fe3d:f519
 2804:998:10::23
 2a00:1450:4864:20::245
+2a00:1450:4864:3a::a
 2a00:1938::5
 2a01:111:f403:d211::2
 2a01:239:248:1300::1
