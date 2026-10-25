@@ -56,6 +56,21 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 		pyScope = hooks
 	}
 
+	// The cargo and nuget rules below are install-hook rules too, and fail the same way over the
+	// whole package: their processors pass every crate or nupkg source as PkgbuildContent, so a crate
+	// that documents `.cargo/config.toml` in one file and calls `.write(` in another, or a project
+	// template whose test code calls Assembly.Load and HttpClient, was minted as persistence or staged
+	// execution. Measured 2026-10-25: CARGO-CONFIG-PERSISTENCE was the only remaining evidence for 162
+	// of the first 468 still-malicious cargo rescans, and a read of all 12 NUGET-ASSEMBLYLOAD-EGRESS
+	// mints found none malicious. build.rs, and the nuget install scripts and MSBuild targets, are
+	// what those processors pass as the hook, so that is the scope. npm is not narrowed: its hook
+	// text is the lifecycle command line, not the file the command runs.
+	hookScope := combined
+	switch eco {
+	case "cargo", "rust", "nuget", "dotnet":
+		hookScope = hooks
+	}
+
 	// ── RubyGems: global Gem.post_install_hooks persistence ──────────────────
 	// A gem registering Gem.post_install_hooks (or Gem.pre_install_hooks) runs
 	// arbitrary code on EVERY future gem install once it is loaded. This is a
@@ -146,7 +161,7 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 	// dependency fetches. Benign build.rs never rewrites the global cargo
 	// config. Intent: persistence → ClassEvidence.
 	if eco == "cargo" || eco == "rust" || eco == "" {
-		if cargoConfigPathRE.MatchString(combined) && cargoWriteCallRE.MatchString(combined) {
+		if cargoConfigPathRE.MatchString(hookScope) && cargoWriteCallRE.MatchString(hookScope) {
 			out = append(out, qualifiedEvidence(
 				"CARGO-CONFIG-PERSISTENCE",
 				"behavioral",
@@ -161,7 +176,7 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 	// copy/reference project files; reflective load + network is staged
 	// execution/exfil. Intent: malicious → ClassEvidence.
 	if eco == "nuget" || eco == "dotnet" || eco == "" {
-		if nugetAssemblyLoadRE.MatchString(combined) && nugetNetEgressRE.MatchString(combined) {
+		if nugetAssemblyLoadRE.MatchString(hookScope) && nugetNetEgressRE.MatchString(hookScope) {
 			out = append(out, qualifiedEvidence(
 				"NUGET-ASSEMBLYLOAD-EGRESS",
 				"behavioral",

