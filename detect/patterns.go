@@ -315,9 +315,13 @@ func firstMatchingLine(content string, re *regexp.Regexp) string {
 // suppression can remove false positives but cannot hide a genuine hit sitting
 // further down the same file.
 //
-// When the pattern matches the content as a whole but no individual line does (a
-// match spanning a line break), the finding is kept with an empty line — the same
-// conservative direction the per-rule suppressors take on an unparseable line.
+// When the pattern matches the content as a whole but no individual line does (a match
+// spanning a line break), only a rule written to span lines ([\s\S]) is kept, reporting the
+// line the match starts on. Any other rule matched across a line break by accident: an
+// unbounded \s or (\S+\s+)* joining a word in one line of prose to a flag several lines on.
+// Measured in the 2026-10-25 audit, every mint that recorded an empty matched line (P-BASE32,
+// P-XXD-DECODE and others across hex, rubygems, pub.dev, packagist, conan and julia) was a false
+// positive, and a mint with no line names nothing a reviewer can check.
 func reportableLine(p compiledPattern, content string) (string, bool) {
 	matched := false
 	for _, raw := range splitLines(content) {
@@ -330,10 +334,23 @@ func reportableLine(p compiledPattern, content string) (string, bool) {
 			return line, true
 		}
 	}
-	if !matched {
-		return "", true
+	if matched || !p.multiline {
+		return "", false
 	}
-	return "", false
+	loc := p.re.FindStringIndex(content)
+	if loc == nil {
+		return "", false
+	}
+	start := strings.LastIndexByte(content[:loc[0]], '\n') + 1
+	end := strings.IndexByte(content[loc[0]:], '\n')
+	if end < 0 {
+		end = len(content) - loc[0]
+	}
+	line := trimSpace(content[start : loc[0]+end])
+	if line == "" || suppressLine(p.id, line) {
+		return "", false
+	}
+	return line, true
 }
 
 // suppressLine reports whether this rule considers this specific line a false

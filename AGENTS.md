@@ -109,6 +109,10 @@ and gated via `config.EcosystemConfig.Enabled`.
      comes from a file that runs. `file_exts` on a rule restricts it to files in its
      language (`.php`, `go.mod`, …); a language rule never judges another language's
      file. Unmarked content is judged whole, as before.
+   - **A finding names a line.** A match that crosses a line break is kept only
+     for a rule written to span lines (`[\s\S]` in its pattern), and reports the
+     line the match starts on. Any other cross-line match is dropped
+     (`reportableLine`).
    - **Cargo and NuGet hook rules read the hook only.** `CARGO-CONFIG-PERSISTENCE`
      and `NUGET-ASSEMBLYLOAD-EGRESS` match only install-hook text (`build.rs`,
      nuget install scripts and MSBuild targets), never the whole crate or nupkg.
