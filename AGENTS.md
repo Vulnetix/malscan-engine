@@ -100,6 +100,15 @@ and gated via `config.EcosystemConfig.Enabled`.
    - **Public constants** (`allow/constants.go`): EVM zero/burn addresses,
      canonical USDC/USDT contracts and the secp256k1 n/p are never a wallet
      (`P-CRYPTO-WALLET` suppression, `allow.Benign("wallet", …)`).
+   - **Library content is judged file by file** (`detect/fileview.go`). When
+     `PkgbuildExecutes` is false and the content carries the processors' file
+     markers, a hit found only in a non-surface file (`nonSurfacePath`: tests,
+     testdata, docs, examples, `.github/`, lockfiles and `go.sum`, `vendor/`
+     except on packagist, `node_modules/` except on npm, `.yarn/`) is
+     `ClassContext` for every rule, override_gate included, and the reported line
+     comes from a file that runs. `file_exts` on a rule restricts it to files in its
+     language (`.php`, `go.mod`, …); a language rule never judges another language's
+     file. Unmarked content is judged whole, as before.
    - **Cargo and NuGet hook rules read the hook only.** `CARGO-CONFIG-PERSISTENCE`
      and `NUGET-ASSEMBLYLOAD-EGRESS` match only install-hook text (`build.rs`,
      nuget install scripts and MSBuild targets), never the whole crate or nupkg.

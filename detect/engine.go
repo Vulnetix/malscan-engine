@@ -45,14 +45,20 @@ func Detect(ctx *PackageContext) []Finding {
 	}
 	if ctx.PkgbuildContent != "" {
 		n := len(f)
+		// Shipped library content (not an executing recipe) is judged file by file when the processor
+		// marked its files: see fileIndex and matchSectionView.
+		var files *fileIndex
+		if !ctx.PkgbuildExecutes {
+			files = newFileIndex(ctx.PkgbuildContent, ctx.Ecosystem)
+		}
 		if ctx.capEnabled(CapManifestPatterns) {
-			f = matchSectionView(ctx.PkgbuildContent, pkgView, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapSourceURLPatterns) {
-			f = matchSectionView(ctx.PkgbuildContent, pkgView, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapGTFObins) {
-			f = matchSectionView(ctx.PkgbuildContent, pkgView, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
 		}
 		if ctx.capEnabled(CapShellObfuscation) {
 			f = append(f, analyzeShell(ctx.PkgbuildContent, "", "")...)

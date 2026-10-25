@@ -102,6 +102,14 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   evidence only in an install hook or an executing recipe. For a pypi library's
   `.py` sources, docstrings and comments are not read and string-literal data
   lists (deny-lists, test vectors) are context only.
+- Library content is judged file by file when the processor marks its files
+  (`// ==== path ====`, `# ==== path ====` or `<!-- ==== path ==== -->`). A hit
+  found only in files that never run — tests, testdata, docs, examples, CI
+  configuration, lockfiles and dependency lists, vendored copies the ecosystem
+  does not load — is context, never evidence, for every rule. A rule with
+  `file_exts` (PHP, Python, Ruby, JS, Dart, Elixir, Go, Java and Rust rules)
+  judges only the files in its language. Content with no markers is judged
+  whole.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.

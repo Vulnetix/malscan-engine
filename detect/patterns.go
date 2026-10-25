@@ -48,6 +48,10 @@ type patternRule struct {
 	// call, an npm lifecycle hook — because callers such as the package firewall
 	// run every detector against every ecosystem's metadata.
 	Ecosystems []string `toml:"ecosystems"`
+	// FileExts scopes a language-specific rule to the files written in that language, when the content
+	// carries the processors' per-file markers (see fileIndex): ".php" matches by extension, a bare
+	// name ("go.mod") by base name. Empty means every file. Content with no markers is judged whole.
+	FileExts []string `toml:"file_exts"`
 	// Weakness marks a dual-use code-execution capability that is NOT evidence of
 	// malice: exec(compile(...)), a shell spawned from a build script,
 	// Code.eval_string. A matching hit is ClassWeakness — reported as a
@@ -74,6 +78,10 @@ type compiledPattern struct {
 	cwe          string
 	cvss         string
 	ecosystems   map[string]bool // empty = every ecosystem
+	fileExts     []string
+	// multiline: the pattern is written to span lines ([\s\S]). Any other pattern whose only match
+	// crosses a line break matched by accident (an unbounded \s across prose), see reportableLine.
+	multiline bool
 }
 
 // appliesTo reports whether the rule should run for this ecosystem. A rule with
@@ -137,6 +145,8 @@ func loadPatterns() {
 					hookOnly: r.HookOnly, hookOnlyEcos: ecoSet(r.HookOnlyEcosystems), pkgbuildOnly: r.PkgbuildOnly,
 					weakness: r.Weakness, cwe: r.CWE, cvss: r.CVSS,
 					ecosystems: ecos,
+					fileExts:   r.FileExts,
+					multiline:  strings.Contains(r.Pattern, `[\s\S]`),
 				})
 			}
 		}
@@ -190,13 +200,12 @@ func LogStartup(logger *slog.Logger) {
 // reverse-shell indicators) are always evidence regardless of points.
 const evidenceThreshold = 40
 
-// matchSection matches one TOML section against content.
 // matchSection matches one TOML section against content. inHookSurface reports
 // whether content auto-executes at build/install time (an install hook, or a
 // PkgbuildContent the caller flagged PkgbuildExecutes). hook_only patterns found
 // outside such a surface are demoted to ClassContext corroboration.
 func matchSection(content, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
-	return matchSectionView(content, content, section, category, idPrefix, inHookSurface, eco, findings)
+	return matchSectionView(content, content, nil, section, category, idPrefix, inHookSurface, eco, findings)
 }
 
 // matchSectionView is matchSection with a second, narrower view of the same content: the text
@@ -204,7 +213,13 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 // where lines that are elements of a string-literal list are blanked). A hit that matches
 // content but not execView is recorded as ClassContext. override_gate rules that are hostile
 // on every surface for this ecosystem (not demoted by hook_only) ignore execView.
-func matchSectionView(content, execView, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
+//
+// files, when non-nil, is the per-file structure of non-executing library content (see
+// fileIndex). A rule with file_exts then judges only the files in its language, and a hit found
+// only in files that never run (tests, docs, examples, CI, lockfiles, unloaded vendored copies)
+// is ClassContext for every rule, override_gate included: a reverse shell in a detector's test
+// table is the detector's data, not its behaviour.
+func matchSectionView(content, execView string, files *fileIndex, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
 	loadPatterns()
 	pkgbuildLike := inHookSurface || looksLikePkgbuild(content)
 	for _, p := range patternsBySection[section] {
@@ -213,6 +228,11 @@ func matchSectionView(content, execView, section, category, idPrefix string, inH
 		// apply to.
 		if !p.appliesTo(eco) {
 			continue
+		}
+		content, execView, scope := content, execView, content
+		if files != nil {
+			content, execView = files.view(content, "content", p.fileExts, false), files.view(execView, "exec", p.fileExts, false)
+			scope = files.view(content, "content", p.fileExts, true)
 		}
 		if p.re.MatchString(content) {
 			// PKGBUILD-source-hygiene rules carry no signal on a declarative
@@ -238,7 +258,20 @@ func matchSectionView(content, execView, section, category, idPrefix string, inH
 				// The rule matches only data: a deny-list, a keyword list, test vectors.
 				class = ClassContext
 			}
-			line, keep := reportableLine(p.id, content, p.re)
+			report := content
+			if class == ClassEvidence && scope != content {
+				if p.re.MatchString(scope) {
+					report = scope // name the line in a file that runs
+				} else {
+					class = ClassContext // only in tests, docs, examples, CI or lockfiles
+				}
+			}
+			line, keep := reportableLine(p, report)
+			if !keep && report != content {
+				// Every line in the running files was suppressed; what is left is context.
+				class = ClassContext
+				line, keep = reportableLine(p, content)
+			}
 			if !keep {
 				continue
 			}
@@ -285,15 +318,15 @@ func firstMatchingLine(content string, re *regexp.Regexp) string {
 // When the pattern matches the content as a whole but no individual line does (a
 // match spanning a line break), the finding is kept with an empty line — the same
 // conservative direction the per-rule suppressors take on an unparseable line.
-func reportableLine(id, content string, re *regexp.Regexp) (string, bool) {
+func reportableLine(p compiledPattern, content string) (string, bool) {
 	matched := false
 	for _, raw := range splitLines(content) {
-		if !re.MatchString(raw) {
+		if !p.re.MatchString(raw) {
 			continue
 		}
 		matched = true
 		line := trimSpace(raw)
-		if !suppressLine(id, line) {
+		if !suppressLine(p.id, line) {
 			return line, true
 		}
 	}
