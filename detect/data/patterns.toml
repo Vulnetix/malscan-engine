@@ -37,7 +37,7 @@ override_gate = true
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-NC"
-pattern = '\b(nc|ncat)\s+[^;&|\n]*(-e|-c)\s'
+pattern = '\b(nc|ncat|netcat)[ \t]+(?:[^=;&|\n][^;&|\n]*?[ \t])?(-e|-c)[ \t]'
 points = 95
 description = "Netcat reverse shell"
 override_gate = true
@@ -265,7 +265,7 @@ override_gate = false
 # Cryptocurrency mining
 [[pkgbuild_analysis]]
 id = "P-MINER-BINARY"
-pattern = '(xmrig|cpuminer|minerd|ethminer|bfgminer|cgminer|nbminer|phoenixminer|lolminer|gminer|teamredminer)'
+pattern = '\b(xmrig|cpuminer|minerd|ethminer|bfgminer|cgminer|nbminer|phoenixminer|lolminer|gminer|teamredminer)\b'
 points = 70
 description = "Reference to cryptocurrency mining software"
 override_gate = false
@@ -409,7 +409,7 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-XXD-DECODE"
-pattern = 'xxd\s+(\S+\s+)*(-r|-revert)'
+pattern = 'xxd[ \t]+(?:\S+[ \t]+)*?(?:-r|-revert)\b'
 points = 55
 description = "xxd reverse (hex to binary decode, possible payload)"
 override_gate = false
@@ -584,7 +584,7 @@ override_gate = true
 # Encoding bypasses
 [[pkgbuild_analysis]]
 id = "P-BASE32"
-pattern = 'base32\s+(\S+\s+)*(-d|--decode)'
+pattern = 'base32[ \t]+(?:\S+[ \t]+)*?(?:-d|--decode)\b'
 points = 60
 description = "Base32 decoding (payload hiding)"
 override_gate = false

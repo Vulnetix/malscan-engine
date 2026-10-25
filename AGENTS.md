@@ -100,6 +100,14 @@ and gated via `config.EcosystemConfig.Enabled`.
    - **Public constants** (`allow/constants.go`): EVM zero/burn addresses,
      canonical USDC/USDT contracts and the secp256k1 n/p are never a wallet
      (`P-CRYPTO-WALLET` suppression, `allow.Benign("wallet", …)`).
+   - **Cargo and NuGet hook rules read the hook only.** `CARGO-CONFIG-PERSISTENCE`
+     and `NUGET-ASSEMBLYLOAD-EGRESS` match only install-hook text (`build.rs`,
+     nuget install scripts and MSBuild targets), never the whole crate or nupkg.
+     A path documented in one file and a write call in another is not persistence.
+   - **Command rules need token boundaries.** `P-REVSHELL-NC`, `P-MINER-BINARY`,
+     `P-XXD-DECODE` and `P-BASE32` match within one line: `nc` must be a command
+     with arguments (`let nc = -c * inv` is not), a miner name is a whole word
+     (`gminer` in `logminer` is not), and the decode flag is on the same line.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.
