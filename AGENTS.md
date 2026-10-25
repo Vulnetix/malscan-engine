@@ -147,6 +147,11 @@ and gated via `config.EcosystemConfig.Enabled`.
      pipe-to-shell family suppresses a line whose command sits inside a string handed to a print,
      log or error call, or is quoted in backticks in a Markdown table row or list item, unless that
      string is redirected (`>`) or piped to a shell.
+   - **Backgrounding means a real `&`.** `P-DEVNULL-BACKGROUND`, `P-INSTALL-DEVNULL-BG`,
+     `P-NOHUP-BACKGROUND` and `P-INSTALL-NOHUP` need a trailing `&` on the same line that is not
+     part of `>&`, `&&` or `&>`. The nohup rules also need a network or payload sign in the nohup
+     body (curl/wget/nc/socat, base64, /dev/tcp, `sh -i`, a URL, `python -c`, or a program run
+     from /tmp, /var/tmp or /dev/shm); nohup on a dev server or daemon is not a finding.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

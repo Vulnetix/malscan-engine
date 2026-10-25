@@ -405,7 +405,14 @@ hook_only = true
 # Process backgrounding/hiding
 [[pkgbuild_analysis]]
 id = "P-NOHUP-BACKGROUND"
-pattern = 'nohup\s+\S+.*&'
+# Starting a daemon with nohup is ordinary (`nohup ollama serve > /tmp/x.log 2>&1 &`), and the old
+# `.*&` also took the `&` of `2>&1`. The 2026-10 audit found 258 of 275 withdrawn lines firing on
+# dev servers, sandbox launchers and agent docs. The nohup body now needs a network or payload
+# sign (curl/wget/nc/socat/telnet, base64, /dev/tcp, `sh -i`, a URL, `python -c`, `perl -e`, a miner,
+# or a program run from /tmp, /var/tmp or /dev/shm), then a backgrounding `&` that is not part of
+# `>&`, `&&` or `&>`. Replay: withdrawn 258 -> 8; verified-malware lines 5 -> 2 (the 3 lost start
+# Xorg, steam and the package's own binary, not the payload).
+pattern = '\bnohup\s(?:[^\n]*?(?:\b(?:curl|wget|nc|ncat|socat|telnet)\s|base64|/dev/(?:tcp|udp)/|\b(?:ba)?sh\s+-i\b|https?://|python[23]?\s+-c|perl\s+-e|\bxmrig)|(?:[^\s>]\S*\s+){0,3}["\x27]?/(?:tmp|dev/shm|var/tmp)/)[^\n]*[^>&]&(?:[^&>]|$)'
 points = 55
 description = "nohup with backgrounding (persistent hidden process)"
 override_gate = false
@@ -416,7 +423,13 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-DEVNULL-BACKGROUND"
-pattern = '(curl|wget|python[23]?|bash|sh)\s+.*>/dev/null.*&'
+# `.*&` took the `&` of `2>&1` or `&&`, so every `command -v curl >/dev/null 2>&1 && ...` presence
+# probe and `curl -sf http://127.0.0.1:8000/health >/dev/null && break` health poll matched (the
+# 2026-10 audit: 296 of 324 withdrawn lines fired). The `&` must now background: not part of `>&`,
+# `&&` or `&>`, on the same line, and the command is a whole word. Replay: withdrawn 296 -> 46; the
+# one verified-malware line (`sudo tee /etc/profile.d/x >/dev/null && sudo chmod +x`) backgrounds
+# nothing and is lost.
+pattern = '\b(?:curl|wget|python[23]?|bash|sh)\s[^\n]*>\s*/dev/null[^\n]*[^>&]&(?:[^&>]|$)'
 points = 65
 description = "Network/shell command backgrounded with suppressed output"
 override_gate = false
@@ -859,7 +872,10 @@ override_gate = false
 
 [[install_script_analysis]]
 id = "P-INSTALL-NOHUP"
-pattern = 'nohup\s+\S+.*&'
+# Same shape as P-NOHUP-BACKGROUND (see there): the nohup body must carry a network or payload sign
+# and the `&` must background. Both verified-malware lines (`nohup /tmp/systemd-helper > /dev/null
+# 2>&1 &`) still fire.
+pattern = '\bnohup\s(?:[^\n]*?(?:\b(?:curl|wget|nc|ncat|socat|telnet)\s|base64|/dev/(?:tcp|udp)/|\b(?:ba)?sh\s+-i\b|https?://|python[23]?\s+-c|perl\s+-e|\bxmrig)|(?:[^\s>]\S*\s+){0,3}["\x27]?/(?:tmp|dev/shm|var/tmp)/)[^\n]*[^>&]&(?:[^&>]|$)'
 points = 75
 description = "nohup with backgrounding in install script (persistent hidden process)"
 override_gate = false
@@ -887,7 +903,9 @@ override_gate = true
 
 [[install_script_analysis]]
 id = "P-INSTALL-DEVNULL-BG"
-pattern = '(curl|wget|python[23]?|bash|sh)\s+.*>/dev/null.*&'
+# Same fix as P-DEVNULL-BACKGROUND: `command -v curl >/dev/null 2>&1 &&` (a presence probe, the CRAN
+# audit finding) has no backgrounding `&`.
+pattern = '\b(?:curl|wget|python[23]?|bash|sh)\s[^\n]*>\s*/dev/null[^\n]*[^>&]&(?:[^&>]|$)'
 points = 75
 description = "Network/shell command backgrounded with suppressed output in install script"
 override_gate = false
