@@ -142,6 +142,11 @@ and gated via `config.EcosystemConfig.Enabled`.
      `tee`, cp/mv/install/rm/`sed -i`, a write call). Lines inside a test assertion
      (`assert`, `expect(`, `expect_error(`) are suppressed, and so is a sudoers drop-in staged
      under `$pkgdir`.
+   - **A printed install hint is not a pipe-to-shell.** `P-CURL-PIPE` needs curl to fetch a URL,
+     host, `$var` or `{placeholder}`, and the shell as a whole word (`| shasum` is not). The
+     pipe-to-shell family suppresses a line whose command sits inside a string handed to a print,
+     log or error call, or is quoted in backticks in a Markdown table row or list item, unless that
+     string is redirected (`>`) or piped to a shell.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

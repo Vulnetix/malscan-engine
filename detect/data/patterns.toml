@@ -12,7 +12,15 @@ id = "P-CURL-PIPE"
 # live npm mints resting on it alone were `console.error("... curl ... | bash")` hints and per-OS
 # install dictionaries, and about 3 OpenSSF-confirmed npm packages rest on it alone; npm keeps the
 # other demoted strings as evidence (P-TELEGRAM-BOT 12 of 54 confirmed, P-PASSWD-READ 12 of 120).
-pattern = 'curl\s[^|\n]*\|\s*(ba)?sh'
+# The 2026-10 audit: prose such as "a trojanized update can pipe `curl | sh`" and "curl … | sh"
+# matched because nothing required curl to fetch anything, and `| shasum` matched "sh". curl now
+# needs a URL, host, `$var` or `{placeholder}` argument, and the shell is a whole word. Hints
+# printed for a human (`console.error("... curl ... | bash")`, `errors.New(...)`, `click.echo(...)`)
+# and Markdown table rows / list items quoting the command in backticks are suppressed
+# (suppressPrintedHint), unless the printed string is redirected or piped to a shell. Replay:
+# withdrawn 1,061 -> 802; verified-malware lines 15 -> 12 (the 3 lost are prose and a detector
+# regex). Most of what is left is a bare install line in a README or a test vector.
+pattern = '\bcurl\s[^|\n]*(?:://|\$|\{|[\w-]\.[A-Za-z]{2,})[^|\n]*\|\s*(?:ba)?sh\b'
 points = 90
 description = "curl output piped to shell (download-and-execute)"
 override_gate = true

