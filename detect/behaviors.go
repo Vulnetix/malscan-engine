@@ -111,8 +111,19 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 	// so the advisory states the intent (exfiltration/staged execution). Emitted
 	// as ClassTrigger so it corroborates the combination gate rather than
 	// double-minting; the gate already mints on the override-gate atoms.
-	if (eco == "npm" || eco == "node" || eco == "") && hasInstallHook(manifest) {
-		if npmDecodeRE.MatchString(combined) && npmNetEgressRE.MatchString(combined) {
+	//
+	// When the processor passes the lifecycle hooks (InstallScriptContent), both rules read only
+	// what runs at install: the install hook lines and the files they run (npmHookFiles). Read over
+	// the whole tarball, JS-INSTALL-REMOTE-IMPORT matched browser ESM imports from CDNs in library
+	// files: the 2026-10-25 audit found 0 of its 69 matches in a hook path, and 52 of those packages
+	// had no install hook at all. A caller with only a manifest keeps the old whole-content test.
+	npmScope, npmHooked := combined, hasInstallHook(manifest)
+	if hooks != "" && (eco == "npm" || eco == "node") {
+		npmScope = npmInstallLines(hooks) + "\n" + npmHookFiles(ctx)
+		npmHooked = strings.TrimSpace(npmScope) != ""
+	}
+	if (eco == "npm" || eco == "node" || eco == "") && npmHooked {
+		if npmDecodeRE.MatchString(npmScope) && npmNetEgressRE.MatchString(npmScope) {
 			out = append(out, qualifiedTrigger(
 				"JS-HOOK-DECODE-EGRESS-SEQ",
 				"behavioral",
@@ -121,7 +132,7 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 		}
 		// npm install hook that require()/import from a remote https URL bypasses
 		// the registry and fetches attacker-controlled code at install time.
-		if npmRemoteImportRE.MatchString(combined) {
+		if npmRemoteImportRE.MatchString(npmScope) {
 			out = append(out, qualifiedEvidence(
 				"JS-INSTALL-REMOTE-IMPORT",
 				"behavioral",
@@ -286,7 +297,7 @@ var (
 	npmDecodeRE    = regexp.MustCompile(`(?:atob|Buffer\.from)\s*\(`)
 	npmNetEgressRE = regexp.MustCompile(`(?:https?://|fetch\s*\(|net\.(connect|createConnection|Socket)|http\.(get|request)|dgram\.|dns\.)`)
 	// require('https://...') or import('https://...') or import x from 'https://...'
-	npmRemoteImportRE = regexp.MustCompile(`(?i)(?:require|import)\s*\(\s*['"]https?://|import\s+[^'"]*['"]https?://`)
+	npmRemoteImportRE = regexp.MustCompile(`(?i)(?:^|[^@\w.])(?:require|import)\s*\(\s*['"]https?://|(?:^|[^@\w.])import[ \t]+[^'"\n;]*['"]https?://`)
 
 	pyCredFileRE  = regexp.MustCompile(`(?:~/\.aws/credentials|~/\.ssh/id_(?:rsa|ed25519|ecdsa)|~/\.docker/config\.json|~/\.netrc|~/\.pypirc)`)
 	pyNetEgressRE = regexp.MustCompile(`(?:urllib\.request\.urlopen|requests\.(?:post|get|put)|httpx\.(?:post|get|Client)|urlopen|socket\.connect)`)

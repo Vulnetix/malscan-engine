@@ -76,6 +76,21 @@ func Detect(ctx *PackageContext) []Finding {
 		}
 		setSurface(f[n:], SurfaceInstall)
 	}
+	// npm: the files the lifecycle hooks run are install-time code (see npmHookFiles). They are
+	// judged as an executing surface, so hook_only rules count there; findings carry the IS- prefix.
+	if hookFiles := npmHookFiles(ctx); hookFiles != "" && ctx.capEnabled(CapInstallScript) {
+		n := len(f)
+		if ctx.capEnabled(CapManifestPatterns) {
+			f = matchSection(hookFiles, "pkgbuild_analysis", "install", "IS-", true, ctx.Ecosystem, f)
+		}
+		if ctx.capEnabled(CapSourceURLPatterns) {
+			f = matchSection(hookFiles, "source_url_analysis", "install", "IS-", true, ctx.Ecosystem, f)
+		}
+		if ctx.capEnabled(CapGTFObins) {
+			f = matchSection(hookFiles, "gtfobins_analysis", "gtfobins", "IS-", true, ctx.Ecosystem, f)
+		}
+		setSurface(f[n:], SurfaceInstall)
+	}
 
 	if ctx.capEnabled(CapOnionC2) {
 		f = append(f, analyzeOnion(ctx)...)

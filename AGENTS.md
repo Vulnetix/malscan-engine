@@ -100,6 +100,12 @@ and gated via `config.EcosystemConfig.Enabled`.
    - **Public constants** (`allow/constants.go`): EVM zero/burn addresses,
      canonical USDC/USDT contracts and the secp256k1 n/p are never a wallet
      (`P-CRYPTO-WALLET` suppression, `allow.Benign("wallet", …)`).
+   - **An npm hook's file is install code** (`detect/hookfiles.go`). The files a
+     `preinstall`/`install`/`postinstall` hook runs with `node` are judged as an
+     executing surface (`IS-` prefix, `SurfaceInstall`), so hook_only rules count
+     there. `prepare` and `prepublish` do not run on a registry install and are
+     ignored. JS-HOOK-DECODE-EGRESS-SEQ and JS-INSTALL-REMOTE-IMPORT read only the
+     install hook lines and those files when the processor passes the hooks.
    - **Library content is judged file by file** (`detect/fileview.go`). When
      `PkgbuildExecutes` is false and the content carries the processors' file
      markers, a hit found only in a non-surface file (`nonSurfacePath`: tests,
