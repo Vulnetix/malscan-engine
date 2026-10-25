@@ -86,6 +86,46 @@ var printedThenUsedRE = regexp.MustCompile(`["'` + "`" + `]\s*(?:>|\|\s*(?:sudo\
 // and `expect_error(read("/etc/passwd"))`: a test that the package REFUSES the read.
 var testAssertionRE = regexp.MustCompile(`^\s*assert\s|(?:^|[^\w.])(?:assert\w*!?|expect(?:_error)?|refute\w*|self\.assert\w+)\s*\(`)
 
+// devNetHostRE pulls the host out of each /dev/tcp/<host>/ or /dev/udp/<host>/ on a line.
+var devNetHostRE = regexp.MustCompile("/dev/(?:tcp|udp)/([^/\\s\"'`]+)")
+
+// loopbackHostRE is a host that never leaves the machine.
+var loopbackHostRE = regexp.MustCompile(`^(?:127\.\d{1,3}\.\d{1,3}\.\d{1,3}|localhost|0\.0\.0\.0|::1|\[::1\])$`)
+
+// suppressLoopbackDevNet reports whether every /dev/tcp or /dev/udp host on line is loopback: a port
+// probe (`exec 3<>/dev/tcp/127.0.0.1/$PORT`) or a statsd write (`> /dev/udp/127.0.0.1/8125`), not a
+// connection out. A line with no extractable host is kept.
+func suppressLoopbackDevNet(line string) bool {
+	hosts := devNetHostRE.FindAllStringSubmatch(line, -1)
+	if len(hosts) == 0 {
+		return false
+	}
+	for _, h := range hosts {
+		if !loopbackHostRE.MatchString(h[1]) {
+			return false
+		}
+	}
+	return true
+}
+
+// chownOwnerRE pulls the owner out of each chown on a line (flags skipped, group dropped).
+var chownOwnerRE = regexp.MustCompile(`\bchown[ \t]+(?:-\S+[ \t]+)*["']?([^\s:."']+)`)
+
+// suppressRootChown reports whether every chown on line gives the file to root: restoring the
+// owner of /etc/shadow or /root/.ssh, which hands nothing to anyone.
+func suppressRootChown(line string) bool {
+	owners := chownOwnerRE.FindAllStringSubmatch(line, -1)
+	if len(owners) == 0 {
+		return false
+	}
+	for _, o := range owners {
+		if o[1] != "root" && o[1] != "0" {
+			return false
+		}
+	}
+	return true
+}
+
 // suppressPackagingIdiom reports whether rule id's match on line is a packaging idiom.
 func suppressPackagingIdiom(id, line string) bool {
 	switch id {
@@ -95,6 +135,10 @@ func suppressPackagingIdiom(id, line string) bool {
 		return testAssertionRE.MatchString(line)
 	case "P-SYSINFO-RECON":
 		return suppressPrintedRecon(line)
+	case "P-REVSHELL-DEVTCP", "P-DEV-UDP":
+		return suppressLoopbackDevNet(line)
+	case "G-CHOWN-SENSITIVE":
+		return suppressRootChown(line)
 	case "P-EVAL-VAR":
 		return splitPackageEvalRE.MatchString(line)
 	case "P-PYTHON-INLINE":

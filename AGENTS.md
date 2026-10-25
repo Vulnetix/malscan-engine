@@ -160,6 +160,16 @@ and gated via `config.EcosystemConfig.Enabled`.
      parameter name, dependency or tool list. `P-CLIPBOARD-READ`: output mode only (`xclip -o`,
      `xsel -o`, wl-paste/pbpaste at command position); `xclip -selection clipboard`, `xsel -i`,
      wl-copy and pbcopy write the clipboard.
+   - **Reverse shells need the shape, on one line.** `P-REVSHELL-DEVTCP`/`P-DEV-UDP` need a shell
+     fd redirect into `/dev/tcp/<host>` (`>&`, `<`, `>`, `3<>`), and a line whose every host is
+     loopback is suppressed. `P-MKFIFO` needs mkfifo plus nc/ncat/socat/telnet/`openssl s_client`,
+     /dev/tcp or `sh -i` (or the `rm /tmp/f;mkfifo /tmp/f` prefix). `G-BUSYBOX-SHELL` needs
+     `nc -e`, `telnetd -l sh`, `sh -i` or /dev/tcp; `G-CHOWN-SENSITIVE` ignores chown to root and
+     covers .ssh only under /root. Interpreter reverse-shell and GTFOBins rules (`P-REVSHELL-LUA`,
+     `-PERL`, `-PYTHON`, `G-REVSHELL-NODE`, `-TCLSH`, `G-VIM-SHELL`, `G-AB-EXFIL`,
+     `G-BASENC-DECODE`, `G-ED-SHELL`, `G-GDB-PYTHON`, `P-PRINTF-HEX`, `G-CODE-TUNNEL`) use bounded
+     `[^\n]{0,N}` spans and `[ \t]`, never `.*` or `\s`, so a match cannot cross a line or run
+     the length of a minified bundle.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

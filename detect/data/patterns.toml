@@ -38,7 +38,14 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "np
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-DEVTCP"
-pattern = '/dev/tcp/'
+# The bare path matched detector tables (`r"/dev/tcp/"`, `strings.Contains(cmd, "/dev/tcp/")`),
+# deny-lists and loopback port probes (`exec 3<>/dev/tcp/127.0.0.1/$PORT`): the 2026-10 audit found
+# 146 of 148 withdrawn lines firing. The path must now be the target of a shell fd redirect (`>&`,
+# `<`, `>`, `>>`, `&>`, `3<>`) with a host after it, and a line whose every /dev/tcp host is
+# loopback (127.x, localhost, 0.0.0.0, ::1) is suppressed. Replay: withdrawn 146 -> 52;
+# verified-malware lines 25 -> 21 (the 4 lost are detector regexes, an assert and a 127.0.0.1
+# test vector).
+pattern = '(?:[<>]&?|&>|[0-9]<>)[ \t]*/dev/tcp/[^/\s]'
 points = 95
 description = "Bash reverse shell via /dev/tcp"
 override_gate = true
@@ -59,7 +66,12 @@ override_gate = true
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-PYTHON"
-pattern = 'socket\..*connect.*subprocess'
+# `.*` ran across a whole minified line, and the bare words matched audit-hook tables
+# (`('socket.connect', ..., 'subprocess.Popen')`), `patch("socket.create_connection", ...)` mocks
+# and prose (2026-10 audit). Now: a socket, then a `connect(` call within 200 characters, then a
+# subprocess call, os.dup2 or pty.spawn within 400. Replay: withdrawn 6 -> 3 (reverse-shell test
+# vectors); verified-malware lines 7 -> 7.
+pattern = 'socket\.[^\n]{0,200}?\bconnect\s*\([^\n]{0,400}?(?:subprocess\.\w+\s*\(|os\.dup2\s*\(|pty\.spawn\s*\()'
 points = 85
 description = "Python reverse shell pattern"
 override_gate = true
@@ -284,7 +296,14 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-MKFIFO"
-pattern = 'mkfifo\s'
+# A named pipe is ordinary IPC: `t.Skipf("mkfifo unsupported")`, `.expect("mkfifo failed")`,
+# `mkfifo "$stdout_pipe" "$stderr_pipe"`, and `\s` also joined "mkfifo" to the next line. The
+# 2026-10 audit found all 131 withdrawn lines firing. The rule now needs the reverse-shell shape on
+# one line: mkfifo followed within 200 characters by nc/ncat/netcat/telnet/socat, `openssl
+# s_client`, /dev/tcp or an interactive `sh -i`, or the `rm /tmp/f; mkfifo /tmp/f` one-liner
+# prefix. Replay: withdrawn 131 -> 5 (all reverse-shell test vectors); verified-malware lines
+# 9 -> 8 (the one lost is help text: "tries mkfifo first, falls back to bash").
+pattern = '\bmkfifo[ \t]+[^\n]{0,200}?(?:\b(?:nc|ncat|netcat|telnet|socat)\b|openssl[ \t]+s_client|/dev/tcp/|\b(?:ba)?sh[ \t]+-i\b)|\brm[ \t]+(?:-f[ \t]+)?/tmp/\S+[ \t]*;[ \t]*mkfifo[ \t]+/tmp/'
 points = 55
 description = "Named pipe creation (possible reverse shell component)"
 override_gate = false
@@ -484,7 +503,8 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 # Hex/octal obfuscation
 [[pkgbuild_analysis]]
 id = "P-PRINTF-HEX"
-pattern = 'printf\s+.*(\\x[0-9a-fA-F]{2}){4,}'
+# Bounded to one line (2026-10 audit: `\s+.*` crossed lines and minified bundles).
+pattern = '\bprintf[ \t]+[^\n]{0,100}?(\\x[0-9a-fA-F]{2}){4,}'
 points = 60
 description = "printf with hex escape sequences (obfuscated payload)"
 override_gate = false
@@ -594,7 +614,9 @@ override_gate = false
 # Reverse shells - additional languages
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-PERL"
-pattern = 'perl\s.*Socket.*connect|perl\s.*INET.*exec'
+# Spans bounded to one line and a few hundred characters (2026-10 audit: `.*` crossed whole
+# minified bundles).
+pattern = '\bperl[ \t][^\n]{0,200}?Socket[^\n]{0,300}?connect|\bperl[ \t][^\n]{0,200}?INET[^\n]{0,300}?exec'
 points = 85
 description = "Perl reverse shell (Socket + connect/exec)"
 override_gate = true
@@ -615,7 +637,10 @@ override_gate = true
 
 [[pkgbuild_analysis]]
 id = "P-REVSHELL-LUA"
-pattern = 'lua\s.*socket\.tcp|lua.*socket.*connect'
+# `lua.*socket.*connect` had no word boundary and no call: "Callback function evaluated when new
+# websocket connection was established" matched (2026-10 audit). Now `\blua\b`, bounded spans,
+# and a `socket.tcp` or a `:connect(`/`.connect(` call.
+pattern = '\blua[ \t][^\n]{0,200}?socket\.tcp\b|\blua\b[^\n]{0,200}?\bsocket\b[^\n]{0,200}?[:.]connect\s*\('
 points = 85
 description = "Lua reverse shell (socket.tcp)"
 override_gate = true
@@ -659,7 +684,10 @@ override_gate = true
 
 [[pkgbuild_analysis]]
 id = "P-DEV-UDP"
-pattern = '/dev/udp/'
+# Same shape as P-REVSHELL-DEVTCP: a shell fd redirect into /dev/udp/<host>, and a line whose every
+# host is loopback (statsd `> /dev/udp/127.0.0.1/8125`) is suppressed. Replay: withdrawn 27 -> 2;
+# verified-malware lines 5 -> 5.
+pattern = '(?:[<>]&?|&>|[0-9]<>)[ \t]*/dev/udp/[^/\s]'
 points = 85
 description = "Bash /dev/udp network connection"
 override_gate = true
@@ -1162,7 +1190,10 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-REVSHELL-NODE"
-pattern = '''node\s+(-e|--eval)\s.*\bnet\b.*\bSocket\b|require\s*\(\s*['"](?:net|child_process)['"]\s*\).*\bconnect\b'''
+# `.*` spanned whole minified bundles (a CDP relay source string matched; 2026-10 audit). Spans are
+# now bounded to one line and a few hundred characters. A bare `require('net').connect(port, host)`
+# still fires: the hook-context tests treat it as an outbound socket from runtime source.
+pattern = '''\bnode[ \t]+(-e|--eval)[ \t][^\n]{0,200}?\bnet\b[^\n]{0,200}?\bSocket\b|require\s*\(\s*['"](?:net|child_process)['"]\s*\)[^\n]{0,200}?\bconnect\b'''
 points = 85
 description = "Node.js reverse shell (net.Socket connect)"
 override_gate = true
@@ -1176,7 +1207,9 @@ override_gate = true
 
 [[gtfobins_analysis]]
 id = "G-REVSHELL-TCLSH"
-pattern = '(tclsh|wish)\s.*\bsocket\b'
+# "wish" is an English word and `.*` spanned whole lines (2026-10 audit). Now a Tcl `[socket ...]`
+# command on the same line as tclsh/wish, either order, bounded.
+pattern = '\b(?:tclsh|wish)\b[^\n]{0,200}?\[\s*socket[ \t]|\[\s*socket[ \t][^\n]{0,300}?\|[ \t]*(?:tclsh|wish)\b'
 points = 85
 description = "Tcl reverse shell (socket connect)"
 override_gate = true
@@ -1385,7 +1418,8 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-VIM-SHELL"
-pattern = '(vi|vim|nvim|rvim|vimdiff|view|ex)\s+.*-c\s.*[!:]\s*!'
+# Bounded to one line (2026-10 audit: `\s+.*` crossed lines, and "view"/"ex" ended other words).
+pattern = '\b(?:vi|vim|nvim|rvim|vimdiff|view|ex)[ \t]+[^\n]{0,100}?-c[ \t][^\n]{0,100}?[!:][ \t]*!'
 points = 70
 description = "Vim/Neovim shell escape via -c flag"
 override_gate = false
@@ -1483,7 +1517,12 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[gtfobins_analysis]]
 id = "G-BUSYBOX-SHELL"
-pattern = 'busybox\s+(nc|telnetd|sh|ash)\s'
+# `busybox sh -c 'echo x'` in a container, `busybox nc -z -w 2 127.0.0.1 80` health checks and
+# prose ("busybox sh ignores SIGTERM") matched, and `\s` joined lines: the 2026-10 audit found all
+# 13 withdrawn lines firing. Now the shell shape on one line: `busybox nc ... -e`, `busybox telnetd
+# ... -l .../sh`, an interactive `busybox sh -i`, or busybox sh/ash with /dev/tcp. Replay: withdrawn
+# 13 -> 0; verified-malware lines 4 -> 4.
+pattern = '\bbusybox[ \t]+(?:nc[ \t][^\n|;&]{0,100}?[ \t]-e\b|telnetd[ \t][^\n|;&]{0,60}?-l[ \t]*\S*sh\b|(?:sh|ash)[ \t]+-i\b|(?:sh|ash)\b[^\n]{0,100}?/dev/tcp/)'
 points = 65
 description = "Busybox shell/network subcommand abuse"
 override_gate = false
@@ -1688,7 +1727,8 @@ hook_only = true
 
 [[gtfobins_analysis]]
 id = "G-GDB-PYTHON"
-pattern = 'gdb\s+.*-ex\s.*\bpython\b'
+# Bounded to one line (2026-10 audit).
+pattern = '\bgdb[ \t]+[^\n]{0,200}?-ex[ \t][^\n]{0,200}?\bpython\b'
 points = 55
 description = "GDB embedded Python execution"
 override_gate = false
@@ -1759,7 +1799,8 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-BASENC-DECODE"
-pattern = '(basenc|base58|ascii85)\s+.*(-d|--decode)'
+# One command on one line (2026-10 audit: `\s+.*` joined the tool name to a `-d` lines later).
+pattern = '\b(?:basenc|base58|ascii85)[ \t]+[^\n|;&]{0,100}?(?:-d\b|--decode\b)'
 points = 55
 description = "Non-standard base encoding decode (payload hiding)"
 override_gate = false
@@ -1949,14 +1990,17 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-ED-SHELL"
-pattern = '\bed\b\s.*<<<.*[!]'
+# Bounded to one line (2026-10 audit).
+pattern = '\bed[ \t]+[^\n]{0,100}?<<<[^\n]{0,100}?!'
 points = 55
 description = "ed editor shell escape (! command)"
 override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-CODE-TUNNEL"
-pattern = 'code\s+tunnel\b|code\s+.*--remote-tunnel\b'
+# `code` had no left boundary, so "Couldn't decode tunnel secret" and "Decode tunnel server domain"
+# matched (2026-10 audit, 5 of 9 withdrawn lines). Word-bounded and on one line.
+pattern = '\bcode[ \t]+tunnel\b|\bcode[ \t]+[^\n]{0,200}?--remote-tunnel\b'
 points = 70
 description = "VS Code tunnel (remote access establishment)"
 override_gate = false
@@ -2012,7 +2056,11 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-CHOWN-SENSITIVE"
-pattern = 'chown\s+[^;|&\n]*/etc/(shadow|sudoers|passwd)|chown\s+[^;|&\n]*\.ssh/'
+# Provisioning a user's own key (`chown git:git /home/git/.ssh/authorized_keys`) and restoring root
+# ownership (`chown root:root /etc/shadow`) matched: the 2026-10 audit found all 23 withdrawn lines
+# firing. The .ssh form now covers only /root/.ssh, and a line whose owner is root (or 0) is
+# suppressed (suppressRootChown). `\s` is `[ \t]`. Replay: withdrawn 23 -> 0.
+pattern = '\bchown[ \t]+[^;|&\n]*/etc/(shadow|sudoers|passwd)\b|\bchown[ \t]+[^;|&\n]*/root/\.ssh/'
 points = 65
 description = "chown on sensitive authentication files"
 override_gate = false
@@ -2067,7 +2115,8 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-AB-EXFIL"
-pattern = '\bab\s+.*-p\s'
+# Bounded to one command (2026-10 audit: `\s+.*` crossed lines).
+pattern = '\bab[ \t]+[^\n|;&]{0,200}?-p[ \t]'
 points = 55
 description = "Apache Bench POST data exfiltration"
 override_gate = false
