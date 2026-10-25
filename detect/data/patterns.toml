@@ -623,14 +623,25 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-OCTAL-ENCODE"
-pattern = '(printf|echo\s+-e)\s+.*\\[0-7]{3}.*\\[0-7]{3}.*\\[0-7]{3}'
+# Three octal escapes anywhere after printf matched every ANSI colour (`\033[1;31m`), terminal
+# control sequence (`\033]7;`, `\033[?1049h`), file magic (`\377\330\377\340`), NUL-separated
+# records (`\000`) and UTF-8 bytes (`\342\227\217`). The 2026-10 audit found all 80 withdrawn lines
+# firing and no verified malware. An octal-encoded payload is text: four or more consecutive
+# escapes of printable ASCII (\040-\176), executed, either the printf inside `$(...)`, backquotes or
+# eval, or piped into a shell. Replay: withdrawn 80 -> 0 (library 80 -> 0).
+pattern = '(?:\$\(|`|\beval\b[^\n]{0,10}?)[ \t]*(?:printf|echo[ \t]+-e)[ \t]+["\x27]?[^\n]{0,40}?(?:\\{1,2}(?:0?[4-7][0-7]|1[0-6][0-7]|17[0-6])){4}|(?:printf|echo[ \t]+-e)[ \t]+["\x27]?[^\n]{0,40}?(?:\\{1,2}(?:0?[4-7][0-7]|1[0-6][0-7]|17[0-6])){4}[^\n]{0,300}?\|[ \t]*(?:sudo[ \t]+)?(?:/usr)?(?:/bin/)?(?:ba|z|da)?sh\b'
 points = 55
 description = "Octal-encoded payload in printf/echo (3+ sequences)"
 override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-REV-EXEC"
-pattern = 'rev\s.*\|\s*(ba)?sh'
+# `rev` had no left boundary, so `prev || ...`, `sha256(prev || ':' || sha)` (Italian docs) and
+# `prev is not None:  # echo 'git push' | sh` matched; `.*` ran the length of a minified line. The
+# rule now needs rev as a command (line start, after `;` `&` `|` `(` `$(` or a backquote) and a pipe
+# into a shell within the same line. Replay: withdrawn 5 -> 1 (library 4 -> 1), a detector's
+# `echo 'lruc' | rev | sh` test vector.
+pattern = '(?:^|[;&|(`]|\$\()[ \t]*rev\b[^\n]{0,200}?\|[ \t]*(?:sudo[ \t]+)?(?:/usr)?(?:/bin/)?(?:ba|z|da)?sh\b'
 points = 70
 description = "Reversed string piped to shell (obfuscation)"
 override_gate = false
@@ -2236,7 +2247,14 @@ override_gate = true
 [[pkgbuild_analysis]]
 id = "P-JS-CHILDPROC-DECODE"
 file_exts = [".js", ".mjs", ".cjs", ".ts", ".mts", ".cts", ".jsx", ".tsx"]
-pattern = '(child_process|exec|execSync|spawn|spawnSync)[^\n]{0,120}(Buffer\.from\s*\(|atob\s*\()'
+# A call, and a decode. `exec` matched inside `executable`, `execution` and `executor`, and
+# RegExp's `/re/.exec(Buffer.from(...))`; `execSync.mockReturnValue(Buffer.from(""))` and
+# `vi.mocked(execFileSync).mockReturnValue(...)` are test mocks; `Buffer.from(script,
+# 'utf16le').toString('base64')` for PowerShell -EncodedCommand ENCODES. The 2026-10 audit found 37
+# of 73 withdrawn lines firing. The rule now needs exec/execSync/execFile/spawn(Sync) called (not
+# `.exec(` on a regex, not a mock) with `Buffer.from(x, 'base64'|'hex')` or `atob(` inside the
+# call's first 120 characters. Replay: withdrawn 37 -> 0 (library 37 -> 0).
+pattern = '(?:^|[^\w.$]|\)\.|\b(?:child_process\w*|cp|childProcess|child|proc)\.)(?:exec|execSync|execFile|execFileSync|spawn|spawnSync)\)?\s*\([^\n]{0,120}?(?:Buffer\.from\s*\([^()\n]{0,120}?,\s*["\x27](?:base64|hex)["\x27]\s*\)|\batob\s*\()'
 points = 50
 description = "child_process exec/spawn of a base64-decoded command (download-and-execute)"
 override_gate = true

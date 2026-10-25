@@ -206,6 +206,13 @@ and gated via `config.EcosystemConfig.Enabled`.
      `&>`, `cmd > /var/log/x.log 2>&1` and plist `<string>` paths are logging. `P-HISTORY-CLEAR`
      needs `history -c` as a command; `HISTFILE=/dev/null`, `unset HISTFILE` and `set +o history`
      keep a tool's own driven shell out of the user's history and are not findings.
+   - **An encoded payload is decoded and run.** `P-OCTAL-ENCODE` needs four or more consecutive
+     octal escapes of printable ASCII (never `\033[` colours, `\000` separators, file magic or
+     UTF-8 bytes) in a printf/`echo -e` that runs: inside `$(...)`, backquotes or eval, or piped to
+     a shell. `P-REV-EXEC` needs `rev` as a command piped to a shell on the same line.
+     `P-JS-CHILDPROC-DECODE` needs exec/execSync/execFile/spawn called (not RegExp `.exec(`, not a
+     test mock) with `Buffer.from(x, 'base64'|'hex')` or `atob(` in its arguments; `.toString('base64')`
+     encodes.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

