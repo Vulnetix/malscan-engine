@@ -180,6 +180,12 @@ another finding but never mint alone.
   (Dropbox, Backblaze B2 `fNNN` download hosts, ntfy.sh, Vercel's apex anycast `76.76.21.21`,
   GitHub's web and Pages/raw front-end ranges). A feed entry for the whole platform cannot say
   which tenant is bad. A `url` indicator with a path on the same platform keeps full weight.
+- **Test, fixture, example and doc members of a concatenated package.** A processor that passes
+  one blob per package separates its members with `// ==== path ====`, `# ==== path ====` or
+  `<!-- ==== path ==== -->`. Each member is tiered by its own path (`*_test.go`, `testdata/`,
+  `tests/test_*.py`, `*_spec.rb`, `README.md`, …) until the next separator, and the separator
+  line itself is never matched. Members are only ever demoted, never suppressed, so a forged
+  separator inside a package cannot hide its code.
 - **Data lists and DNS records** (`iocscan/datalist.go`): a bare address or host in a block of
   list rows that carries at least five distinct literals (a crawler CIDR allow-list, a Tor exit
   list, a resolver or root-server table, a host map, a generated prefix table, a domain

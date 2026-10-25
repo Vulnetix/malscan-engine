@@ -121,6 +121,14 @@ and gated via `config.EcosystemConfig.Enabled`.
      `P-XXD-DECODE` and `P-BASE32` match within one line: `nc` must be a command
      with arguments (`let nc = -c * inv` is not), a miner name is a whole word
      (`gminer` in `logminer` is not), and the decode flag is on the same line.
+   - **IOC hits that cannot name a contacted host are context.** `iocscan` keeps a
+     known-bad match as `ClassEvidence` only when it can be an endpoint: a hit in a
+     comment, a test/fixture/example/doc member (tiered by the processor's
+     `==== path ====` separator, demote-only), a data list of five or more literals,
+     a zone-file record, or a bare hit on a shared platform front end
+     (`allow.SharedHost`) is recorded as `ClassContext`. The shared-host, data-list
+     and zone-record demotions never touch a `url` hit. README "What a hit weighs"
+     has the detail.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

@@ -61,8 +61,16 @@ func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 	lines := splitLinesString(content)
 	skipIPFile := suppressIPv4ForFile(relPath)
 	lists := &dataLists{lines: lines}
+	fileTier := tier
 	var ev []Evidence
 	for i, line := range lines {
+		// A processor's member separator starts the next file of a concatenated package; that
+		// member's own path sets the tier until the next separator. The header line is the
+		// processor's, not the package's, so it is never matched.
+		if member, ok := memberHeader(line); ok {
+			tier = max(fileTier, memberTier(member))
+			continue
+		}
 		minified := isMinifiedLine(line)
 		// The file-level tier sets the floor; a minified line inside an otherwise
 		// kept file is generated-bundle noise, so its URL/domain hits demote to
@@ -592,12 +600,47 @@ func iocFileTier(relPath string) iocTier {
 	return tierKeep
 }
 
+// memberHeaderRe matches the separator the registry processors write between the members of a
+// concatenated package source (`// ==== path ====`, `# ==== path ====`,
+// `<!-- ==== path ==== -->`): vdb-manager hands MatchText one blob per package named after its
+// manifest (`<pkg>/go.mod`, `<pkg>/setup.py`), so the file name alone cannot tier a test file.
+var memberHeaderRe = regexp.MustCompile(`^(?://|#|<!--) ==== (.+?) ====(?: -->)?\s*$`)
+
+// memberHeader reports whether line is a member separator and returns the member's path.
+func memberHeader(line string) (string, bool) {
+	if !strings.HasPrefix(line, "// ==== ") && !strings.HasPrefix(line, "# ==== ") && !strings.HasPrefix(line, "<!-- ==== ") {
+		return "", false
+	}
+	m := memberHeaderRe.FindStringSubmatch(line)
+	if m == nil {
+		return "", false
+	}
+	return m[1], true
+}
+
+// memberTier tiers one member of a concatenated package by its path, as iocFileTier tiers a
+// file: a test, fixture, example, bundle, source-map or Markdown member is demoted. It never
+// suppresses, unlike Scan for a real .md or .map file: the separator is plain text, so a package
+// could write a forged `// ==== README.md ====` line above its own code. A forged header can at
+// most turn that code's hits into recorded context, and every detect rule still reads it.
+//
+// Measured on the 2026-10-26 GCVE malware audit: 230 of 641 withdrawn Go "still-malicious"
+// records rested on *_test.go or testdata/ members (all rules), and the IOC-STIX-MATCH lines
+// still firing after the other fixes are dominated by test code (log-parser fixtures with Tor
+// exit addresses, assert lines, table tests), which a single blob name could not see.
+func memberTier(path string) iocTier {
+	if isInertDoc(path) {
+		return tierDemote
+	}
+	return min(iocFileTier(path), tierDemote)
+}
+
 // testPathSegments are directory names whose contents are a package's own test
 // inputs, not code the consumer executes. fixtures hold literal sample data
 // (URIs, payloads, hosts) that collides with known-bad IOC values.
 var testPathSegments = []string{
 	"/test/", "/tests/", "/__tests__/", "/__fixtures__/", "/fixtures/",
-	"/spec/", "/__mocks__/",
+	"/spec/", "/__mocks__/", "/testdata/",
 }
 
 // isTestArtifact reports whether p (lowercased, slash-normalised, leading-slash
@@ -613,7 +656,10 @@ func isTestArtifact(p string) bool {
 		strings.Contains(base, ".spec.") ||
 		strings.HasSuffix(base, "_test.go") ||
 		strings.HasSuffix(base, ".snap") ||
-		base == "conftest.py"
+		base == "conftest.py" || base == "tests.py" ||
+		(strings.HasPrefix(base, "test_") && strings.HasSuffix(base, ".py")) ||
+		strings.HasSuffix(base, "_test.py") ||
+		strings.HasSuffix(base, "_spec.rb") || strings.HasSuffix(base, "_test.rb")
 }
 
 // examplePathSegments are directories of runnable samples/demos shipped for
