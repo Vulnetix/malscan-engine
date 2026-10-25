@@ -60,6 +60,7 @@ func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 	}
 	lines := splitLinesString(content)
 	skipIPFile := suppressIPv4ForFile(relPath)
+	lists := &dataLists{lines: lines}
 	var ev []Evidence
 	for i, line := range lines {
 		minified := isMinifiedLine(line)
@@ -80,13 +81,17 @@ func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 			class = detect.ClassContext
 		}
 		for _, mm := range m.matchLine(line, skipIPFile || minified) {
+			hc := worstClass(worstClass(class, indicatorClassFloor(mm.ind)), worstClass(codeTokenClass(mm), sharedHostClass(mm)))
+			if hc == "" && dataHit(mm, lists, i) {
+				hc = detect.ClassContext
+			}
 			ev = append(ev, Evidence{
 				IndicatorType:  mm.typ,
 				IndicatorValue: mm.value,
 				Indicator:      mm.ind,
 				FilePath:       filePath,
 				RelPath:        relPath,
-				Class:          worstClass(worstClass(class, indicatorClassFloor(mm.ind)), worstClass(codeTokenClass(mm), sharedHostClass(mm))),
+				Class:          hc,
 				LineNumber:     i + 1,
 				ColStart:       mm.col,
 				ColEnd:         mm.col + len(mm.value),
@@ -152,6 +157,11 @@ type lineMatch struct {
 	// codeToken marks a bare domain that is an unquoted identifier chain in code
 	// (`this.info = payload.info;`), not a host the code names.
 	codeToken bool
+	// inURL marks a domain or address hit that is the host of (or sits inside) a URL on the
+	// line: an endpoint, never a data-list element.
+	inURL bool
+	// zoneRecord marks an address that is the RDATA of a DNS A/AAAA record (ipInZoneRecord).
+	zoneRecord bool
 }
 
 var (
@@ -169,13 +179,16 @@ var (
 func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 	var matches []lineMatch
 	seen := map[string]bool{}
-	add := func(typ IndicatorType, value string, col int, ind *Indicator) {
+	// add records a hit and returns it for the caller to annotate, or nil when the same
+	// (type, value) was already recorded on this line.
+	add := func(typ IndicatorType, value string, col int, ind *Indicator) *lineMatch {
 		key := string(typ) + "|" + strings.ToLower(value)
 		if seen[key] {
-			return
+			return nil
 		}
 		seen[key] = true
 		matches = append(matches, lineMatch{typ: typ, value: value, col: col, ind: ind})
+		return &matches[len(matches)-1]
 	}
 
 	// URLs (and the domain inside them).
@@ -192,7 +205,9 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 				if idx := strings.Index(strings.ToLower(u), strings.ToLower(host)); idx >= 0 {
 					col += idx
 				}
-				add(TypeDomain, host, col, ind)
+				if mm := add(TypeDomain, host, col, ind); mm != nil {
+					mm.inURL = true
+				}
 			}
 		}
 	}
@@ -205,8 +220,9 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 		}
 		dom := strings.TrimSuffix(s[loc[0]:loc[1]], ".")
 		if ind := m.set.LookupDomain(dom); ind != nil {
-			add(TypeDomain, dom, loc[0], ind)
-			matches[len(matches)-1].codeToken = looksLikeCodeToken(s, loc[0]) || continuesAsMemberChain(s, loc[1])
+			if mm := add(TypeDomain, dom, loc[0], ind); mm != nil {
+				mm.codeToken = looksLikeCodeToken(s, loc[0]) || continuesAsMemberChain(s, loc[1])
+			}
 		}
 	}
 
@@ -234,7 +250,10 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 				continue
 			}
 			if ind := m.set.LookupIP(ipStr); ind != nil {
-				add(TypeIPv4, ipStr, loc[0], ind)
+				if mm := add(TypeIPv4, ipStr, loc[0], ind); mm != nil {
+					mm.inURL = insideSpan(urlSpans, loc[0])
+					mm.zoneRecord = ipInZoneRecord(s, loc[0])
+				}
 			}
 		}
 	}
@@ -247,7 +266,10 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 		}
 		if ip := net.ParseIP(ipStr); ip != nil && ip.To4() == nil {
 			if ind := m.set.LookupIP(ipStr); ind != nil {
-				add(TypeIPv6, ipStr, loc[0], ind)
+				if mm := add(TypeIPv6, ipStr, loc[0], ind); mm != nil {
+					mm.inURL = insideSpan(urlSpans, loc[0])
+					mm.zoneRecord = ipInZoneRecord(s, loc[0])
+				}
 			}
 		}
 	}

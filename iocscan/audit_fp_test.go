@@ -106,6 +106,73 @@ func TestAuditSharedHostHitsAreContext(t *testing.T) {
 	}
 }
 
+// Data lists from withdrawn records: a crawler CIDR allow-list, a generated prefix table, a
+// one-line Tor exit list, a host map, and DNS records in zone-file syntax. Every listed value is
+// in the set; none of them may mint, and every hit is still recorded.
+func TestAuditDataListsAreContext(t *testing.T) {
+	cases := map[string]string{
+		"crawler CIDR allow-list": "$googlebot = [\n" +
+			"    '66.249.64.224/27',\n    '66.249.66.32/27',\n    '66.249.68.128/27',\n" +
+			"    '66.249.68.160/27',\n    '66.249.69.32/27',\n    '66.249.70.32/27',\n];\n",
+		"generated prefix table": "" +
+			"\t{\n\t\tPrefix:             netip.MustParsePrefix(\"1.178.1.0/24\"),\n\t},\n" +
+			"\t{\n\t\tPrefix:             netip.MustParsePrefix(\"1.178.10.0/24\"),\n\t},\n" +
+			"\t{\n\t\tPrefix:             netip.MustParsePrefix(\"1.178.100.0/24\"),\n\t},\n" +
+			"\t{\n\t\tPrefix:             netip.MustParsePrefix(\"1.178.101.0/24\"),\n\t},\n" +
+			"\t{\n\t\tPrefix:             netip.MustParsePrefix(\"1.178.102.0/24\"),\n\t},\n",
+		"one-line tor exit list": `    "185.220.101.42", "45.155.205.233", "94.232.46.202", "80.82.77.139", "162.247.74.27",` + "\n",
+		"tor exit map": "TOR = {\n" +
+			`    "185.220.101.5": {"category": "Tor Exit Node", "confidence": 85},` + "\n" +
+			`    "185.220.101.6": {"category": "Tor Exit Node", "confidence": 85},` + "\n" +
+			"    # relays seen this week\n" +
+			`    "171.25.193.20": {"category": "Tor Exit Node", "confidence": 85},` + "\n" +
+			`    "171.25.193.25": {"category": "Tor Exit Node", "confidence": 85},` + "\n" +
+			`    "198.96.155.3": {"category": "Tor Exit Node", "confidence": 85},` + "\n}\n",
+		"host map": "" +
+			`'github.com': ['20.205.243.166', '140.82.121.4'],` + "\n" +
+			`'raw.githubusercontent.com': ['185.199.108.133', '185.199.109.133'],` + "\n" +
+			`'objects.githubusercontent.com': ['185.199.108.133', '185.199.109.133'],` + "\n",
+		"zone file":     "A.ROOT-SERVERS.NET.      3600000      A     198.41.0.4\n",
+		"NewRR fixture": `rr, _ := dns.NewRR("foo.github.io. 300 IN A 185.199.108.153")` + "\n",
+		"bare ip list":  "134.195.4.2\n195.46.39.40\n205.171.3.65\n216.146.35.35\n216.146.36.36\n",
+	}
+	values := []string{"66.249.64.224", "66.249.66.32", "66.249.68.128", "66.249.68.160",
+		"66.249.69.32", "66.249.70.32", "1.178.1.0", "1.178.10.0", "1.178.100.0",
+		"185.220.101.42", "45.155.205.233", "94.232.46.202", "80.82.77.139", "162.247.74.27",
+		"185.220.101.5", "185.220.101.6", "171.25.193.20", "171.25.193.25", "198.96.155.3",
+		"20.205.243.166", "198.41.0.5", "134.195.4.2", "205.171.3.65", "216.146.35.36"}
+	m := auditMatcher(values...)
+	// The zone-file and NewRR cases carry addresses that are not in the set unless added here.
+	m.set.Add(&Indicator{Type: TypeIPv4, Value: "198.41.0.4"})
+	for name, content := range cases {
+		ev := m.MatchText("pkg/src/data.go", content)
+		if got := evidenceLines(ev); len(got) != 0 {
+			t.Errorf("%s: list lines %v still yield evidence", name, got)
+		}
+	}
+}
+
+// A short C2 list, a list of endpoint URLs, and an address used inside a URL in a list keep full
+// weight: the list rule demotes only bare data literals, in blocks of five or more.
+func TestAuditDataListRuleKeepsEndpoints(t *testing.T) {
+	m := auditMatcher("45.137.21.9", "45.137.21.10", "45.137.21.11", "45.137.21.12",
+		"45.137.21.13", "evil-c2.io")
+	cases := map[string]int{
+		// three hard-coded C2 addresses: below the block size
+		"const SERVERS = [\n  \"45.137.21.9\",\n  \"45.137.21.10\",\n  \"45.137.21.11\",\n];\n": 3,
+		// a list of URLs is a list of endpoints
+		"urls = [\n 'http://45.137.21.9/a', 'http://45.137.21.10/b', 'http://45.137.21.11/c',\n" +
+			" 'http://45.137.21.12/d', 'http://45.137.21.13/e',\n]\n": 2,
+		// a connection to a listed address is a use, not a list row
+		"sock.connect((\"45.137.21.9\", 443))\nrequests.get(\"https://evil-c2.io/x\")\n": 2,
+	}
+	for content, want := range cases {
+		if got := evidenceLines(m.MatchText("pkg/index.js", content)); len(got) != want {
+			t.Errorf("want %d evidence lines, got %v in:\n%s", want, got, content)
+		}
+	}
+}
+
 // A url indicator on a shared platform names one tenant's payload and keeps full weight, and a
 // tenant-named host on the same provider is not shared.
 func TestAuditSharedHostURLAndTenantHostsStillMatch(t *testing.T) {

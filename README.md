@@ -180,6 +180,12 @@ another finding but never mint alone.
   (Dropbox, Backblaze B2 `fNNN` download hosts, ntfy.sh, Vercel's apex anycast `76.76.21.21`,
   GitHub's web and Pages/raw front-end ranges). A feed entry for the whole platform cannot say
   which tenant is bad. A `url` indicator with a path on the same platform keeps full weight.
+- **Data lists and DNS records** (`iocscan/datalist.go`): a bare address or host in a block of
+  list rows that carries at least five distinct literals (a crawler CIDR allow-list, a Tor exit
+  list, a resolver or root-server table, a host map, a generated prefix table, a domain
+  blocklist), and the address in a zone-file A/AAAA record (`A.ROOT-SERVERS.NET. 3600000 A
+  198.41.0.4`, `dns.NewRR("x. 300 IN A …")`). A url hit, or an address inside a URL in the list,
+  keeps full weight; so does a list of fewer than five, the size of a hard-coded C2 fallback list.
 
 ### Feed cache (temp dir, timestamped, TTL)
 
