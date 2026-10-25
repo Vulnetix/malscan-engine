@@ -2373,6 +2373,19 @@ description = "PowerShell base64 decode of payload in NuGet install hook"
 override_gate = false
 
 [[install_script_analysis]]
+id = "P-NUGET-MSBUILD-ENV-EGRESS"
+# An MSBuild <Exec> in a package's build/ targets that dumps the environment and sends it over the
+# network. It runs in every consuming project's build, CI included, so it is CI secret theft. The
+# Atom.* 1.0.0 packages (GCVE-110-NUGET-2026-000184 to -000188, confirmed in the 2026-10-25 audit)
+# POST `Get-ChildItem Env:` and `env | base64` to a pipedream.net bin AfterTargets="Build".
+file_exts = [".targets", ".props", ".ps1"]
+pattern = '(?i)<Exec\b[\s\S]{0,1000}?(Get-ChildItem\s+Env:|\[Environment\]::GetEnvironmentVariables|\(env\b|\benv\s*\||\bprintenv\b)[\s\S]{0,1000}?(curl|wget|Invoke-WebRequest|Invoke-RestMethod|WebClient|UploadString|HttpClient)'
+points = 85
+description = "MSBuild Exec collects the environment and sends it over the network (build-time secret exfiltration)"
+override_gate = true
+ecosystems = ["nuget"]
+
+[[install_script_analysis]]
 id = "P-NUGET-MSBUILD-INLINE-EXEC"
 pattern = '(?i)<usingtask[^>]*taskfactory\s*=\s*"(code|roslyncode)taskfactory"'
 points = 50
