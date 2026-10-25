@@ -38,6 +38,15 @@ func Detect(ctx *PackageContext) []Finding {
 		ctx = &lib
 		pkgView = execView
 	}
+	// A Homebrew formula's caveats, `test do` block and printed messages never run on install. They
+	// are blanked in the content itself, not only in the exec view, because override_gate rules
+	// ignore the exec view. See homebrewExecView.
+	if strings.EqualFold(strings.TrimSpace(ctx.Ecosystem), "homebrew") && ctx.PkgbuildContent != "" {
+		lib := *ctx
+		lib.PkgbuildContent = homebrewExecView(ctx.PkgbuildContent)
+		ctx = &lib
+		pkgView = lib.PkgbuildContent
+	}
 
 	pkgSurface := SurfaceLibrary
 	if ctx.PkgbuildExecutes {
@@ -52,13 +61,13 @@ func Detect(ctx *PackageContext) []Finding {
 			files = newFileIndex(ctx.PkgbuildContent, ctx.Ecosystem)
 		}
 		if ctx.capEnabled(CapManifestPatterns) {
-			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "pkgbuild_analysis", "pkgbuild", "", ctx.PkgbuildExecutes, ctx.Ecosystem, ctx.Name, f)
 		}
 		if ctx.capEnabled(CapSourceURLPatterns) {
-			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "source_url_analysis", "source-url", "", ctx.PkgbuildExecutes, ctx.Ecosystem, ctx.Name, f)
 		}
 		if ctx.capEnabled(CapGTFObins) {
-			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, ctx.Ecosystem, f)
+			f = matchSectionView(ctx.PkgbuildContent, pkgView, files, "gtfobins_analysis", "gtfobins", "", ctx.PkgbuildExecutes, ctx.Ecosystem, ctx.Name, f)
 		}
 		if ctx.capEnabled(CapShellObfuscation) {
 			f = append(f, analyzeShell(ctx.PkgbuildContent, "", "")...)
@@ -67,13 +76,14 @@ func Detect(ctx *PackageContext) []Finding {
 	}
 	if ctx.InstallScriptContent != "" && ctx.capEnabled(CapInstallScript) {
 		n := len(f)
-		f = matchSection(ctx.InstallScriptContent, "install_script_analysis", "install", "", true, ctx.Ecosystem, f)
+		f = matchSection(ctx.InstallScriptContent, "install_script_analysis", "install", "", true, ctx.Ecosystem, ctx.Name, f)
 		if ctx.capEnabled(CapGTFObins) {
-			f = matchSection(ctx.InstallScriptContent, "gtfobins_analysis", "gtfobins", "IS-", true, ctx.Ecosystem, f)
+			f = matchSection(ctx.InstallScriptContent, "gtfobins_analysis", "gtfobins", "IS-", true, ctx.Ecosystem, ctx.Name, f)
 		}
 		if ctx.capEnabled(CapShellObfuscation) {
 			f = append(f, analyzeShell(ctx.InstallScriptContent, "IS-", "(in install script)")...)
 		}
+		f = append(f, analyzeInstallTopLevel(ctx)...)
 		setSurface(f[n:], SurfaceInstall)
 	}
 	// npm: the files the lifecycle hooks run are install-time code (see npmHookFiles). They are
@@ -81,13 +91,13 @@ func Detect(ctx *PackageContext) []Finding {
 	if hookFiles := npmHookFiles(ctx); hookFiles != "" && ctx.capEnabled(CapInstallScript) {
 		n := len(f)
 		if ctx.capEnabled(CapManifestPatterns) {
-			f = matchSection(hookFiles, "pkgbuild_analysis", "install", "IS-", true, ctx.Ecosystem, f)
+			f = matchSection(hookFiles, "pkgbuild_analysis", "install", "IS-", true, ctx.Ecosystem, ctx.Name, f)
 		}
 		if ctx.capEnabled(CapSourceURLPatterns) {
-			f = matchSection(hookFiles, "source_url_analysis", "install", "IS-", true, ctx.Ecosystem, f)
+			f = matchSection(hookFiles, "source_url_analysis", "install", "IS-", true, ctx.Ecosystem, ctx.Name, f)
 		}
 		if ctx.capEnabled(CapGTFObins) {
-			f = matchSection(hookFiles, "gtfobins_analysis", "gtfobins", "IS-", true, ctx.Ecosystem, f)
+			f = matchSection(hookFiles, "gtfobins_analysis", "gtfobins", "IS-", true, ctx.Ecosystem, ctx.Name, f)
 		}
 		setSurface(f[n:], SurfaceInstall)
 	}

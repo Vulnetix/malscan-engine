@@ -21,11 +21,11 @@ func TestReportableLineMultiline(t *testing.T) {
 		t.Fatalf("multiline flags: DART %v, P-CURL-PIPE %v", spanning.multiline, single.multiline)
 	}
 	src := "final c = HttpClient();\nfinal body = await fetch(c);\nawait Process.run('sh', ['-c', body]);\n"
-	line, keep := reportableLine(spanning, src)
+	line, keep := reportableLine(spanning, src, "", "")
 	if !keep || line != "final c = HttpClient();" {
 		t.Errorf("spanning rule: %q %v", line, keep)
 	}
-	if _, keep := reportableLine(single, "no single line\nmatches here"); keep {
+	if _, keep := reportableLine(single, "no single line\nmatches here", "", ""); keep {
 		t.Error("a non-matching rule cannot be kept")
 	}
 }
@@ -40,7 +40,7 @@ func TestCrossLineAccidentDropped(t *testing.T) {
 			if p.multiline || !p.re.MatchString(src) {
 				continue
 			}
-			if line, keep := reportableLine(p, src); keep && line == "" {
+			if line, keep := reportableLine(p, src, "", ""); keep && line == "" {
 				t.Errorf("%s kept a cross-line match with no line", p.id)
 			}
 		}

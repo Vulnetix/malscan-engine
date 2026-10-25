@@ -139,7 +139,7 @@ func scanLine(line, surface string, out *[]Finding, seenMixed, seenPuny *bool) {
 	if len(ms) == 0 {
 		return
 	}
-	guarded := suppressLine("P-HOMOGRAPH-MIXED-SCRIPT", trimSpace(line))
+	guarded := suppressLine("P-HOMOGRAPH-MIXED-SCRIPT", trimSpace(line), "", "")
 	for _, m := range ms {
 		host := urlHostname(m[1])
 		if host == "" {

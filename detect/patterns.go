@@ -204,8 +204,8 @@ const evidenceThreshold = 40
 // whether content auto-executes at build/install time (an install hook, or a
 // PkgbuildContent the caller flagged PkgbuildExecutes). hook_only patterns found
 // outside such a surface are demoted to ClassContext corroboration.
-func matchSection(content, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
-	return matchSectionView(content, content, nil, section, category, idPrefix, inHookSurface, eco, findings)
+func matchSection(content, section, category, idPrefix string, inHookSurface bool, eco, pkg string, findings []Finding) []Finding {
+	return matchSectionView(content, content, nil, section, category, idPrefix, inHookSurface, eco, pkg, findings)
 }
 
 // matchSectionView is matchSection with a second, narrower view of the same content: the text
@@ -219,7 +219,7 @@ func matchSection(content, section, category, idPrefix string, inHookSurface boo
 // only in files that never run (tests, docs, examples, CI, lockfiles, unloaded vendored copies)
 // is ClassContext for every rule, override_gate included: a reverse shell in a detector's test
 // table is the detector's data, not its behaviour.
-func matchSectionView(content, execView string, files *fileIndex, section, category, idPrefix string, inHookSurface bool, eco string, findings []Finding) []Finding {
+func matchSectionView(content, execView string, files *fileIndex, section, category, idPrefix string, inHookSurface bool, eco, pkg string, findings []Finding) []Finding {
 	loadPatterns()
 	pkgbuildLike := inHookSurface || looksLikePkgbuild(content)
 	for _, p := range patternsBySection[section] {
@@ -266,11 +266,11 @@ func matchSectionView(content, execView string, files *fileIndex, section, categ
 					class = ClassContext // only in tests, docs, examples, CI or lockfiles
 				}
 			}
-			line, keep := reportableLine(p, report)
+			line, keep := reportableLine(p, report, eco, pkg)
 			if !keep && report != content {
 				// Every line in the running files was suppressed; what is left is context.
 				class = ClassContext
-				line, keep = reportableLine(p, content)
+				line, keep = reportableLine(p, content, eco, pkg)
 			}
 			if !keep {
 				continue
@@ -322,7 +322,7 @@ func firstMatchingLine(content string, re *regexp.Regexp) string {
 // Measured in the 2026-10-25 audit, every mint that recorded an empty matched line (P-BASE32,
 // P-XXD-DECODE and others across hex, rubygems, pub.dev, packagist, conan and julia) was a false
 // positive, and a mint with no line names nothing a reviewer can check.
-func reportableLine(p compiledPattern, content string) (string, bool) {
+func reportableLine(p compiledPattern, content, eco, pkg string) (string, bool) {
 	matched := false
 	for _, raw := range splitLines(content) {
 		if !p.re.MatchString(raw) {
@@ -330,7 +330,7 @@ func reportableLine(p compiledPattern, content string) (string, bool) {
 		}
 		matched = true
 		line := trimSpace(raw)
-		if !suppressLine(p.id, line) {
+		if !suppressLine(p.id, line, eco, pkg) {
 			return line, true
 		}
 	}
@@ -347,7 +347,7 @@ func reportableLine(p compiledPattern, content string) (string, bool) {
 		end = len(content) - loc[0]
 	}
 	line := trimSpace(content[start : loc[0]+end])
-	if line == "" || suppressLine(p.id, line) {
+	if line == "" || suppressLine(p.id, line, eco, pkg) {
 		return "", false
 	}
 	return line, true
@@ -355,14 +355,20 @@ func reportableLine(p compiledPattern, content string) (string, bool) {
 
 // suppressLine reports whether this rule considers this specific line a false
 // positive. Rules with no suppressor still get the comment guard.
-func suppressLine(id, line string) bool {
+func suppressLine(id, line, eco, pkg string) bool {
 	if IsCommentLine(line) {
+		return true
+	}
+	// PKGBUILD-family line judgements: pkgdesc and depends lines, eval at command position,
+	// sudoers grants, a miner the package is named after, Homebrew's own prefix (pkgbuild_lines.go).
+	if suppressPkgbuildLine(id, line, eco, pkg) {
 		return true
 	}
 	switch id {
 	case "P-RAW-IP-URL":
 		return suppressNonRoutableIPURL(id, line)
-	case "P-CURL-PIPE", "P-WGET-PIPE", "P-CURL-PIPE-PYTHON", "P-CURL-PIPE-PERL", "P-WGET-PIPE-PYTHON":
+	case "P-CURL-PIPE", "P-WGET-PIPE", "P-CURL-PIPE-PYTHON", "P-CURL-PIPE-PERL", "P-WGET-PIPE-PYTHON",
+		"P-PROC-SUB-EXEC", "P-INSTALL-PROC-SUB-EXEC", "P-CMD-SUB-EXEC", "P-INSTALL-CMD-SUB-EXEC":
 		return suppressVendorInstaller(line) || suppressPrintedHint(line)
 	case "PHP-SHELL-EXEC-VAR":
 		return phpFunctionDeclRe.MatchString(line)
