@@ -210,7 +210,10 @@ func NewIndicatorSet() *IndicatorSet {
 }
 
 // Add inserts one indicator, keyed by its lowercased value. A duplicate value of
-// the same kind keeps the first occurrence (feeds may repeat across ecosystems).
+// the same kind keeps the first occurrence (feeds may repeat across ecosystems), except that
+// an externally-sourced copy replaces one whose only provenance is our own registry
+// (selfSourcedLabel): otherwise loading the Vulnetix index before the badnet blocklists left a
+// third-party C2 entry tagged self-sourced, and indicatorClassFloor demoted every hit on it.
 //
 // Benign indicators (reserved/placeholder IPs, package-registry/CDN/standards/docs
 // domains — see the allow package) are dropped here so they never enter the match
@@ -231,7 +234,7 @@ func (s *IndicatorSet) Add(ind *Indicator) {
 			return
 		}
 		key := domainKey(ind.Value)
-		if _, ok := s.domains[key]; !ok {
+		if prev, ok := s.domains[key]; !ok || replaces(prev, ind) {
 			s.domains[key] = ind
 		}
 	case TypeIPv4, TypeIPv6:
@@ -240,7 +243,7 @@ func (s *IndicatorSet) Add(ind *Indicator) {
 			return
 		}
 		key := ipKey(ind.Value)
-		if _, ok := s.ips[key]; !ok {
+		if prev, ok := s.ips[key]; !ok || replaces(prev, ind) {
 			s.ips[key] = ind
 		}
 	case TypeURL:
@@ -249,10 +252,26 @@ func (s *IndicatorSet) Add(ind *Indicator) {
 			return
 		}
 		key := strings.ToLower(ind.Value)
-		if _, ok := s.urls[key]; !ok {
+		if prev, ok := s.urls[key]; !ok || replaces(prev, ind) {
 			s.urls[key] = ind
 		}
 	}
+}
+
+// replaces reports whether next should take prev's place: an externally-sourced indicator
+// outranks one we asserted ourselves.
+func replaces(prev, next *Indicator) bool {
+	return selfSourced(prev) && !selfSourced(next)
+}
+
+// selfSourced reports whether an indicator's only provenance is our own registry.
+func selfSourced(ind *Indicator) bool {
+	for _, l := range ind.Labels {
+		if strings.EqualFold(strings.TrimSpace(l), selfSourcedLabel) {
+			return true
+		}
+	}
+	return false
 }
 
 // AddAll inserts every indicator in inds.

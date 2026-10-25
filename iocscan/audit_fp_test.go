@@ -237,3 +237,19 @@ func TestAuditSharedHostURLAndTenantHostsStillMatch(t *testing.T) {
 		}
 	}
 }
+
+// Loading the Vulnetix index first must not hide a badnet entry for the same address: the
+// externally-sourced copy wins, so a hit keeps full weight.
+func TestExternalIndicatorReplacesSelfSourcedDuplicate(t *testing.T) {
+	s := NewIndicatorSet()
+	s.Add(&Indicator{Type: TypeIPv4, Value: "45.61.149.130", Labels: []string{"malicious-activity", selfSourcedLabel}})
+	s.Add(&Indicator{Type: TypeIPv4, Value: "45.61.149.130", Labels: []string{"malicious-activity", "source:threat-intel-blocklist"}})
+	if got := s.LookupIP("45.61.149.130"); got == nil || selfSourced(got) {
+		t.Fatalf("self-sourced copy kept: %+v", got)
+	}
+	// The reverse order keeps the external copy too.
+	s.Add(&Indicator{Type: TypeIPv4, Value: "45.61.149.130", Labels: []string{selfSourcedLabel}})
+	if selfSourced(s.LookupIP("45.61.149.130")) {
+		t.Fatal("a later self-sourced copy replaced the external one")
+	}
+}
