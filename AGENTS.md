@@ -236,6 +236,10 @@ and gated via `config.EcosystemConfig.Enabled`.
      id (8+ characters) or `/api/` on pastebin.com and a path on the other hosts; test assertions
      and `homepage` fields are suppressed. `P-FILEHOST-SOURCE` needs the file host as an
      `http(s)://` URL or an argument on a curl/wget line, never a bare name in a list.
+   - **Install-script rules match the command.** `P-INSTALL-EVAL` needs the eval builtin (no word
+     character or `-` before it: not `retrieval`, `--eval`, `node --eval`). `P-INSTALL-CURL`
+     suppresses a line whose only curl is a presence probe (`command -v curl >/dev/null`, `which`,
+     `type`, `hash`) and a YAML `description:` field.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

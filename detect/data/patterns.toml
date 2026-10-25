@@ -974,6 +974,12 @@ id = "P-INSTALL-CURL"
 # `[ \t]`, not `\s`: `\s` also matched the newline after a module path, so four go mirrors of the curl
 # project itself (module github.com/curl/curl) were minted as malware. A command has its arguments on
 # the same line.
+# A presence probe downloads nothing: `if command -v curl >/dev/null 2>&1; then` (CRAN configure
+# scripts), `which curl`, `type curl`, `hash curl`. Nor does a pubspec `description:` saying the
+# package "shows requests ... with curl commands". A line whose only curl is a probe, or that is a
+# YAML description field, is suppressed (suppressCurlProbe). Replay as install-script content:
+# withdrawn 175 -> 167 (what is left is real downloads in composer scripts and build helpers);
+# verified-malware lines 408 -> 408.
 pattern = '(?:^|[^A-Za-z0-9_])curl[ \t]'
 points = 45
 description = "curl in install script (should not download during install)"
@@ -1052,7 +1058,13 @@ override_gate = false
 
 [[install_script_analysis]]
 id = "P-INSTALL-EVAL"
-pattern = 'eval\s+["$]'
+# `eval` must be the shell builtin, not the tail of a word or a flag: `retrieval "$x"`,
+# `octave ... --eval "$*"` and `node --eval "..."` (an npm hook running inline JavaScript, which
+# the P-NPM-HOOK-NODE-EVAL rules judge) all matched. The 2026-10 audit found all 26 withdrawn lines
+# firing; the rule now needs no word character or `-` before eval. Replay as install-script
+# content: withdrawn 26 -> 14 (9 of them GNU Autoconf `(eval "$as_required")`, a separate fix); no
+# verified-malware line carried it.
+pattern = '(?:^|[^\w-])eval\s+["$]'
 points = 55
 description = "Dynamic code execution via eval in install script"
 override_gate = false
