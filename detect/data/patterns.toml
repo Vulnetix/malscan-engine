@@ -854,14 +854,34 @@ override_gate = false
 # Anti-forensics
 [[pkgbuild_analysis]]
 id = "P-HISTORY-CLEAR"
-pattern = 'unset\s+HISTFILE|HISTFILE=/dev/null|history\s+-c|set\s+\+o\s+history'
+# Clearing the user's history, not keeping a driven shell out of it. Terminal, pty and agent tools
+# start their own shells with `HISTFILE=/dev/null`, `unset HISTFILE; stty -echo` or `set +o
+# history` so the commands they type never reach the user's history file; detectors list
+# `"history -c"` as a pattern, and `wasm-history -config`/`bdbackup history -c CONFIG` are other
+# programs' flags. The 2026-10 audit found 40 of 42 withdrawn lines firing. The rule now needs
+# `history -c` as a command: at command position (line start, after `;` `&` `|` `(` `{` or `$(`)
+# and ending the command, or opening a quoted command string and chained with `&&`, `;` or `||`
+# (`"history -c && unset HISTFILE && kill -9 $$"`). Replay: withdrawn 40 -> 3 (library 38 -> 3),
+# all attack-step text; verified-malware lines 2 -> 1, the one lost is prose ("shell history
+# (HISTFILE/HISTSIZE/`set +o history`, each guarded").
+pattern = '(?m)(?:^|[;&|({]|\$\()[ \t]*history[ \t]+-c[ \t]*(?:$|&&|;|\|\||\))|["\x27`][ \t]*history[ \t]+-c[ \t]*(?:&&|;|\|\|)'
 points = 70
 description = "Shell history clearing/suppression"
 override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-LOG-CLEAR"
-pattern = '\brm\s+(-\S+\s+)*/var/log|truncate\s+.*\s+/var/log|>\s*/var/log/'
+# Writing a log is not clearing one. `>\s*/var/log/` matched every service that logs there
+# (`dockerd >/var/log/dockerd.log 2>&1 &`, `>> /var/log/cron.log 2>&1` in crontab lines, `2>
+# /var/log/x.err`) and launchd plists (`<string>/var/log/x.log</string>`); `rm` matched a tool
+# removing its own log or install leftovers. The 2026-10 audit found 89 of 92 withdrawn lines
+# firing. The rule now needs one of: rm of /var/log itself, of everything in it (`/var/log/*`), or
+# of a system log (auth, syslog, secure, messages, wtmp, btmp, lastlog, kern, audit, faillog, ufw,
+# journal, apache2, nginx, httpd); truncate of a /var/log path; or a standalone truncating `>`
+# (nothing written into it, or only `:`, `true`, a bare `echo` or `cat /dev/null`) at command
+# position, ending the command. Replay: withdrawn 89 -> 26 (library 89 -> 26), nearly all `rm -rf
+# /var/log` strings in dangerous-command detectors' tests; the verified-malware line still fires.
+pattern = '(?m)\brm[ \t]+(?:-\S+[ \t]+)*["\x27]?/var/log(?:/?\*|/?(?:$|["\x27\s;&|)])|/(?:[\w.-]+/)?(?:auth|syslog|secure|messages|wtmp|btmp|lastlog|kern|audit|faillog|ufw|journal|apache2|nginx|httpd)\b)|\btruncate[ \t]+(?:-{1,2}[\w-]+(?:[ =]\S+)?[ \t]+)*["\x27]?/var/log/|(?:^|[;|(`"\x27]|&&|\$\()[ \t]*(?:(?::|true|echo|cat[ \t]+/dev/null)[ \t]*)?>[ \t]*["\x27]?/var/log/[^\s;&|"\x27<>]+[ \t]*(?:$|["\x27`);&|]|2>[ \t]*/dev/null)'
 points = 75
 description = "System log clearing/truncation"
 override_gate = false

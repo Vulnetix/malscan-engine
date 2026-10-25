@@ -115,7 +115,8 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   boundary on one line. Injection and persistence rules need the act: LD_PRELOAD pointed at a
   world-writable directory, a PROMPT_COMMAND or alias written into a shell rc file, a write into
   `.config/autostart`, a udev rule with `RUN+=`, an `at` job given its input, a shell or payload
-  under `systemd-run`.
+  under `systemd-run`. Log and history rules need a clear: rm or a standalone truncating `>` of a
+  system log (not a service appending to its own), and `history -c` as a command.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.

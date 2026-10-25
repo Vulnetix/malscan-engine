@@ -200,6 +200,12 @@ and gated via `config.EcosystemConfig.Enabled`.
      job's input on the line (a pipe into `at TIME`, `at -f`, a heredoc or `<`, an argv list).
      `G-SYSTEMD-RUN` needs a shell (`-t`/`--pty`, `sh -i`) or a payload (curl/wget/nc/socat,
      /dev/tcp, `base64 -d`, a program in /tmp) in the transient unit.
+   - **Writing a log is not clearing it.** `P-LOG-CLEAR` needs rm of /var/log, `/var/log/*` or a
+     system log (auth, syslog, wtmp, audit, ...), truncate of a /var/log path, or a standalone
+     truncating `>` at command position (`> /var/log/wtmp`, `cat /dev/null > ...`); `>>`, `2>`,
+     `&>`, `cmd > /var/log/x.log 2>&1` and plist `<string>` paths are logging. `P-HISTORY-CLEAR`
+     needs `history -c` as a command; `HISTFILE=/dev/null`, `unset HISTFILE` and `set +o history`
+     keep a tool's own driven shell out of the user's history and are not findings.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

@@ -50,3 +50,31 @@ func TestAuditInjectionAndPersistenceNeedTheAct(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Anti-forensics rules fired on services writing their logs and on shells kept out of history.
+func TestAuditAntiForensicsNeedsAClear(t *testing.T) {
+	neg := []ruleCase{
+		{"P-LOG-CLEAR", "go", `"PATH=/usr/local/sbin:$PATH nohup sudo /usr/local/bin/localkube start > /var/log/localkube.out 2> /var/log/localkube.err < /dev/null &"} {`},
+		{"P-LOG-CLEAR", "go", `<string>/var/log/tailroute.out</string>`},
+		{"P-LOG-CLEAR", "pypi", `0 3 * * *  APSIA_API_KEY=... apsia ingest SAT-1 /data/eps_last24h.csv >> /var/log/apsia.log 2>&1`},
+		{"P-LOG-CLEAR", "go", `"dockerd-entrypoint.sh dockerd -s vfs &>/var/log/docker.log &\n" +`},
+		{"P-LOG-CLEAR", "go", `removeLogFileCmd := []string{"sh", "-c", "rm /var/log/time.log"}`},
+		{"P-LOG-CLEAR", "pypi", `host, "rm -rf /var/log/CFEngine-Install*", connection=connection, sudo=True`},
+		{"P-HISTORY-CLEAR", "go", `interp.Env(expand.ListEnviron("HOME="+dir, "HISTFILE=/dev/null", "PATH=/bin:/usr/bin")),`},
+		{"P-HISTORY-CLEAR", "pypi", `self.cmd("unset HISTFILE; stty -echo; set +m")  # pylint: disable=no-member`},
+		{"P-HISTORY-CLEAR", "go", `wasm-history -config PATH -contracts ID,ID,... [-from N] [-to N] [-bucket NAME]`},
+		{"P-HISTORY-CLEAR", "cargo", `("unset HISTFILE; history -c", "history_tamper"),`},
+		{"P-HISTORY-CLEAR", "go", "5. Clear terminal history: history -c && clear`,"},
+	}
+	pos := []ruleCase{
+		{"P-LOG-CLEAR", "npm", `cmd = exec.Command("sh", "-c", "rm -rf /var/log/ufw* 2>/dev/null")`},
+		{"P-LOG-CLEAR", "npm", "execSync(`rm -rf /var/log/* 2>/dev/null`, { stdio: 'ignore' });"},
+		{"P-LOG-CLEAR", "npm", `tryExec('> /var/log/wtmp 2>/dev/null');`},
+		{"P-LOG-CLEAR", "npm", `cat /dev/null > /var/log/auth.log; history -c`},
+		{"P-LOG-CLEAR", "npm", `truncate -s 0 /var/log/syslog`},
+		{"P-HISTORY-CLEAR", "npm", `cmd = exec.Command("sh", "-c", "history -c && unset HISTFILE && kill -9 $$ 2>/dev/null")`},
+		{"P-HISTORY-CLEAR", "npm", `history -c`},
+		{"P-HISTORY-CLEAR", "npm", `rm -f /tmp/.x; history -c; exit`},
+	}
+	checkRuleCases(t, neg, pos)
+}
