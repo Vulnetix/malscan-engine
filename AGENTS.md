@@ -126,6 +126,13 @@ and gated via `config.EcosystemConfig.Enabled`.
    attacker.
 7. **Allowlist stays conservative.** Only unambiguously non-indicative values go
    in `allow`; never allowlist something that could be a real C2/exfil host.
+   - Operator-run DNS infrastructure is listed by address: public resolvers, the
+     root and gTLD servers, AliDNS's two anycast /24s, and the RFC 4892 CHAOS
+     names (`version.bind`, `id.server`, …). So are vendor-only hosts that no third
+     party can publish under (`api.adoptium.net`, `dl.google.com`, LLM provider
+     APIs). A platform that serves user content (`claude.ai`, `workers.dev`,
+     `trycloudflare.com`, `pastebin.com`, `webhook.site`, `raw.githubusercontent.com`
+     URLs) is never allowlisted.
 8. **Capabilities default-on.** A nil map, nil config, or absent key = enabled.
    Config records only what a human turned *off*; a newly added detector still
    runs against an older config.

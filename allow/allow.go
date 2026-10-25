@@ -78,7 +78,65 @@ var placeholderIPs = map[string]bool{
 	"185.228.168.9": true, "185.228.169.9": true, // CleanBrowsing
 	"76.76.2.0": true, "76.76.10.0": true, // ControlD
 	"64.6.64.6": true, "64.6.65.6": true, // Verisign
+
+	// Public resolvers and DNS root / gTLD servers, added 2026-10-26 from the GCVE malware
+	// audit. The embedded badnet set carries these (DoH-bypass and scanner blocklists list
+	// resolvers), so every DNS library, resolver picker and dig-style tool that ships the
+	// usual table matched IOC-STIX-MATCH: 489 withdrawn audit lines still fired on the
+	// production feed (badnet + TweetFeed), and this block with the DNS and vendor hosts in
+	// genericServiceHosts takes that to 283.
+	// Each is an operator-run anycast service address; none can be a C2 a package talks to.
+	"8.26.56.26": true, "8.20.247.20": true, // Comodo Secure DNS
+	"156.154.70.1": true, "156.154.71.1": true, "156.154.70.2": true, "156.154.71.2": true,
+	"156.154.70.3": true, "156.154.71.3": true, "156.154.70.5": true, "156.154.71.5": true, // Neustar UltraDNS
+	"114.114.115.115": true, "114.114.114.119": true, "114.114.115.119": true,
+	"114.114.114.110": true, "114.114.115.110": true, // 114DNS
+	"77.88.8.2": true, "77.88.8.3": true, "77.88.8.7": true, "77.88.8.88": true, // Yandex
+	"45.90.28.0": true, "45.90.30.0": true, // NextDNS
+	"94.140.14.140": true, "94.140.14.141": true, "94.140.14.15": true, "94.140.15.16": true, // AdGuard
+	"195.46.39.39": true, "195.46.39.40": true, // SafeDNS
+	"168.95.1.1": true, "168.95.192.1": true, // HiNet
+	"101.101.101.101": true, "101.102.103.104": true, // TWNIC Quad101
+	"168.126.63.1": true, "168.126.63.2": true, // KT
+	"46.182.19.48": true,                       // Digitalcourage
+	"80.67.169.12": true, "80.67.169.40": true, // FDN
+	"84.200.69.80": true, "84.200.70.40": true, // DNS.WATCH
+	"91.239.100.100": true, "89.233.43.71": true, // UncensoredDNS
+	"4.2.2.3": true, "4.2.2.4": true, "4.2.2.5": true, "4.2.2.6": true, // Level3
+	"149.112.112.10": true, "149.112.112.9": true, // Quad9
+	"149.112.121.10": true, "149.112.122.10": true, "149.112.121.20": true,
+	"149.112.122.20": true, "149.112.121.30": true, "149.112.122.30": true, // CIRA Canadian Shield
+	"216.146.35.35": true, "216.146.36.36": true, // Dyn
+	"185.222.222.222": true, "45.11.45.11": true, // DNS.SB
+	"119.29.29.29": true, "119.28.28.28": true, // DNSPod
+	"74.82.42.42":    true,                         // Hurricane Electric
+	"208.67.222.123": true, "208.67.220.123": true, // OpenDNS FamilyShield
+	"185.228.168.168": true, "185.228.169.168": true, "185.228.168.10": true, // CleanBrowsing
+	// The 13 root servers (a..m.root-servers.net).
+	"198.41.0.4": true, "170.247.170.2": true, "199.9.14.201": true, "192.33.4.12": true,
+	"199.7.91.13": true, "192.203.230.10": true, "192.5.5.241": true, "192.112.36.4": true,
+	"198.97.190.53": true, "192.36.148.17": true, "192.58.128.30": true, "193.0.14.129": true,
+	"199.7.83.42": true, "202.12.27.33": true,
+	// The 13 .com/.net gTLD servers (a..m.gtld-servers.net).
+	"192.5.6.30": true, "192.33.14.30": true, "192.26.92.30": true, "192.31.80.30": true,
+	"192.12.94.30": true, "192.35.51.30": true, "192.42.93.30": true, "192.54.112.30": true,
+	"192.43.172.30": true, "192.48.79.30": true, "192.52.178.30": true, "192.41.162.30": true,
+	"192.55.83.30": true,
 }
+
+// resolverCIDRs are public-resolver anycast blocks where the whole block is the service, not
+// one address. AliDNS answers on all of 223.5.5.0/24 and 223.6.6.0/24, and its DoH API is
+// called with `edns_client_subnet=223.5.5.0%2F24`, which matched 223.5.5.0 in six withdrawn
+// npm mints of one package family.
+var resolverCIDRs = func() []*net.IPNet {
+	var out []*net.IPNet
+	for _, b := range []string{"223.5.5.0/24", "223.6.6.0/24"} {
+		if _, n, err := net.ParseCIDR(b); err == nil {
+			out = append(out, n)
+		}
+	}
+	return out
+}()
 
 // oidPrefixes are the dotted-decimal arcs that X.509 / SNMP / LDAP object
 // identifiers live under. An OID such as 2.5.29.37 (id-kp-timeStamping) or
@@ -214,6 +272,30 @@ var genericServiceHosts = map[string]bool{
 	"huggingface.co": true, "api-inference.huggingface.co": true, "hf.co": true,
 	"api.replicate.com": true, "replicate.com": true,
 	"ollama.com": true, "registry.ollama.ai": true,
+	// Added 2026-10-26 from the GCVE malware audit, where provider endpoints were still
+	// matching in withdrawn LLM clients (dashscope.aliyuncs.com on 33 lines,
+	// platform.claude.com on 39, api.githubcopilot.com on 16). claude.ai is NOT listed: it
+	// serves user-published artifacts, so it can host a payload.
+	"platform.claude.com": true, "console.anthropic.com": true,
+	"dashscope.aliyuncs.com": true, "dashscope-intl.aliyuncs.com": true,
+	"api.githubcopilot.com": true, "api.moonshot.cn": true, "api.moonshot.ai": true,
+	"api.kimi.com": true, "open.bigmodel.cn": true, "api.siliconflow.cn": true,
+	"api.fireworks.ai": true, "api.cerebras.ai": true,
+
+	// ── Vendor download / telemetry endpoints named by build tooling ─────────
+	// A JDK installer asks api.adoptium.net for the Temurin build (16 withdrawn audit
+	// lines in installers across cargo, gem, go, npm and pypi); Android tooling downloads
+	// from dl.google.com; coralogix.io is a logging SaaS ingest host a log shipper names.
+	// All three are vendor-operated: no third party can publish a payload under them.
+	"api.adoptium.net": true, "dl.google.com": true, "coralogix.io": true,
+
+	// ── DNS CHAOS-class names (RFC 4892) ─────────────────────────────────────
+	// version.bind, hostname.bind, id.server, version.server and authors.bind are the
+	// fixed query names a resolver answers about itself. They are not registrable hosts,
+	// but the domain pattern reads them as names, and the feed carries them: every DNS
+	// fingerprinting tool in the audit matched (26 withdrawn lines).
+	"version.bind": true, "hostname.bind": true, "authors.bind": true,
+	"id.server": true, "version.server": true,
 
 	// ── Survivors of the first FP purge that are plainly legitimate ──────────
 	// All were published at severity critical. alpinejs.dev is Alpine.js's own
@@ -356,6 +438,11 @@ func IP(ip string) bool {
 		return false
 	}
 	for _, n := range reservedCIDRs {
+		if n.Contains(parsed) {
+			return true
+		}
+	}
+	for _, n := range resolverCIDRs {
 		if n.Contains(parsed) {
 			return true
 		}
