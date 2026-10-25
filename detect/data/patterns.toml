@@ -977,7 +977,10 @@ points = 65
 description = "Telegram bot API URL (data exfiltration channel)"
 override_gate = false
 hook_only = true
-hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
+# hex and nuget added after the 2026-10-25 audit, which read every library hit there (bot frameworks,
+# notifiers, docs; none malicious). npm and rubygems stay evidence: 12 of 54 npm packages carrying
+# the URL are OpenSSF-confirmed (patterns.go, HookOnlyEcosystems).
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "hex", "nuget"]
 
 [[source_url_analysis]]
 id = "P-TELEGRAM-BOT-TOKEN"

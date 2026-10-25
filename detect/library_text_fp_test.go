@@ -580,3 +580,20 @@ func TestSingleLibraryIndicatorIsLowFidelity(t *testing.T) {
 		t.Error("a clean verdict is never high fidelity")
 	}
 }
+
+// hex and nuget: the 2026-10-25 audit read every library P-TELEGRAM-BOT hit (bot frameworks and
+// notifiers). A bare bot URL there is context; the same URL in an executing recipe still mints.
+func TestTelegramBotURLIsContextInHexAndNugetLibraries(t *testing.T) {
+	for _, tc := range []struct{ eco, line string }{
+		{"hex", `@base_url "https://api.telegram.org/bot"`},
+		{"nuget", `private const string ApiBase = "https://api.telegram.org/bot";`},
+	} {
+		if libraryMints(tc.eco, tc.line) {
+			t.Errorf("%s library line minted: %q", tc.eco, tc.line)
+		}
+		exec := Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line, PkgbuildExecutes: true})
+		if !CombinedVerdict(exec).Malicious {
+			t.Errorf("%s executing recipe line must still mint: %q", tc.eco, tc.line)
+		}
+	}
+}
