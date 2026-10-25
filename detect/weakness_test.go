@@ -33,7 +33,6 @@ var weaknessRules = []struct {
 }{
 	{"P-PY-COMPILE-EXEC", "pypi", "pkg", `exec(compile(src, mod.__file__, "exec"), mod.__dict__)`, "CWE-94"},
 	{"GO-EXEC-SHELL", "go", "pkg", `cmd := exec.Command("sh", "-c", script)`, "CWE-78"},
-	{"GO-SYSCALL-EXEC", "go", "pkg", `syscall.Exec(path, argv, os.Environ())`, "CWE-78"},
 	{"DART-PROCESS-SHELL", "pubdev", "pkg", `await Process.run("sh", ["-c", cmd]);`, "CWE-78"},
 	{"HEX-MIX-CODE-EVAL", "hex", "install", `Code.eval_string(contents)`, "CWE-95"},
 	{"P-NPM-HOOK-NODE-EVAL", "npm", "install", `node -e "require('./scripts/postinstall')"`, "CWE-95"},

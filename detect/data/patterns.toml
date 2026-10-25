@@ -2286,7 +2286,11 @@ override_gate = false
 [[pkgbuild_analysis]]
 id = "GO-EXEC-SHELL"
 file_exts = [".go"]
-pattern = 'exec\.Command\(\s*"(/bin/)?(ba)?sh"\s*,\s*"-c"'
+# The command must be built (a variable, a call, a concatenation): a single literal string is the
+# author's own fixed command, and `exec.Command("bash", "-c")` with no third argument runs nothing.
+# Of the 572 audited lines on withdrawn Go mints, 152 were literal or argument-less calls
+# (`"dd if=/dev/zero ... echo hello"`, `exec.Command("bash", "-c")`).
+pattern = 'exec\.Command\(\s*"(/bin/)?(ba)?sh"\s*,\s*"-c"\s*,\s*(?:[^"\s)]|"[^"\n]*"\s*\+)'
 points = 55
 description = "exec.Command invoking a shell with -c (arbitrary command execution)"
 weakness = true
@@ -2297,11 +2301,11 @@ cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 id = "GO-SYSCALL-EXEC"
 file_exts = [".go"]
 pattern = 'syscall\.(Exec|ForkExec)\('
-points = 50
+# Context, not a weakness: syscall.Exec takes an argv, so nothing is parsed by a shell and there is no
+# CWE-78 to report. 234 of the 239 audited lines were on withdrawn Go mints (process supervisors,
+# a program re-executing itself, sandbox launchers).
+points = 20
 description = "syscall.Exec/ForkExec direct process replacement/spawn"
-weakness = true
-cwe = "CWE-78"
-cvss = "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L"
 
 [[pkgbuild_analysis]]
 id = "GO-B64-DECODE-EXEC"
