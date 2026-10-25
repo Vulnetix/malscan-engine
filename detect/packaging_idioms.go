@@ -36,11 +36,19 @@ var pythonHostileRE = regexp.MustCompile(
 // echoedMessageRE is a line that only prints text (echo, printf, msg, plain, warning).
 var echoedMessageRE = regexp.MustCompile(`^\s*(?:sudo\s+)?(?:echo|printf|msg2?|plain|warning|note)\b`)
 
+// testAssertionRE is a line that hands the text to a test assertion: `assert x == y`,
+// `assert!(...)`, `expect(...)`, R's `expect_error(...)`, `self.assertTrue(...)`. The 2026-10 audit
+// found P-PASSWD-READ and P-SSH-ACCESS firing on `assert validate_slug("cat /etc/passwd") is False`
+// and `expect_error(read("/etc/passwd"))`: a test that the package REFUSES the read.
+var testAssertionRE = regexp.MustCompile(`^\s*assert\s|(?:^|[^\w.])(?:assert\w*!?|expect(?:_error)?|refute\w*|self\.assert\w+)\s*\(`)
+
 // suppressPackagingIdiom reports whether rule id's match on line is a packaging idiom.
 func suppressPackagingIdiom(id, line string) bool {
 	switch id {
-	case "P-SUID-BIT", "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE", "P-PACMAN-HOOK":
+	case "P-SUID-BIT", "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE", "P-PACMAN-HOOK", "P-SUDOERS-MOD":
 		return stagingRootRE.MatchString(line)
+	case "P-PASSWD-READ", "P-SSH-ACCESS", "P-GPG-ACCESS":
+		return testAssertionRE.MatchString(line)
 	case "P-EVAL-VAR":
 		return splitPackageEvalRE.MatchString(line)
 	case "P-PYTHON-INLINE":

@@ -103,7 +103,15 @@ id = "P-SSH-ACCESS"
 # hook_only: ssh clients, deploy tools and key managers name ~/.ssh in ordinary source (4 of
 # 662 pypi packages carrying this are OpenSSF-confirmed, all with other evidence). A build or
 # install hook reading it is the signal.
-pattern = '~/\.ssh/|/home/[^/]+/\.ssh/'
+# Naming the directory is not reading a key. The 2026-10 audit replayed 1,017 withdrawn lines and
+# 945 still fired: `~/.ssh/config` help text, `--key ~/.ssh/id_ed25519.pub` examples, sandbox
+# deny-lists (`Read(~/.ssh/**)`), known_hosts docs. The rule now needs a read, copy or send of a
+# private key (or the whole directory) on the same line: a reading command or `read ...` imperative,
+# `< file`, or a file-open call, then id_rsa/id_dsa/id_ecdsa/id_ed25519/identity, a glob, or the
+# bare directory; `.pub` is excluded. Planting a literal ssh-* key with `>> .ssh/authorized_keys`
+# also counts. Replay: withdrawn 945 -> 88; verified-malware lines 19 -> 6 (the 13 lost are
+# tool-path examples, docs and deny-lists inside offensive tools, not a key being read).
+pattern = '(?:\b(?:cat|head|tail|less|more|cp|scp|rsync|tar|zip|base64|xxd|od|strings|curl|wget|nc|read)\s[^|;&<>\n]{0,60}?|<\s*|\b(?:open|fopen|io\.open|ReadFile|readFile|readFileSync|read_to_string|file_get_contents|readfile|File\.(?:read|open|readlines|new)|IO\.read|File::open|fs::read|os\.Open|FileReader)\s*\(\s*(?:[\w.]+\s*\(\s*)?[rbf]?)["\x27`]?(?:~|/home/[^/\s\x27"]+)/\.ssh/(?:\*|id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:[^.\w]|\.[^p]|$)|identity\b|["\x27`\s]|$)|ssh-(?:rsa|ed25519|dss|ecdsa)[^\n]{0,200}>>\s*["\x27]?(?:~|/home/[^/\s\x27"]+)/\.ssh/authorized_keys'
 points = 75
 description = "Accessing SSH keys"
 override_gate = false
@@ -121,7 +129,11 @@ hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub"]
 
 [[pkgbuild_analysis]]
 id = "P-GPG-ACCESS"
-pattern = '~/\.gnupg/|/home/[^/]+/\.gnupg/'
+# Same shape as P-SSH-ACCESS: the 2026-10 audit found 30 of 31 withdrawn lines firing on deny-lists
+# (`"~/.gnupg/**": "deny"`), `helm package --keyring ~/.gnupg/secring.gpg` docs and `touch
+# ~/.gnupg/common.conf`. The keyring now has to be read, copied or sent on the same line. Replay:
+# withdrawn 30 -> 2; the one verified-malware line, `[]byte("~/.gnupg/")` in a path list, is lost.
+pattern = '(?:\b(?:cat|head|tail|less|more|cp|scp|rsync|tar|zip|base64|xxd|od|strings|curl|wget|nc|read)\s[^|;&<>\n]{0,60}?|<\s*|\b(?:open|fopen|io\.open|ReadFile|readFile|readFileSync|read_to_string|file_get_contents|readfile|File\.(?:read|open|readlines|new)|IO\.read|File::open|fs::read|os\.Open|FileReader)\s*\(\s*(?:[\w.]+\s*\(\s*)?[rbf]?)["\x27`]?(?:~|/home/[^/\s\x27"]+)/\.gnupg/'
 points = 65
 description = "Accessing GPG keyring"
 override_gate = false
@@ -164,7 +176,15 @@ id = "P-PASSWD-READ"
 # mints: every matched line was one of those (`os.path.join(dest, "/etc/passwd")`,
 # `check_url("file:///etc/passwd")`, `("/etc/shadow", "data_leakage", 0.30)`). 5 of 1,200
 # pypi packages carrying it are OpenSSF-confirmed, all with other evidence.
-pattern = '/etc/(passwd|shadow)'
+# The path alone is not a read. The 2026-10 audit replayed 2,482 withdrawn lines and 2,392 still
+# fired on the bare path: `"../../etc/passwd"` traversal vectors, `file:///etc/passwd` URL-validator
+# tests, deny-lists and prose. The rule now needs a read of the literal path on the same line: a
+# reading command (`cat`, `cut`, `grep`, `cp`, `base64`, ... or `< /etc/passwd`) or a file-open
+# call (`open(`, `os.ReadFile(`, `readFileSync(`, `file_get_contents(`, ...); a test assertion
+# line is suppressed. Replay: withdrawn
+# 2,392 -> 168. Verified-malware lines 55 -> 9; the 46 lost are payload lists, docs and
+# detector regexes in offensive tools kept under the hack-tool policy, not a read by the package.
+pattern = '(?:\b(?:cat|head|tail|less|more|cut|awk|grep|egrep|sed|sort|cp|scp|base64|xxd|strings|od|nl|tac)\s[^|;&<>\n]{0,40}?|<\s*|\b(?:open|fopen|io\.open|ReadFile|readFile|readFileSync|read_to_string|file_get_contents|readfile|file|[Gg]et-[Cc]ontent|File\.(?:read|open|readlines|foreach|new)|IO\.(?:read|readlines|foreach)|File::open|fs::read|os\.Open|FileReader|FileInputStream)\s*\(\s*[rbf]?)["\x27`]?/etc/(?:passwd|shadow)\b'
 points = 60
 description = "Reading system password files"
 override_gate = false
@@ -680,7 +700,14 @@ override_gate = false
 # Privilege escalation
 [[pkgbuild_analysis]]
 id = "P-SUDOERS-MOD"
-pattern = '/etc/sudoers'
+# Writes only. The 2026-10 audit replayed 250 withdrawn lines and 241 fired on the bare path: path
+# deny-lists, `re.compile(r'^/etc/sudoers')`, `grep -v '^#' /etc/sudoers` read-only probes and docs.
+# The rule now needs a write on the same line: a `>`/`>>`/`tee` redirect into it, cp/mv/install/ln/
+# rm/sed -i/rsync naming it, a write call, or open() with a w/a mode. A drop-in staged under $pkgdir
+# is suppressed as a packaging idiom. Replay: withdrawn 241 -> 39 (most left are printed
+# `echo ... | sudo tee /etc/sudoers.d/x` setup hints); verified-malware lines 4 -> 2 (the two lost
+# are path-list elements).
+pattern = '(?:>>?|\btee(?:\s+-a)?)\s*["\x27]?/etc/sudoers|\b(?:cp|mv|install|ln|rm|sed\s+-i|rsync)\s[^|;&\n]{0,200}?/etc/sudoers|\b(?:WriteFile|writeFile|writeFileSync|appendFile|appendFileSync|write_text|file_put_contents)\s*\(\s*["\x27`]?/etc/sudoers|\bopen\s*\(\s*["\x27]/etc/sudoers[^"\x27]*["\x27]\s*,\s*["\x27]?[wa]'
 points = 75
 description = "Sudoers file access/modification"
 override_gate = false

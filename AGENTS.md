@@ -135,6 +135,13 @@ and gated via `config.EcosystemConfig.Enabled`.
      (`allow.SharedHost`) is recorded as `ClassContext`. The shared-host, data-list
      and zone-record demotions never touch a `url` hit. README "What a hit weighs"
      has the detail.
+   - **A credential path is not a read.** `P-PASSWD-READ`, `P-SSH-ACCESS` and `P-GPG-ACCESS`
+     need a read, copy or send of the literal path on the same line (a reading command,
+     `< path`, or a file-open call); `P-SSH-ACCESS` needs a private key, the directory or a glob,
+     never a `.pub`, `config` or `known_hosts` path. `P-SUDOERS-MOD` needs a write (redirect,
+     `tee`, cp/mv/install/rm/`sed -i`, a write call). Lines inside a test assertion
+     (`assert`, `expect(`, `expect_error(`) are suppressed, and so is a sudoers drop-in staged
+     under `$pkgdir`.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

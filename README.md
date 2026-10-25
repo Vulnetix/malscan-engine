@@ -110,6 +110,9 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   `file_exts` (PHP, Python, Ruby, JS, Dart, Elixir, Go, Java and Rust rules)
   judges only the files in its language. Content with no markers is judged
   whole.
+- Shell and command rules match the act, not the words: a credential path needs a read of
+  it on the same line, a sudoers path needs a write, and command names need a token
+  boundary on one line.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.

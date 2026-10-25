@@ -2,7 +2,7 @@
 # GENERATED from public threat-intel feeds (badnet). Do not edit by hand.
 # Rebuild: `just gen-blocklists-force` (release) or `vulnetix malscan --fetch-definitions` (runtime).
 # sources: alienvault-data, alienvault-generic, aper-phishing-reply, binarydefense-banlist, bruteforceblocker, cinsscore-badguys, crowdsec-intelligence, dandelionsprout-antimalware, dshield-block, dshield-ipsascii, feodotracker-recommended, firehol-level3, isc-cloudips, isc-intelfeed, projecthoneypot-p-rss, projecthoneypot-rss, urlhaus-hosts
-# count: 13927
+# count: 13923
 0022a601.pphost.net
 00pq7d1j.1xboropartners.com
 0180info.de
@@ -6499,7 +6499,6 @@ host15m.cfd
 host17x.cfd
 host63x.cfd
 hostessdeeply.com
-hostname.bind
 hot-girls-around.com
 hot-pretty-chiks.com
 hot-short-clips.com
@@ -6672,7 +6671,6 @@ icioinc.com
 icoffeecloud.com
 iconrefer.com
 iconropeknob.xyz
-id.server
 id89565.cfd
 id89652.cfd
 idating.cc
@@ -13025,9 +13023,7 @@ verifyuser.org
 veronicagomezrealtor.com
 versaclean.com.br
 versce.com
-version.bind
 version.gratis
-version.server
 versionsinfosemblance.com
 versionskind.com
 versionsoffencepopped.com
