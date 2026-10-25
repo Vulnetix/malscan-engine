@@ -116,6 +116,23 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.
+- A shell run on a download is download-and-execute whatever the syntax: `curl … | sh`,
+  `bash <(curl …)`, `source <(curl …)`, `bash -c "$(curl …)"` and `eval "$(curl …)"` are
+  all `override_gate` evidence in install scripts and executing recipes.
+- AUR metadata signals are reputation, not proof: an orphan adoption (`B-ORPHAN-TAKEOVER`)
+  is context, and a 1-edit typosquat name (`B-TYPOSQUAT`) is context once the name is two
+  years old. `B-BIN-DOMAIN-MISMATCH` compares registrable domains (eTLD+1), treats GitHub
+  hosts as one and compares the repository owner instead, and skips licence, icon,
+  checksum and signature files and npm/PyPI registry sources. `T-DIFF-SOURCE-DOMAIN-CHANGED`
+  ignores moves within one registrable domain or one hosting service (GitHub, SourceForge,
+  PyPI, Maven Central, CPAN), and `T-DIFF-CHECKSUM-REMOVED` ignores a PKGBUILD whose remaining
+  sources are all VCS checkouts or local files.
+- Unverified downloads are weaknesses (CWE-494), not malware: a plain-http or ftp PKGBUILD
+  source with a `SKIP` checksum (`P-HTTP-SOURCE-SKIP`), and a Julia `deps/build.jl` that
+  downloads over http with no checksum (`JL-BUILD-UNVERIFIED-DOWNLOAD`; any other build.jl
+  download is `JL-BUILD-DOWNLOAD` context). So are a passwordless sudoers grant with SETENV,
+  a wildcard or a /tmp path (`P-SUDOERS-WEAK-GRANT`, CWE-269) and a write to
+  `/etc/ld.so.preload` (`P-LD-SO-PRELOAD`, CWE-829).
 
 ## STIX IOC filesystem scan (`iocscan`)
 

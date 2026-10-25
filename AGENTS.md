@@ -170,6 +170,26 @@ and gated via `config.EcosystemConfig.Enabled`.
      `G-BASENC-DECODE`, `G-ED-SHELL`, `G-GDB-PYTHON`, `P-PRINTF-HEX`, `G-CODE-TUNNEL`) use bounded
      `[^\n]{0,N}` spans and `[ \t]`, never `.*` or `\s`, so a match cannot cross a line or run
      the length of a minified bundle.
+   - **Process and command substitution are download-and-execute.** `bash <(curl …)`,
+     `source <(curl …)`, `bash -c "$(curl …)"` and `eval "$(curl …)"` are `override_gate`
+     (`P-PROC-SUB-EXEC`, `P-CMD-SUB-EXEC` and their `P-INSTALL-` install-script twins). The
+     shell must be the command: `cat <(curl …)` and `gpg --verify <(curl …)` read data. In
+     library source they are `hook_only` like `P-CURL-PIPE`.
+   - **AUR metadata is context unless measured otherwise.** `B-ORPHAN-TAKEOVER` is context.
+     `B-TYPOSQUAT` (1 edit) is context when `FirstSubmitted` is ≥ 2 years ago.
+     `B-BIN-DOMAIN-MISMATCH` and `T-DIFF-SOURCE-DOMAIN-CHANGED` compare registrable domains
+     (`registrableDomain`, a small conservative public-suffix list in `binsource.go`, no
+     dependency); GitHub hosts compare by repository owner. `T-DIFF-CHECKSUM-REMOVED` needs a
+     remaining non-VCS source a checksum could pin.
+   - **Unverified-download and privilege-config shapes are weaknesses.** `P-HTTP-SOURCE-SKIP`
+     and `JL-BUILD-UNVERIFIED-DOWNLOAD` (CWE-494), `P-SUDOERS-WEAK-GRANT` (CWE-269),
+     `P-LD-SO-PRELOAD` (CWE-829). They never mint.
+   - **PKGBUILD-family line judgements** live in `detect/pkgbuild_lines.go`
+     (`suppressPkgbuildLine`: metadata assignments, eval position, sudoers parsing, a miner the
+     package is named after, a formula's own library path, Julia build fetches;
+     `homebrewExecView`: caveats, `test do` and message text; `installTopLevelCommands`: commands
+     outside every .install hook). The shell judgements apply only to shell recipes (AUR,
+     APKBUILD), never to a quoted npm or Ruby command string.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.
