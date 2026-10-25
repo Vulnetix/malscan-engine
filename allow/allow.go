@@ -486,6 +486,71 @@ var payloadCapableHosts = map[string]bool{
 	"core.telegram.org": true, "api.telegram.org": true,
 }
 
+// sharedHostNames and sharedHostCIDRs are multi-tenant platforms whose bare host or front-end
+// address is shared by every tenant: a file-sharing or object-storage host, a push-notification
+// relay, Vercel's apex anycast address, GitHub's web and Pages/raw front ends. A feed that lists
+// the WHOLE host cannot say which tenant was bad, so a bare match names the platform, not the
+// payload. They are NOT benign (each can carry a payload or an exfil channel), so they are not in
+// Domain/IP; the matcher keeps a hit on them as corroboration and never lets it mint alone.
+// A feed `url` indicator naming a specific path on them keeps full weight.
+//
+// Measured 2026-10-26 on the GCVE malware audit, production feed: GitHub front-end addresses
+// (140.82.121.x, 185.199.108-111.x) and Vercel's 76.76.21.21 matched 65 withdrawn lines;
+// dropbox.com, backblazeb2.com and ntfy.sh were domain-only hits in withdrawn Homebrew casks
+// and notification clients.
+var sharedHostNames = map[string]bool{
+	"dropbox.com": true, "www.dropbox.com": true, "dl.dropbox.com": true,
+	"dl.dropboxusercontent.com": true, "backblazeb2.com": true, "ntfy.sh": true,
+}
+
+var sharedHostCIDRs = func() []*net.IPNet {
+	var out []*net.IPNet
+	for _, b := range []string{
+		"76.76.21.21/32",   // Vercel apex anycast (every Vercel apex domain resolves here)
+		"140.82.112.0/20",  // GitHub web/API/git front ends
+		"143.55.64.0/20",   // GitHub
+		"192.30.252.0/22",  // GitHub
+		"185.199.108.0/22", // GitHub Pages and *.githubusercontent.com
+	} {
+		if _, n, err := net.ParseCIDR(b); err == nil {
+			out = append(out, n)
+		}
+	}
+	return out
+}()
+
+// SharedHost reports whether value (a bare host or an IP address) is a multi-tenant platform
+// front end whose bare match cannot identify a tenant. See sharedHostNames.
+func SharedHost(value string) bool {
+	v := normHost(value)
+	if v == "" {
+		return false
+	}
+	if ip := net.ParseIP(v); ip != nil {
+		for _, n := range sharedHostCIDRs {
+			if n.Contains(ip) {
+				return true
+			}
+		}
+		return false
+	}
+	if sharedHostNames[v] {
+		return true
+	}
+	// Backblaze B2's download hosts are f000..f999.backblazeb2.com, with the bucket in the
+	// path (f005.backblazeb2.com/file/<bucket>/...). A bucket-named host
+	// (<bucket>.s3.<region>.backblazeb2.com) names one tenant and is not shared.
+	if lbl, ok := strings.CutSuffix(v, ".backblazeb2.com"); ok && len(lbl) == 4 && lbl[0] == 'f' {
+		for i := 1; i < 4; i++ {
+			if lbl[i] < '0' || lbl[i] > '9' {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
 // BenignDocURL reports whether u is a documentation / homepage / funding URL on a
 // benign host that CANNOT serve arbitrary payloads — a url indicator that is pure
 // noise (a package linking to tidelift.com/security or floating-ui.com/docs). It

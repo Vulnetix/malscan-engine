@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/vulnetix/malscan-engine/allow"
 	"github.com/vulnetix/malscan-engine/detect"
 )
 
@@ -85,7 +86,7 @@ func (m *Matcher) matchText(filePath, relPath, content string) []Evidence {
 				Indicator:      mm.ind,
 				FilePath:       filePath,
 				RelPath:        relPath,
-				Class:          worstClass(worstClass(class, indicatorClassFloor(mm.ind)), codeTokenClass(mm)),
+				Class:          worstClass(worstClass(class, indicatorClassFloor(mm.ind)), worstClass(codeTokenClass(mm), sharedHostClass(mm))),
 				LineNumber:     i + 1,
 				ColStart:       mm.col,
 				ColEnd:         mm.col + len(mm.value),
@@ -132,7 +133,7 @@ func (m *Matcher) matchBinary(filePath, relPath string, data []byte) []Evidence 
 				FilePath:       filePath,
 				RelPath:        relPath,
 				IsBinary:       true,
-				Class:          worstClass(class, indicatorClassFloor(mm.ind)),
+				Class:          worstClass(worstClass(class, indicatorClassFloor(mm.ind)), sharedHostClass(mm)),
 				ByteOffset:     sh.offset + int64(mm.col),
 				MatchedLine:    truncate(sh.value, 200),
 			})
@@ -822,6 +823,17 @@ func looksLikeCodeToken(s string, col int) bool {
 
 func codeTokenClass(mm lineMatch) detect.Class {
 	if mm.codeToken {
+		return detect.ClassContext
+	}
+	return ""
+}
+
+// sharedHostClass demotes a bare domain or address hit on a multi-tenant platform front end
+// (allow.SharedHost: Dropbox, Backblaze B2, ntfy.sh, Vercel's apex anycast, GitHub's front ends)
+// to context. The feed entry names the whole platform, so the hit cannot say which tenant is
+// bad; it still corroborates. A url hit keeps full weight: a path names one tenant's payload.
+func sharedHostClass(mm lineMatch) detect.Class {
+	if mm.typ != TypeURL && allow.SharedHost(mm.value) {
 		return detect.ClassContext
 	}
 	return ""

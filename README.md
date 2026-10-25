@@ -170,6 +170,17 @@ for _, pkg := range packages {
 matching, evidence shape and dedup. Passing `Options{Set: preloaded}` to `Scan` likewise skips
 the loader and scans against an already-loaded set.
 
+### What a hit weighs
+
+A hit is `ClassEvidence` (it mints) unless something about where it sits says it cannot name a
+host the package talks to. Those hits are still returned, as `ClassContext`: they corroborate
+another finding but never mint alone.
+
+- **Shared platforms** (`allow.SharedHost`): a bare host or address of a multi-tenant front end
+  (Dropbox, Backblaze B2 `fNNN` download hosts, ntfy.sh, Vercel's apex anycast `76.76.21.21`,
+  GitHub's web and Pages/raw front-end ranges). A feed entry for the whole platform cannot say
+  which tenant is bad. A `url` indicator with a path on the same platform keeps full weight.
+
 ### Feed cache (temp dir, timestamped, TTL)
 
 The index (`https://vulnetix.com/malscan-stix/index.json`) and each per-ecosystem

@@ -50,3 +50,21 @@ func TestAuditDNSInfraStaysNarrow(t *testing.T) {
 		}
 	}
 }
+
+func TestSharedHost(t *testing.T) {
+	for _, v := range []string{"www.dropbox.com", "dropbox.com", "f005.backblazeb2.com", "ntfy.sh",
+		"76.76.21.21", "140.82.121.4", "185.199.108.153", "185.199.111.133"} {
+		if !SharedHost(v) {
+			t.Errorf("SharedHost(%q) = false", v)
+		}
+		if Benign("domain", v) || Benign("ipv4", v) {
+			t.Errorf("%q must not be benign: a shared platform can still carry a payload", v)
+		}
+	}
+	for _, v := range []string{"evilbucket.s3.us-west-004.backblazeb2.com", "fabc.backblazeb2.com",
+		"dropbox.com.evil.io", "76.76.21.22", "206.189.81.181", "x.vercel.app", "rocket-sense.duckdns.org"} {
+		if SharedHost(v) {
+			t.Errorf("SharedHost(%q) = true — names a tenant or an unrelated host", v)
+		}
+	}
+}
