@@ -41,8 +41,25 @@ var echoedMessageRE = regexp.MustCompile(`^\s*(?:sudo\s+)?(?:echo|printf|msg2?|p
 // "`curl ... | bash`" + ` first")`, `click.echo(f"  echo ... | sudo tee ...")`. The string is a
 // hint for a human; nothing runs it. The quote must open before the command and stay open up to
 // it, so `echo "Installing"; curl x | sh` (the echo string closes first) is not a hint.
-var printedHintRE = regexp.MustCompile(
-	`(?:\b(?:echo|printf|print|puts|say|warn|die|raise|panic!?|println!?|eprintln!?|format!|console\.\w+|fmt\.\w+|errors\.New|log\.\w+|logger\.\w+|logging\.\w+|click\.s?echo|Warn|UI\.\w+|\$stderr\.puts|STDERR\.puts|\$this->(?:line|info|warn|error|comment)|Write-Host|hint|msg)\s*\(?\s*[frb]?)(?:"[^"]*|'[^']*|` + "`[^`]*" + `)\b(?:curl|wget)\b`)
+var printedHintRE = regexp.MustCompile(printCallOpen + `\b(?:curl|wget)\b`)
+
+// printCallOpen is a print, log or error call followed by an open string literal that stays open
+// up to whatever regex is appended to it.
+const printCallOpen = `(?:\b(?:echo|printf|print|puts|say|warn|warning|die|raise|panic!?|println!?|eprintln!?|format!|console\.\w+|fmt\.\w+|errors\.New|log\.\w+|logger\.\w+|logging\.\w+|click\.s?echo|Warn|UI\.\w+|\$stderr\.puts|STDERR\.puts|\$this->(?:line|info|warn|error|comment)|Write-Host|hint|msg)\s*\(?\s*[frb]?)(?:"[^"]*|'[^']*|` + "`[^`]*" + `)`
+
+// printedReconRE is P-SYSINFO-RECON's command inside a printed string (`log.warning("Cannot run
+// 'hostname -I' on localhost")`, `errors.New("ip addr wasn't found")`), and adbShellRE runs it on an
+// attached Android device (`adb shell uname -a`), which is not the host.
+var (
+	printedReconRE = regexp.MustCompile(printCallOpen + `\b(?:uname|lspci|dmidecode|hostname|ip\s+addr|cat\s+/proc/cpuinfo|cat\s+/etc/machine-id)\b`)
+	adbShellRE     = regexp.MustCompile(`\badb\s+(?:-[sdet]\s+\S+\s+|-[de]\s+)*shell\b|\badb_shell\s*\(|["']adb["']\s*,\s*(?:["']-[sdet]["']\s*,\s*[^,]+,\s*)*["']shell["']`)
+)
+
+// suppressPrintedRecon reports whether a P-SYSINFO-RECON line only prints the command or runs it
+// on an attached phone.
+func suppressPrintedRecon(line string) bool {
+	return adbShellRE.MatchString(line) || (!printedThenUsedRE.MatchString(line) && printedReconRE.MatchString(line))
+}
 
 // markdownCommandRE is a Markdown table row or list item that quotes the command in backticks:
 // `| macOS | ` + "`curl -fsSL https://x/cli \\| sh`" + ` |`, `1. ` + "`curl ... | sh`" + `. A bare YAML list
@@ -76,6 +93,8 @@ func suppressPackagingIdiom(id, line string) bool {
 		return stagingRootRE.MatchString(line)
 	case "P-PASSWD-READ", "P-SSH-ACCESS", "P-GPG-ACCESS":
 		return testAssertionRE.MatchString(line)
+	case "P-SYSINFO-RECON":
+		return suppressPrintedRecon(line)
 	case "P-EVAL-VAR":
 		return splitPackageEvalRE.MatchString(line)
 	case "P-PYTHON-INLINE":

@@ -163,7 +163,16 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-CRON-CREATE"
-pattern = '(?:^|[^A-Za-z0-9_.-])crontab\s+[-<\w/.]|["\x27]crontab["\x27]\s*,\s*["\x27]-|/etc/cron(?:\.d/|tab\b)|/var/spool/cron'
+# The crontab command, not the word. The 2026-10 audit replayed 644 withdrawn lines and 263 fired:
+# `crontab string` parameters, "crontab entries" prose, tool-name lists (`"crontab", "at"`),
+# `"../../etc/cron.d/evil"` traversal vectors, `'default' => '/etc/cron.d/x'` config and a go.mod
+# `github.com/mileusna/crontab v1.2.0` line. The rule now needs one of: a pipe into crontab;
+# `crontab [-u user]` with `-` (stdin), `-r`, `-l`, `< file` or a file path; an argv list
+# `["crontab", "-"|"-l"|path|var]`; cat/ls/grep of a cron path (the read half of a
+# read-modify-write, and cron recon); a `>`/`>>`/`tee` redirect, cp/mv/install/ln, a write call or
+# a w/a-mode open() into /etc/cron* or /var/spool/cron. Replay: withdrawn 263 -> 63;
+# verified-malware lines 9 -> 6 (the 3 lost are a path-list element and a `--cron` CLI example).
+pattern = '[\s)]\|\s*(?:sudo\s+)?crontab(?:\s|$|["\x27`])|(?:^|[^\w./-])crontab\s+(?:-u\s+\S+\s+)?(?:-(?:[^\w\s]|$)|-\s*["\x27`)|;&]|-[rl]\b|<|[/.~$][\w$~{}./-]+|[\w-]+\.(?:txt|cron|tab|tmp|conf)\b)|["\x27]crontab["\x27]\s*,\s*(?:["\x27]-u["\x27]\s*,\s*[^,]+,\s*)?["\x27](?:-|-[rl]|[^"\x27\s]*[/.$][^"\x27]*)["\x27]|["\x27]crontab["\x27]\s*,\s*[A-Za-z_][\w.]*\s*[\]),]|\b(?:cat|ls|head|tail|less|grep)\s[^|;&\n]{0,40}?/(?:etc/cron|var/spool/cron)|(?:(?:^|[^=-])>>?|\btee(?:\s+-a)?)\s*["\x27]?/(?:etc/cron(?:\.d/|tab\b|\.(?:hourly|daily|weekly|monthly)/)|var/spool/cron)|\b(?:cp|mv|install|ln)\s[^|;&\n]{0,200}?/(?:etc/cron|var/spool/cron)|\b(?:WriteFile|writeFile|writeFileSync|appendFile|appendFileSync|write_text|file_put_contents|write_file)\s*\(\s*["\x27`]?/(?:etc/cron|var/spool/cron)|\bopen\s*\(\s*["\x27]/(?:etc/cron|var/spool/cron)[^"\x27]*["\x27]\s*,\s*["\x27]?[wa]'
 points = 45
 description = "Creating cron job (persistence)"
 override_gate = false
@@ -289,7 +298,14 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-CLIPBOARD-READ"
-pattern = '(xclip|xsel|wl-paste)\s'
+# Reads only. The bare tool name matched writes (`xclip -selection clipboard` reads stdin INTO the
+# clipboard; `xsel --clipboard --input`, wl-copy, pbcopy) and prose ("requires xclip or xsel",
+# "Copy using wl-copy / xclip / xsel"): the 2026-10 audit found 152 of 171 withdrawn lines firing.
+# The rule now needs an output mode: `xclip ... -o`/`-out`, `xsel` with `-o`/`--output` or with
+# only selection flags at the end of a command, or wl-paste/pbpaste at command position (after a
+# quote, `(`, `|`, `;`, `&` or `=`). Replay: withdrawn 152 -> 19; the 3 verified-malware lines
+# (a docstring and two prose lines naming the tools) are lost.
+pattern = '\bxclip\b[^|;&\n]*?\s-o(?:ut)?\b|\bxsel(?:\s+(?:-[bpsk]+|--(?:clipboard|primary|secondary)))*\s+(?:-[bpsk]*o[bpsk]*|--output)\b|(?:^|["\x27`(|;&=])\s*xsel(?:\s+(?:-[bpsk]+|--(?:clipboard|primary|secondary)))*\s*(?:$|[)|;&`]|["\x27]\s*\))|(?:^|["\x27`(|;&=])\s*(?:wl-paste|pbpaste)\b'
 points = 50
 description = "Clipboard access (possible credential theft)"
 override_gate = false
@@ -448,7 +464,17 @@ id = "P-SYSINFO-RECON"
 # `\bip\s+addr\b` keeps the iproute2 command (`ip addr`, `ip addr show`) while
 # rejecting the prose, and the explicit `ip address <subcommand>` alternative keeps
 # the long form of the real command, which the boundary alone would have dropped.
-pattern = '(\buname\s+-a|\bcat\s+/proc/cpuinfo|\blspci|\bip\s+addr\b|\bip\s+address\s+(show|add|del|flush|list)\b|\bhostname\s+-[fI]|\bcat\s+/etc/machine-id|\bdmidecode)'
+# The 2026-10 audit (344 of 787 withdrawn lines still firing): bare `lspci`/`dmidecode` matched
+# `depends=('dmidecode')`, `optdepends=('pciutils: ... lspci')` and tool-name lists, and `ip addr`
+# matched `ip addr add 10.99.99.1/24 dev dummy0` (configuration, not recon), `errors.New("ip addr
+# wasn't found")` and "addr:{ip addr. of client}". lspci and dmidecode now need a flag, a pipe or
+# a 2> redirect after them (not `command -v lspci >/dev/null`); `ip addr` is the read form only
+# (bare at the end of the command, or `show`/`list`; the long `ip address` form needs show or
+# list); add/del/flush are dropped. The command quoted in a print/log/error string, or run through
+# `adb shell` on a phone, is suppressed (suppressPrintedRecon). Replay: withdrawn 344 -> 211;
+# verified-malware lines 14 -> 14. Most of what is left is `uname -a` run by a remote-exec or SDK
+# tool, which the line alone cannot tell from recon.
+pattern = '(\buname\s+-a|\bcat\s+/proc/cpuinfo|\blspci\s*(?:-|\||2>)|\bip\s+(?:-[46]\s+)?(?:addr(?:ess)?\s+(?:show|list)\b|addr\s*(?:$|["\x27`|;)&]))|\bhostname\s+-[fI]|\bcat\s+/etc/machine-id|\bdmidecode\s*(?:-|\||2>))'
 points = 40
 description = "System information gathering (reconnaissance)"
 override_gate = false
@@ -816,7 +842,11 @@ id = "P-INSTALL-PERSISTENCE"
 # (post_install() { systemctl enable --now foo.service }), and 211 AUR advisories rested on echoed
 # hints and a package enabling its own unit. Cron persistence is what remains; a hostile unit is
 # P-SYSTEMD-CREATE's.
-pattern = 'crontab|/etc/cron\.d/'
+# The bare word also matched mix.exs `{:crontab, "~> 1.1"}` dependencies and `crontab -l` reads
+# (2026-10 audit). It now uses P-CRON-CREATE's command shape. Regex alone over the audited lines:
+# withdrawn 211 -> 0 (most of the 211 were already-fixed `systemctl enable` lines); the one
+# verified-malware line, `subprocess.check_output(['crontab','-l'])`, still fires.
+pattern = '[\s)]\|\s*(?:sudo\s+)?crontab(?:\s|$|["\x27`])|(?:^|[^\w./-])crontab\s+(?:-u\s+\S+\s+)?(?:-(?:[^\w\s]|$)|-\s*["\x27`)|;&]|-[rl]\b|<|[/.~$][\w$~{}./-]+|[\w-]+\.(?:txt|cron|tab|tmp|conf)\b)|["\x27]crontab["\x27]\s*,\s*(?:["\x27]-u["\x27]\s*,\s*[^,]+,\s*)?["\x27](?:-|-[rl]|[^"\x27\s]*[/.$][^"\x27]*)["\x27]|["\x27]crontab["\x27]\s*,\s*[A-Za-z_][\w.]*\s*[\]),]|\b(?:cat|ls|head|tail|less|grep)\s[^|;&\n]{0,40}?/(?:etc/cron|var/spool/cron)|(?:(?:^|[^=-])>>?|\btee(?:\s+-a)?)\s*["\x27]?/(?:etc/cron(?:\.d/|tab\b|\.(?:hourly|daily|weekly|monthly)/)|var/spool/cron)|\b(?:cp|mv|install|ln)\s[^|;&\n]{0,200}?/(?:etc/cron|var/spool/cron)|\b(?:WriteFile|writeFile|writeFileSync|appendFile|appendFileSync|write_text|file_put_contents|write_file)\s*\(\s*["\x27`]?/(?:etc/cron|var/spool/cron)|\bopen\s*\(\s*["\x27]/(?:etc/cron|var/spool/cron)[^"\x27]*["\x27]\s*,\s*["\x27]?[wa]'
 points = 45
 description = "Cron persistence in install script"
 override_gate = false

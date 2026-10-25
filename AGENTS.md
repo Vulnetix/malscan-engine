@@ -152,6 +152,14 @@ and gated via `config.EcosystemConfig.Enabled`.
      part of `>&`, `&&` or `&>`. The nohup rules also need a network or payload sign in the nohup
      body (curl/wget/nc/socat, base64, /dev/tcp, `sh -i`, a URL, `python -c`, or a program run
      from /tmp, /var/tmp or /dev/shm); nohup on a dev server or daemon is not a finding.
+   - **Recon, cron and clipboard rules need the command.** `P-SYSINFO-RECON`: lspci/dmidecode
+     with a flag, pipe or `2>`; `ip addr` in its read form only (never add/del/flush, never the
+     prose "ip address"); the command inside a print/log/error string or run through `adb shell`
+     is suppressed. `P-CRON-CREATE`/`P-INSTALL-PERSISTENCE`: the crontab command (`-`, `-r`, `-l`,
+     a file, a pipe into it, an argv list) or a read/write of a cron path, never the word in a
+     parameter name, dependency or tool list. `P-CLIPBOARD-READ`: output mode only (`xclip -o`,
+     `xsel -o`, wl-paste/pbpaste at command position); `xclip -selection clipboard`, `xsel -i`,
+     wl-copy and pbcopy write the clipboard.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

