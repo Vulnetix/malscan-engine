@@ -120,7 +120,9 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   rules need the decode and the run: octal-encoded printable text executed (not terminal escapes),
   `rev` piped to a shell, a child_process call fed `Buffer.from(x, 'base64')` or `atob(`.
   Privilege rules need a root shell: a set-user-ID mode (not setgid, not chrome-sandbox), and
-  pkexec, doas or `find -exec` running an interactive shell.
+  pkexec, doas or `find -exec` running an interactive shell. Channel rules need an endpoint: a
+  real `.onion` name (16 or 56 characters, not a placeholder or a public operator's service),
+  `openssl s_client` wired to a shell, data in a DNS label, a POST that leaves the machine.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.

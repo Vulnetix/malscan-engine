@@ -134,11 +134,35 @@ var (
 	chromeSandboxRE = regexp.MustCompile(`(?i)chrome[-_]sandbox|chromeSandbox`)
 )
 
+// loopbackURLRE is a loopback host named as a URL or host:port; anyURLHostRE is any http(s) host.
+var (
+	loopbackURLRE = regexp.MustCompile(`(?:https?://)?(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1\])(?::|/|\b)`)
+	anyURLHostRE  = regexp.MustCompile(`https?://(\[[^\]]*\]|[^/\s"'` + "`" + `:\\)\]},;|]+)`)
+)
+
+// suppressLoopbackPost reports whether a P-CURL-POST-DATA line only posts to this machine:
+// `curl -s -X POST http://127.0.0.1:${port}/hook/${event} -d @-`, a dev server's `curl -X POST
+// localhost:${PORT}/mock/reset`. Nothing leaves the host. A line that also names any other http(s)
+// host keeps the finding.
+func suppressLoopbackPost(line string) bool {
+	if !loopbackURLRE.MatchString(line) {
+		return false
+	}
+	for _, m := range anyURLHostRE.FindAllStringSubmatch(line, -1) {
+		if !loopbackHostRE.MatchString(m[1]) {
+			return false
+		}
+	}
+	return true
+}
+
 // suppressPackagingIdiom reports whether rule id's match on line is a packaging idiom.
 func suppressPackagingIdiom(id, line string) bool {
 	switch id {
 	case "P-SUID-BIT":
 		return stagingRootRE.MatchString(line) || buildTreeRE.MatchString(line) || chromeSandboxRE.MatchString(line)
+	case "P-CURL-POST-DATA":
+		return suppressPrintedHint(line) || suppressLoopbackPost(line)
 	case "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE", "P-PACMAN-HOOK", "P-SUDOERS-MOD":
 		return stagingRootRE.MatchString(line)
 	case "P-PASSWD-READ", "P-SSH-ACCESS", "P-GPG-ACCESS":

