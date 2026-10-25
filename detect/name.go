@@ -66,8 +66,14 @@ func analyzeName(ctx *PackageContext) []Finding {
 			continue
 		}
 		if levenshtein(name, top) == 1 {
-			out = append(out, finding("B-TYPOSQUAT", "name", 55,
-				fmt.Sprintf("Name '%s' is 1 edit(s) away from popular package '%s'", name, top)))
+			desc := fmt.Sprintf("Name '%s' is 1 edit(s) away from popular package '%s'", name, top)
+			if longEstablishedName(ctx) {
+				// A typosquat is caught within days or weeks; a name that has sat in the registry for
+				// years beside the package it resembles is a real project with a similar name.
+				out = append(out, contextFinding("B-TYPOSQUAT", "name", 55, desc+" (name registered years ago)"))
+			} else {
+				out = append(out, finding("B-TYPOSQUAT", "name", 55, desc))
+			}
 			break
 		}
 	}
@@ -88,6 +94,19 @@ func analyzeName(ctx *PackageContext) []Finding {
 	}
 
 	return out
+}
+
+// establishedNameAge is how long a package name must have existed before a 1-edit resemblance
+// to a popular name stops being evidence.
+const establishedNameAge = 2 * 365 * 86400
+
+// longEstablishedName reports whether the package was first submitted at least
+// establishedNameAge ago. Unknown (no metadata, or no submission time) is not established.
+func longEstablishedName(ctx *PackageContext) bool {
+	if ctx.Meta == nil || ctx.Meta.FirstSubmitted <= 0 {
+		return false
+	}
+	return nowUnix()-ctx.Meta.FirstSubmitted >= establishedNameAge
 }
 
 // aurStyleEcosystem reports whether the brand/typosquat corpora apply: AUR, or

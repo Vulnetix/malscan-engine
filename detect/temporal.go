@@ -3,6 +3,7 @@ package detect
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -96,26 +97,39 @@ func analyzePkgbuildDiff(ctx *PackageContext) []Finding {
 	}
 
 	// Checksums removed or all changed to SKIP.
+	// A PKGBUILD whose remaining sources are all VCS checkouts or local files has nothing a
+	// checksum could pin: makepkg requires SKIP for a git+ source, and dropping the last local
+	// patch takes its checksum entry with it. 8 audited AUR mints rested on exactly that
+	// (4 switches to git+ sources, 4 dropped patches merged upstream).
 	oldHasCk := diffChecksumRE.MatchString(oldC)
 	newHasCk := diffChecksumRE.MatchString(newC)
-	if oldHasCk && !newHasCk {
+	pinnable := hasPinnableSource(newC)
+	if oldHasCk && !newHasCk && pinnable {
 		out = append(out, finding("T-DIFF-CHECKSUM-REMOVED", "temporal", 35, "Checksum array removed in latest update"))
-	} else if oldHasCk && newHasCk {
+	} else if oldHasCk && newHasCk && pinnable {
 		if !hasOnlySkipChecksums(oldC) && hasOnlySkipChecksums(newC) {
 			out = append(out, finding("T-DIFF-CHECKSUM-REMOVED", "temporal", 35, "All checksums changed to SKIP in latest update"))
 		}
 	}
 
-	// Source domain changed to new domain(s).
+	// Source domain changed to new domain(s). A move between hosts of the same registrable
+	// domain or within one hosting service is how upstreams relocate (pypi.python.org to
+	// files.pythonhosted.org, github.com to codeload.github.com, a sourceforge mirror): 92 of the
+	// 814 audited set-A AUR mints were such moves.
 	oldDomains := extractSourceDomains(oldC)
 	newDomains := extractSourceDomains(newC)
 	if len(oldDomains) > 0 && len(newDomains) > 0 {
+		oldSites := map[string]bool{}
+		for d := range oldDomains {
+			oldSites[sourceSite(d)] = true
+		}
 		var added []string
 		for d := range newDomains {
-			if !oldDomains[d] {
+			if !oldDomains[d] && !oldSites[sourceSite(d)] {
 				added = append(added, d)
 			}
 		}
+		sort.Strings(added)
 		if len(added) > 0 {
 			out = append(out, finding("T-DIFF-SOURCE-DOMAIN-CHANGED", "temporal", 30,
 				"Source URLs changed to new domain(s): "+strings.Join(added, ", ")))
@@ -176,6 +190,67 @@ func extractSourceDomains(content string) map[string]bool {
 		}
 	}
 	return domains
+}
+
+// hostingServices maps the hosts of one code-hosting or package service to one site. A source
+// that moves between them stays with the same publisher's account on the same service.
+var hostingServices = map[string]string{
+	"github.com": "github", "codeload.github.com": "github", "raw.githubusercontent.com": "github",
+	"objects.githubusercontent.com": "github", "api.github.com": "github",
+	"sourceforge.net": "sourceforge", "sf.net": "sourceforge",
+	"pypi.python.org": "pypi", "pypi.org": "pypi", "pypi.io": "pypi", "files.pythonhosted.org": "pypi",
+	"pythonhosted.org": "pypi",
+	"gitlab.com":       "gitlab", "registry.gitlab.com": "gitlab",
+	"repo.maven.apache.org": "maven", "repo1.maven.org": "maven", "central.maven.org": "maven",
+	"search.maven.org": "maven",
+	"cpan.org":         "cpan", "metacpan.org": "cpan", "cpan.metacpan.org": "cpan", "search.cpan.org": "cpan",
+	"search.mcpan.org": "cpan", "www.cpan.org": "cpan",
+}
+
+// sourceSite names the site a source host belongs to: its hosting service when it is one of
+// hostingServices (sourceforge mirrors such as phoenixnap.dl.sourceforge.net included), else
+// its registrable domain.
+func sourceSite(host string) string {
+	h := strings.ToLower(host)
+	if i := strings.Index(h, ":"); i >= 0 {
+		h = h[:i]
+	}
+	if s, ok := hostingServices[h]; ok {
+		return s
+	}
+	reg := registrableDomain(h)
+	if s, ok := hostingServices[reg]; ok && reg != "github.com" {
+		// *.sourceforge.net mirrors, *.metacpan.org. Not *.github.com: gist and pages hosts there
+		// are other people's content.
+		return s
+	}
+	return reg
+}
+
+// vcsSourceRE matches a VCS source entry, optionally after a `name::` rename.
+var vcsSourceRE = regexp.MustCompile(`^(?:[^:/]+::)?(?:git|svn|hg|bzr|fossil)(?:\+|://)`)
+
+// hasPinnableSource reports whether any source entry is a non-VCS download, the only kind a
+// checksum can pin. A variable whose value is unknown (`${url}/v$pkgver.tar.gz`) counts as one.
+func hasPinnableSource(content string) bool {
+	for _, caps := range binSourceArraysRE.FindAllStringSubmatch(content, -1) {
+		for _, tc := range binURLTokenRE.FindAllStringSubmatch(caps[1], -1) {
+			raw := tc[1]
+			if raw == "" {
+				raw = tc[2]
+			}
+			if raw == "" || strings.HasPrefix(raw, "#") {
+				continue
+			}
+			if vcsSourceRE.MatchString(raw) {
+				continue
+			}
+			if strings.Contains(raw, "://") || strings.Contains(raw, "$") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func checkMajorRewrite(newC, oldC string) []Finding {
