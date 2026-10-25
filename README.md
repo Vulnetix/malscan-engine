@@ -187,6 +187,12 @@ another finding but never mint alone.
   198.41.0.4`, `dns.NewRR("x. 300 IN A …")`). A url hit, or an address inside a URL in the list,
   keeps full weight; so does a list of fewer than five, the size of a hard-coded C2 fallback list.
 
+Some tokens are not looked up at all, because they are not an address or a host: a dotted quad
+that is the value of a version field (`Version="1.0.0.39"`, `'version' => '1.33.0.0'`,
+`NewVersion: "1:1.7.0.95"`, any key ending in `version`) or a version constraint
+(`>=4.13.0.92`), and a domain-shaped token that is a file name: the last component of a path
+(`/sdcard/update.zip`) or followed by a numeric label (`libc.so.6`).
+
 ### Feed cache (temp dir, timestamped, TTL)
 
 The index (`https://vulnetix.com/malscan-stix/index.json`) and each per-ecosystem

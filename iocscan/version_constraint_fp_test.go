@@ -99,3 +99,38 @@ func TestIPv4InVersionField(t *testing.T) {
 		}
 	}
 }
+
+// Version fields from withdrawn GCVE malware audit records (2026-10-26): composer's
+// installed.php array arrow, a Debian epoch, and camel-cased version keys.
+func TestAuditVersionFieldsAreNotAddresses(t *testing.T) {
+	m := auditMatcher("1.33.0.0", "1.7.0.95", "15.63.0.10", "1.103.1.0", "update.zip", "libc.so")
+	for _, line := range []string{
+		`'version' => '1.33.0.0',`,
+		`NewVersion: "1:1.7.0.95",`,
+		`VersionName: "15.63.0.10",`,
+		`AppVersion:     "1.103.1.0",`,
+		`update = "/sdcard/update.zip"`,
+		`libc = ELF("/lib/x86_64-linux-gnu/libc.so.6")`,
+		`return ctypes.CDLL("libc.so.6")`,
+	} {
+		if ev := m.MatchText("pkg/src/main.go", line); len(ev) != 0 {
+			t.Errorf("version or file name matched as an indicator: %s", line)
+		}
+	}
+}
+
+// An endpoint assigned to a key that merely mentions versions, a PHP host map entry, and a
+// protocol-relative script URL still match.
+func TestAuditVersionFieldRuleKeepsEndpoints(t *testing.T) {
+	m := auditMatcher("45.137.21.9", "evil-c2.io")
+	for _, line := range []string{
+		`versionCheckHost: "45.137.21.9",`,
+		`'host' => '45.137.21.9',`,
+		`SERVER=45.137.21.9`,
+		`<script src="//evil-c2.io/x.js"></script>`,
+	} {
+		if got := evidenceLines(m.MatchText("pkg/src/index.js", line)); len(got) != 1 {
+			t.Errorf("endpoint lost its evidence: %s", line)
+		}
+	}
+}

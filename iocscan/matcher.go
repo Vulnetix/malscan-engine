@@ -215,7 +215,7 @@ func (m *Matcher) matchLine(s string, skipIPv4 bool) []lineMatch {
 	// Bare domains. One that lies inside a URL is that URL's host (handled above) or a path
 	// component such as `update.zip` in https://example.com/update.zip, which is a file name.
 	for _, loc := range domainRe.FindAllStringIndex(s, -1) {
-		if insideSpan(urlSpans, loc[0]) {
+		if insideSpan(urlSpans, loc[0]) || domainIsPathComponent(s, loc[0]) || domainHasNumericTail(s, loc[1]) {
 			continue
 		}
 		dom := strings.TrimSuffix(s[loc[0]:loc[1]], ".")
@@ -765,38 +765,81 @@ func truncate(s string, max int) string {
 // nuget's 112 malware mints, on lines like
 // `<dependency id="AWSSDK.Extensions.CborProtocol" version="[4.0.0.53, 5.0.0)" />`.
 //
-// Narrow on purpose. The field name must be exactly `version` (any case, optionally
-// prefixed by `assembly`/`file`/`product`/`package`), directly before the value, so a
-// key like `server`, `host` or `c2` that names an endpoint is never affected.
+// Narrow on purpose. The field name must END in `version` (any case: `version`,
+// `AssemblyVersion`, `NewVersion`, `kubernetesVersion`) or be one of the `version<x>` forms in
+// versionFieldSuffixed, directly before the value, so a key like `server`, `host`, `c2` or
+// `versionCheckHost` that names an endpoint is never affected.
+//
+// Also recognised, from the 2026-10-26 GCVE malware audit (composer installed.php and Debian
+// package metadata in withdrawn records): the PHP array arrow `'version' => '1.33.0.0'`, and a
+// Debian epoch before the version (`NewVersion: "1:1.7.0.95"`).
 func ipv4InVersionField(s string, start int) bool {
-	// Look back over the value's opening punctuation: quote, bracket, paren, space.
 	i := start
+	// A Debian epoch ("1:") between the opening quote and the version.
+	if i > 0 && s[i-1] == ':' {
+		k := i - 1
+		for k > 0 && s[k-1] >= '0' && s[k-1] <= '9' {
+			k--
+		}
+		if k < i-1 && k > 0 && (s[k-1] == '"' || s[k-1] == '\'') {
+			i = k
+		}
+	}
+	// Look back over the value's opening punctuation: quote, bracket, paren, space.
 	for i > 0 && strings.IndexByte(`"'[( `+"\t", s[i-1]) >= 0 {
 		i--
 	}
 	if i == 0 {
 		return false
 	}
-	// What precedes must be a separator after the key: = : or the > of an XML tag.
+	// What precedes must be a separator after the key: = : => or the > of an XML tag.
 	sep := s[i-1]
 	if sep != '=' && sep != ':' && sep != '>' {
 		return false
 	}
 	j := i - 1
+	if sep == '>' && j > 0 && s[j-1] == '=' { // PHP `=>`
+		j--
+	}
 	for j > 0 && strings.IndexByte(`"' `+"\t", s[j-1]) >= 0 { // quote closing the key, space before the separator
 		j--
 	}
 	k := j
-	for k > 0 && isASCIILetter(s[k-1]) {
+	for k > 0 && (isASCIILetter(s[k-1]) || s[k-1] == '_') {
 		k--
 	}
 	word := strings.ToLower(s[k:j])
-	for _, name := range []string{"version", "assemblyversion", "fileversion", "productversion", "packageversion"} {
-		if word == name {
-			return true
-		}
+	return strings.HasSuffix(word, "version") || versionFieldSuffixed[word]
+}
+
+// versionFieldSuffixed are version-valued field names that do not end in "version".
+var versionFieldSuffixed = map[string]bool{
+	"versionname": true, "versioncode": true, "versionstring": true, "versionnumber": true,
+	"version_name": true, "version_code": true, "version_string": true, "version_number": true,
+}
+
+// domainIsPathComponent reports whether the bare domain at s[start:] is the last component of a
+// file path (`/sdcard/update.zip`, `C:\Temp\update.zip`): a file name, not a host. A
+// protocol-relative URL (`//evil.example/x.js`) has two slashes and is not a path component.
+// The audit's withdrawn Android updaters matched `update.zip` (a real .zip-TLD name in the feed)
+// this way.
+func domainIsPathComponent(s string, start int) bool {
+	if start == 0 {
+		return false
 	}
-	return false
+	c := s[start-1]
+	if c == '\\' {
+		return true
+	}
+	return c == '/' && (start < 2 || s[start-2] != '/')
+}
+
+// domainHasNumericTail reports whether the bare domain ending at s[end] continues with a numeric
+// label: `libc.so.6`, `libssl.so.1.1`. No host name ends in a numeric label, so the token is a
+// versioned file name; the audit's verified-malware records matched `libc.so` in
+// `ctypes.CDLL("libc.so.6")`, which is not their malicious part.
+func domainHasNumericTail(s string, end int) bool {
+	return end+1 < len(s) && s[end] == '.' && s[end+1] >= '0' && s[end+1] <= '9'
 }
 
 func insideSpan(spans [][]int, pos int) bool {
