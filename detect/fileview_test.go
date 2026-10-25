@@ -110,3 +110,15 @@ func TestPathMatchesAndNonSurface(t *testing.T) {
 		}
 	}
 }
+
+// P-APK-SOURCE-RAW-IP is a recipe rule (APKBUILD and PKGBUILD share the source= array). It fired
+// on Python and Rust library strings; it still fires on a PKGBUILD that downloads from an address.
+func TestAPKSourceRawIPScope(t *testing.T) {
+	pkgbuild := `source=("https://github.com/ppy/osu/releases/download/v1/osu.AppImage" "http://162.19.230.104:2069/builds/osu")`
+	if !has(Detect(&PackageContext{Name: "p", Ecosystem: "aur", PkgbuildContent: pkgbuild, PkgbuildExecutes: true}), "P-APK-SOURCE-RAW-IP") {
+		t.Error("lost on an AUR PKGBUILD")
+	}
+	if has(libScan("pypi", `app.camera("lobby", source="http://192.168.1.40/snapshot.jpg")`), "P-APK-SOURCE-RAW-IP") {
+		t.Error("fired on python library source")
+	}
+}

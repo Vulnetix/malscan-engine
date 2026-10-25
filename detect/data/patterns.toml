@@ -2640,7 +2640,7 @@ override_gate = true
 # --- Alpine apk (APKBUILD is shell; existing pkgbuild rules also apply) ---
 [[pkgbuild_analysis]]
 id = "P-APK-SOURCE-RAW-IP"
-ecosystems = ["alpine"]
+ecosystems = ["alpine", "aur"]
 pattern = 'source=[^\n]{0,200}https?://[0-9]{1,3}(\.[0-9]{1,3}){3}'
 points = 45
 description = "APKBUILD source= points at a raw IP address rather than a hostname"
