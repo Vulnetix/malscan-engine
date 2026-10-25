@@ -251,7 +251,18 @@ hook_only = true
 
 [[pkgbuild_analysis]]
 id = "P-URL-SHORTENER"
-pattern = '(?:^|[^A-Za-z0-9.-])(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
+# A short link that is fetched. On rubygems and nuget (not demoted) and on every executing surface
+# the bare host matched doc links (`see https://bit.ly/2YrRzVc`, `[Immer] ... https://bit.ly/3cXEKWf`),
+# tweet text and t.co fixtures, spam-filter tests (`'Click here http://bit.ly/xyz'`) and shortener
+# CLIENTS calling the service's own API (`https://tinyurl.com/api-create.php?url=`,
+# `https://is.gd/create.php?format=simple`). The 2026-10 audit found 138 of 321 withdrawn lines
+# firing. The rule now needs a fetch on the line before the short URL (curl, wget, iwr/irm,
+# urlopen, file_get_contents, URI.open, or a fetch/axios/requests/httpx/http.Get/get/request/
+# *download* call), and a line whose every short URL is the shortener's own API is suppressed
+# (suppressShortenerAPI); the source_url_analysis copy keeps a short URL that is a whole source-array
+# item. Replay: withdrawn 138 -> 10 (library 7 -> 1); verified-malware lines 3 -> 2, the one lost is
+# prose ("Possible flag values are listed at https://bit.ly/...").
+pattern = '(?:\b(?:curl|wget|iwr|irm|Invoke-WebRequest|Invoke-RestMethod|urlopen|urlretrieve|file_get_contents|open-uri)\b|\bURI\.open\b|\b(?:fetch|axios(?:\.\w+)?|requests\.\w+|httpx\.\w+|http\.Get|Get|get|request|\w*[Dd]ownload\w*)\s*\()[^\n]{0,200}?[^A-Za-z0-9.-](?:bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
 points = 60
 # hook_only: a library names shorteners as a client (bitly, is.gd, tinyurl APIs), in docs and in tests.
 # OpenSSF-confirmed share of the packages carrying it: pypi 1 of 123, npm 1 of 83 (rubygems 3 of 10 and
@@ -1181,7 +1192,9 @@ pkgbuild_only = true
 
 [[source_url_analysis]]
 id = "P-URL-SHORTENER"
-pattern = '(?:^|[^A-Za-z0-9.-])(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/'
+# The source form: a short URL as a whole item of a source array (`source=("x::https://bit.ly/y")`,
+# or alone on its line inside one). The fetch form is the pkgbuild_analysis rule's.
+pattern = '(?m)^[ \t]*(?:source(?:_\w+)?=\([ \t]*)?["\x27]?(?:[\w.+-]+::)?(?:https?|ftp)://(?:www\.)?(?:bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/[^\s"\x27]+["\x27]?[ \t]*\)?[ \t]*$'
 points = 60
 hook_only = true
 hook_only_ecosystems = ["pypi", "npm", "cargo", "go", "packagist", "pubdev", "pub"]
@@ -1197,7 +1210,15 @@ override_gate = false
 
 [[source_url_analysis]]
 id = "P-PASTEBIN"
-pattern = '(?:^|[^A-Za-z0-9.-])(?:www\.)?(?:pastebin\.com|paste\.ee|hastebin\.com|ptpb\.pw|ix\.io)/'
+# A paste, not the site. The bare `host/` matched `https://pastebin.com/` in link lists, user and
+# avatar pages (`/u/{username}`, `/i/guest.png`), `"pastebin.com/" in url` checks, a `homepage`
+# field, and placeholder pastes in detector tests (`/raw/x`, `/abc`, `/raw/abc123`,
+# `/raw/payload.rpm`); `assert!(classify_url("https://pastebin.com/abc"))` and other test assertions
+# are suppressed. The 2026-10 audit found 45 of 66 withdrawn lines firing. A pastebin.com URL now
+# needs a paste id (8 or more letters and digits, optionally under raw/ or dl/) or the posting API
+# (`/api/`); the other hosts need a non-empty path. Replay: withdrawn 45 -> 22 (library 45 -> 22),
+# real paste URLs in crawler configs, downloaders and docs; verified-malware lines 3 -> 3.
+pattern = '(?:^|[^A-Za-z0-9.-])(?:www\.)?(?:pastebin\.com/(?:(?:raw|dl|embed_js|embed_iframe)/)?(?:[A-Za-z0-9]{8,}\b|api/)|(?:paste\.ee|hastebin\.com|ptpb\.pw|ix\.io)/(?:(?:raw|p|r|d)/)?[A-Za-z0-9])'
 points = 50
 description = "Source from paste service (untrusted, mutable content)"
 override_gate = false
@@ -1275,7 +1296,13 @@ id = "P-FILEHOST-SOURCE"
 # Host boundaries on both sides. Without them `profile.iothings.site` contained file.io,
 # `state_transfer.shallow_clone` contained transfer.sh and `wsidicom.file.io.frame_index` was a hit:
 # 10 pypi and 4 pub.dev advisories were still resting on such lines.
-pattern = '(?:^|[^A-Za-z0-9.-])(?:www\.)?(?:anonfiles\.com|file\.io|transfer\.sh|tmpfiles\.org|gofile\.io|pixeldrain\.com|mediafire\.com)(?:[^A-Za-z0-9_.-]|\.[^A-Za-z_]|\.$|$)'
+# The bare host name is still data: file-host deny-lists (`KNOWN_SERVICE_DOMAINS = &["transfer.sh",
+# ...]`), a Go import of the transfer.sh server (`github.com/dutchcoders/transfer.sh/server`), a
+# script named `catalog_transfer.sh`, "uploads the file to transfer.sh" prose. The 2026-10 audit
+# found 44 of 78 withdrawn lines firing on an executing surface. The host now has to be a URL
+# (`http(s)://`) or an argument on a curl/wget line. Replay: withdrawn 44 -> 12 (library 3 -> 1),
+# mostly file-host downloaders and upload test vectors; no verified-malware line carried it.
+pattern = '(?:https?://|\b(?:curl|wget)\b[^\n]{0,200}?[ \t"\x27@=])(?:www\.)?(?:anonfiles\.com|file\.io|transfer\.sh|tmpfiles\.org|gofile\.io|pixeldrain\.com|mediafire\.com)(?:[^A-Za-z0-9_.-]|\.[^A-Za-z_]|\.$|$)'
 points = 45
 # In a library's runtime source a file-host NAME is data: varden's `risky_domains = ['pastebin',
 # 'ngrok', 'transfer.sh', ...]` feeds a risk score, it downloads nothing (audited pypi FP, 2026-10).

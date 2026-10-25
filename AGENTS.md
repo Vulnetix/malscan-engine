@@ -229,6 +229,13 @@ and gated via `config.EcosystemConfig.Enabled`.
      name (`nslookup $(hostname).x.example`), never a JS template literal. `P-CURL-POST-DATA` needs a
      shell or PHP variable (not a `${js.expr}`), and a printed hint or a POST whose every host is
      loopback is suppressed.
+   - **A host rule needs a fetch, a paste or a URL.** `P-URL-SHORTENER` needs a fetch before the
+     short URL on the line (curl, wget, urlopen, file_get_contents, a fetch/requests/get/download
+     call) or a short URL that is a whole source-array item; a line whose every short URL is the
+     shortener's own API (`api-create.php`, `create.php`) is a client. `P-PASTEBIN` needs a paste
+     id (8+ characters) or `/api/` on pastebin.com and a path on the other hosts; test assertions
+     and `homepage` fields are suppressed. `P-FILEHOST-SOURCE` needs the file host as an
+     `http(s)://` URL or an argument on a curl/wget line, never a bare name in a list.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.
