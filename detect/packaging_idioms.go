@@ -148,3 +148,12 @@ func suppressPackagingIdiom(id, line string) bool {
 	}
 	return false
 }
+
+// jsStringLiteralLineRE is a JavaScript line that is nothing but a string literal, an element of
+// an array or a piece of a + concatenation: the install hint a postinstall script prints when its
+// binary download fails (`"curl -fsSL https://raw.githubusercontent.com/x/cli/install.sh | bash",`,
+// `'  - or:  curl -fsSL https://… | bash\n' +`). Measured over 543 audited npm packages with
+// lifecycle hooks once their hook files were judged as install code: 7 packages minted on such
+// lines, all printed hints. A literal that is then written or piped (printedThenUsedRE) is still a
+// payload. The cost is a command split onto its own line inside an exec call.
+var jsStringLiteralLineRE = regexp.MustCompile("^\\s*(?:\\+\\s*)?(?:\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'|`[^`]*`)\\s*[,+)\\]]?\\s*;?\\s*$")

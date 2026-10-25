@@ -369,7 +369,7 @@ func suppressLine(id, line, eco, pkg string) bool {
 		return suppressNonRoutableIPURL(id, line)
 	case "P-CURL-PIPE", "P-WGET-PIPE", "P-CURL-PIPE-PYTHON", "P-CURL-PIPE-PERL", "P-WGET-PIPE-PYTHON",
 		"P-PROC-SUB-EXEC", "P-INSTALL-PROC-SUB-EXEC", "P-CMD-SUB-EXEC", "P-INSTALL-CMD-SUB-EXEC":
-		return suppressVendorInstaller(line) || suppressPrintedHint(line)
+		return suppressVendorInstaller(line) || suppressPrintedHint(line) || (eco == "npm" && jsStringLiteralLineRE.MatchString(line) && !printedThenUsedRE.MatchString(line))
 	case "PHP-SHELL-EXEC-VAR":
 		return phpFunctionDeclRe.MatchString(line)
 	case "PHP-ASSERT-VAR":
