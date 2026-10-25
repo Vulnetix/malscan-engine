@@ -373,10 +373,10 @@ pub const CAPABILITIES: &[Capability] = &[
     Capability {
         key: "bad-actor-behaviors",
         name: "Registry-native bad-actor behaviours",
-        detail: "Multi-line supply-chain TTPs the single-line pattern DB can't capture: global install-hook persistence, .pth auto-import, npm decode+egress hooks, setup.py credential exfil, build.rs cargo-config persistence, NuGet reflective-load egress — each carrying an intent qualification (the benign-vs-malicious differentiator).",
+        detail: "Multi-line supply-chain TTPs the single-line pattern DB can't capture: global install-hook persistence, .pth auto-import, npm decode+egress hooks, setup.py credential exfil, build.rs cargo-config persistence, NuGet reflective-load egress, a Go init() HTTP command backdoor — each carrying an intent qualification (the benign-vs-malicious differentiator).",
         class: Class::Evidence,
         engine_ref: "detect.analyzeBadActorBehaviors (behaviors.go)",
-        support: Support::Only(&["npm", "pypi", "rubygems", "cargo", "nuget"]),
+        support: Support::Only(&["npm", "pypi", "rubygems", "cargo", "nuget", "go"]),
     },
     Capability {
         key: "onion-c2",
@@ -577,7 +577,7 @@ mod tests {
         assert_eq!(count("pypi"), 18);
         assert_eq!(count("rubygems"), 18);
         assert_eq!(count("nuget"), 18);
-        assert_eq!(count("go"), 16); // universal only — no install hooks
+        assert_eq!(count("go"), 17); // +bad-actor-behaviors (init() import-time backdoor); no install hooks
         assert_eq!(count("cargo"), 17); // +bad-actor-behaviors (build.rs TTPs)
     }
 

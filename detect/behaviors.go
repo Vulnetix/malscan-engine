@@ -185,6 +185,11 @@ func analyzeBadActorBehaviors(ctx *PackageContext) []Finding {
 		}
 	}
 
+	// ── Go: init() registers an HTTP command backdoor at import (behaviors_go.go) ──
+	if eco == "go" || eco == "" {
+		out = append(out, analyzeGoInitBackdoor(manifest)...)
+	}
+
 	return out
 }
 

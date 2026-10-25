@@ -167,8 +167,9 @@ editing all of them in one change:
 
 `Support::All` = offered to every ecosystem; `Support::Only(&[...])` = restricted
 to where the detector is *meaningful* (e.g. `install-script` only where lifecycle
-hooks exist; `bad-actor-behaviors` only npm/pypi/rubygems/cargo/nuget, whose
-registry-native TTPs the detector recognises).
+hooks exist; `bad-actor-behaviors` only npm/pypi/rubygems/cargo/nuget/go, whose
+registry-native TTPs the detector recognises; for go, an `init()` that registers
+HTTP handlers in a file where request values reach `exec.Command`).
 
 ---
 

@@ -47,7 +47,8 @@ func cweForSignal(id string) string {
 		return "CWE-400" // Uncontrolled Resource Consumption (cryptojacking)
 	case strings.Contains(base, "GLOBAL-INSTALL-HOOK"),
 		strings.Contains(base, "PTH-AUTOIMPORT"),
-		strings.Contains(base, "CARGO-CONFIG-PERSISTENCE"):
+		strings.Contains(base, "CARGO-CONFIG-PERSISTENCE"),
+		strings.Contains(base, "INIT-HTTP-EXEC"):
 		return "CWE-912" // Hidden Functionality (stealthy persistence)
 	case strings.Contains(base, "CRED-EXFIL"),
 		strings.Contains(base, "DECODE-EGRESS-SEQ"),
