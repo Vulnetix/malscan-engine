@@ -298,7 +298,15 @@ override_gate = false
 
 [[pkgbuild_analysis]]
 id = "P-SUID-BIT"
-pattern = 'chmod\s+(-\S+\s+)*[ugo]*\+s\s|chmod\s+(-\S+\s+)*[2-7][0-7]{3}\s'
+# Set-user-ID only. `[2-7][0-7]{3}` and `g+s` matched setgid directories, which give a new file the
+# directory's group and run nothing as anyone: `find . -type d -exec chmod 2775 {} +`, `chmod -R
+# g+s $releasePath/$writable` in deploy tools, `chmod 2770 /data`. The 2026-10 audit found 60 of 76
+# withdrawn lines firing. The mode now needs the 4000 bit (4xxx-7xxx, or u+s, a+s, +s, u=...s), and
+# a line naming Chromium/Electron's chrome-sandbox (which must be setuid root to run) or the makepkg
+# build tree ($srcdir) is suppressed like $pkgdir. Replay: withdrawn 60 -> 28 (library 59 -> 27),
+# mostly setuid helpers that tools install on purpose (`sudo chmod u+s /usr/local/bin/qemu-...`)
+# and test strings; verified-malware lines 2 -> 2 (`cp /bin/bash /tmp/bash; chmod +s /tmp/bash`).
+pattern = 'chmod\s+(?:-\S+\s+)*(?:(?:[goa]*u[ugoa]*|a)?[+=][rwxXt]*s|0?[4-7][0-7]{3})\s'
 points = 70
 description = "Setting SUID/SGID bit (privilege escalation)"
 override_gate = false
@@ -1559,7 +1567,13 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-PKEXEC"
-pattern = 'pkexec\s'
+# The GTFOBins shape is a root shell: `pkexec /bin/sh`, `pkexec bash -i`. The word matched AUR
+# optdepends text ('polkit: pkexec fallback'), privilege-helper calls (`pkexec apt-get install`,
+# `Exec=pkexec <helper>`), error strings, `shutil.which("pkexec")` and detector tables (`"pkexec
+# id"`). The 2026-10 audit found 39 of 45 withdrawn lines firing. The rule now needs pkexec running
+# a shell that is interactive or ends the command (`sh -c "..."` runs a given command). Replay:
+# withdrawn 39 -> 0 (library 36 -> 0); no verified-malware line carried it.
+pattern = '\bpkexec(?:[ \t]+--?[\w-]+(?:[ \t]+[^\s-]\S*)?)*[ \t]+(?:/usr)?(?:/bin/)?(?:ba|z|da|k|c)?sh(?:[ \t]*(?:$|["\x27`;&|)])|[ \t]+-[ilp]\b)'
 points = 55
 description = "pkexec privilege escalation via polkit"
 override_gate = false
@@ -1615,7 +1629,13 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-DOAS"
-pattern = 'doas\s'
+# Same shape as G-PKEXEC. `doas\s` had no left boundary (`ordered_tdoas = np.roll(...)`,
+# `model_add_doas`, "doas not contain") and matched every command-guard test (`"doas rm -rf /"`,
+# `analyze_command("doas ls /root")`) and the word in prose. The 2026-10 audit found 46 of 54
+# withdrawn lines firing. The rule now needs `doas -s` or doas running an interactive shell or one
+# that ends the command. Replay: withdrawn 46 -> 0 (library 44 -> 0); no verified-malware line
+# carried it.
+pattern = '(?m)\bdoas(?:[ \t]+(?:-[nL]|-[uC][ \t]+\S+))*[ \t]+(?:-s\b|(?:/usr)?(?:/bin/)?(?:ba|z|da|k|c)?sh(?:[ \t]*(?:$|["\x27`;&|)])|[ \t]+-[ilp]\b))'
 points = 45
 description = "doas privilege escalation (sudo alternative)"
 override_gate = false
@@ -1961,7 +1981,14 @@ override_gate = false
 
 [[gtfobins_analysis]]
 id = "G-FIND-EXEC"
-pattern = 'find\s.*-exec\s+(/bin/)?(sh|bash|dash|zsh|ksh|csh)\b'
+# `find -exec sh -c '...'` is how build scripts loop over files: renaming .js to .cjs, ln -sf,
+# strip, terser, sed -i, `bash -n` syntax checks. The 2026-10 audit found 38 of 39 withdrawn lines
+# firing. The GTFOBins shape is the shell itself (`find . -exec /bin/sh -p \; -quit`): the rule now
+# needs -exec running a shell with -p or -i, or with nothing but the terminator or `{}` after it,
+# or `sh -c` whose script fetches or decodes (curl, wget, nc, socat, /dev/tcp, base64 -d). Replay:
+# withdrawn 38 -> 2 (library 37 -> 2), both GTFOBins text in attack-step lists; verified-malware
+# lines 2 -> 2 (`find . -exec /bin/sh -p \; -quit`).
+pattern = '\bfind[ \t][^\n]{0,300}?-exec[ \t]+(?:/usr)?(?:/bin/)?(?:ba|da|z|k|c)?sh[ \t]+(?:-[pi]\b|\\{0,2}[;+]|\{\})|\bfind[ \t][^\n]{0,300}?-exec[ \t]+(?:/usr)?(?:/bin/)?(?:ba|da|z|k|c)?sh[ \t]+-c[ \t]+["\x27][^\n]{0,200}?(?:\b(?:curl|wget|nc|ncat|socat)[ \t]|/dev/tcp/|base64[ \t]+(?:-d|--decode))'
 points = 60
 description = "find -exec with shell (GTFOBins command execution)"
 override_gate = false

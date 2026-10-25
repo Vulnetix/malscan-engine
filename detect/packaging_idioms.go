@@ -126,10 +126,20 @@ func suppressRootChown(line string) bool {
 	return true
 }
 
+// buildTreeRE is the makepkg build tree ($srcdir), whose files are copied into $pkgdir, and
+// chromeSandboxRE is the Chromium/Electron sandbox helper, which must be setuid root to run at all:
+// `chmod u+s "${srcdir}/${_pkgname}/chrome-sandbox"`, `sudo chmod 4755 "${chromeSandboxPath}"`.
+var (
+	buildTreeRE     = regexp.MustCompile(`\$\{?srcdir\}?`)
+	chromeSandboxRE = regexp.MustCompile(`(?i)chrome[-_]sandbox|chromeSandbox`)
+)
+
 // suppressPackagingIdiom reports whether rule id's match on line is a packaging idiom.
 func suppressPackagingIdiom(id, line string) bool {
 	switch id {
-	case "P-SUID-BIT", "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE", "P-PACMAN-HOOK", "P-SUDOERS-MOD":
+	case "P-SUID-BIT":
+		return stagingRootRE.MatchString(line) || buildTreeRE.MatchString(line) || chromeSandboxRE.MatchString(line)
+	case "P-KERNEL-MODULE-WRITE", "P-UDEV-RULE", "P-PACMAN-HOOK", "P-SUDOERS-MOD":
 		return stagingRootRE.MatchString(line)
 	case "P-PASSWD-READ", "P-SSH-ACCESS", "P-GPG-ACCESS":
 		return testAssertionRE.MatchString(line)

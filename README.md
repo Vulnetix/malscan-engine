@@ -119,6 +119,8 @@ constants), the `config` package, and the frontend (`frontend/src/model.rs`).
   system log (not a service appending to its own), and `history -c` as a command. Obfuscation
   rules need the decode and the run: octal-encoded printable text executed (not terminal escapes),
   `rev` piped to a shell, a child_process call fed `Buffer.from(x, 'base64')` or `atob(`.
+  Privilege rules need a root shell: a set-user-ID mode (not setgid, not chrome-sandbox), and
+  pkexec, doas or `find -exec` running an interactive shell.
 - `Verdict.HighFidelity` is false when the only evidence is one indicator in
   non-executing library content (`Finding.Surface == "library"`) with no
   install-script hit. It qualifies the verdict; it never changes it.
