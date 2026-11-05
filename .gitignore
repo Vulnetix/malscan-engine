@@ -8,3 +8,4 @@
 # Vulnetix CLI local state / scan output
 .vulnetix/
 !.vulnetix/workflow.yaml
+!.vulnetix/workflow.yaml
