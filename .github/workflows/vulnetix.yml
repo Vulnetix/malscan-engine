@@ -1,131 +1,272 @@
+# Managed by `vulnetix gha init`. Edit .vulnetix/workflow.yaml and re-run it.
 name: Vulnetix Security
 
 on:
   push:
-  # A release cut from a tag that already existed produces no push event, so
-  # the tag-push trigger above does not cover it.
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
 
-env:
-  VULNETIX_VERSION: latest
+permissions:
+  contents: read
+
 jobs:
-  analyze:
-    name: ${{ matrix.name }}
+  secrets:
+    name: Secrets
     runs-on: [self-hosted, Linux, X64, vulnetix-local]
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
-    env:
-      VULNETIX_ORG_ID: ${{ secrets.VULNETIX_ORG_ID }}
-      VULNETIX_API_KEY: ${{ secrets.VULNETIX_API_KEY }}
-      GITHUB_TOKEN: ${{ github.token }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: sca
-            name: SCA
-            run: vulnetix sca --no-banner --no-progress --verbose
-            artifact: .vulnetix/sbom.cdx.json
-          - id: secrets
-            name: Secrets
-            run: vulnetix secrets --rule Vulnetix/community-rules --rule Vulnetix/opa-fugue-regula --rule Vulnetix/opa-checkmarx-kics --rule Vulnetix/opa-cds-aws-tf --rule Vulnetix/opa-cigna-tf --rule Vulnetix/opa-aquasecurity-trivy --ignore-binaries --ignore-git --no-banner --no-progress --verbose
-            artifact: .vulnetix/sast.sarif
-          - id: sast
-            name: SAST
-            run: vulnetix sast --rule Vulnetix/community-rules --rule Vulnetix/opa-fugue-regula --rule Vulnetix/opa-checkmarx-kics --rule Vulnetix/opa-cds-aws-tf --rule Vulnetix/opa-cigna-tf --rule Vulnetix/opa-aquasecurity-trivy --no-banner --no-progress --verbose
-            artifact: .vulnetix/sast.sarif
-          - id: licenses
-            name: Licenses
-            run: vulnetix license --no-banner --no-progress --verbose
-            artifact: .vulnetix/sbom.cdx.json
-          - id: cbom
-            name: CBOM
-            run: vulnetix cbom --no-banner --no-progress --verbose
-            artifact: .vulnetix/cbom.cdx.json
-          - id: aibom
-            name: AIBOM
-            run: vulnetix aibom --commit-scan-max 1 --no-banner --no-progress --verbose
-            artifact: .vulnetix/ai-bom.cdx.json
-          - id: analyze
-            name: Analyze
-            run: vulnetix analyze --no-banner --no-progress --verbose
-            artifact: .vulnetix/analyze.report.json
-
+      security-events: write
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/secrets@v4.23.0
         with:
-          # `vulnetix analyze` walks git history. The default depth-1 checkout
-          # has none of it, so every contributor, activity, ownership and
-          # bus-factor metric would describe one commit instead of the repository.
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          extra-args: |
+            --ignore-binaries
+            --ignore-git
+          artifact-name: secrets
+          fail-on-findings: false
+          rules: |
+            Vulnetix/community-rules
+            Vulnetix/opa-fugue-regula
+            Vulnetix/opa-checkmarx-kics
+            Vulnetix/opa-cds-aws-tf
+            Vulnetix/opa-cigna-tf
+            Vulnetix/opa-aquasecurity-trivy
+          github-code-scanning: ${{ github.event_name == 'push' }}
+
+  sast-go:
+    name: SAST go
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
+      security-events: write
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/sast/go@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: sast-go
+          fail-on-findings: false
+          rules: |
+            Vulnetix/community-rules
+            Vulnetix/opa-fugue-regula
+            Vulnetix/opa-checkmarx-kics
+            Vulnetix/opa-cds-aws-tf
+            Vulnetix/opa-cigna-tf
+            Vulnetix/opa-aquasecurity-trivy
+            Vulnetix/opa-gosec
+          github-code-scanning: ${{ github.event_name == 'push' }}
+      - uses: Vulnetix/cli/sast@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          not-language: go,rust
+          artifact-name: sast-go-rest
+          fail-on-findings: false
+          rules: |
+            Vulnetix/community-rules
+            Vulnetix/opa-fugue-regula
+            Vulnetix/opa-checkmarx-kics
+            Vulnetix/opa-cds-aws-tf
+            Vulnetix/opa-cigna-tf
+            Vulnetix/opa-aquasecurity-trivy
+          github-code-scanning: ${{ github.event_name == 'push' }}
+
+  sast-rust:
+    name: SAST rust
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
+      security-events: write
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/sast/rust@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: sast-rust
+          fail-on-findings: false
+          rules: |
+            Vulnetix/community-rules
+            Vulnetix/opa-fugue-regula
+            Vulnetix/opa-checkmarx-kics
+            Vulnetix/opa-cds-aws-tf
+            Vulnetix/opa-cigna-tf
+            Vulnetix/opa-aquasecurity-trivy
+          github-code-scanning: ${{ github.event_name == 'push' }}
+
+  sca-go:
+    name: SCA go
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
+      security-events: write
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/sca/go@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: sca-go
+          fail-on-findings: false
+          github-code-scanning: ${{ github.event_name == 'push' }}
+      - uses: Vulnetix/cli/sca@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          not-package-manager: go,cargo
+          artifact-name: sca-go-rest
+          fail-on-findings: false
+          github-code-scanning: ${{ github.event_name == 'push' }}
+
+  sca-cargo:
+    name: SCA cargo
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
+      security-events: write
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/sca/cargo@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: sca-cargo
+          fail-on-findings: false
+          github-code-scanning: ${{ github.event_name == 'push' }}
+
+  license:
+    name: License
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
+      security-events: write
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/license@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: license
+          fail-on-findings: false
+          github-code-scanning: ${{ github.event_name == 'push' }}
+
+  cbom:
+    name: CBOM
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/cbom@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: cbom
+          fail-on-findings: false
+
+  aibom:
+    name: AIBOM
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/aibom@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: aibom
+          fail-on-findings: false
+          extra-args: |
+            --commit-scan-max
+            1
+
+  analyze:
+    name: Analyze
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
           fetch-depth: 0
-
-      - name: Install Vulnetix CLI
-        run: |
-          # Download to a file, never `curl | sh`: a failed download would
-          # otherwise run an empty script and pass the step.
-          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
-            -o "$RUNNER_TEMP/vulnetix-install.sh" https://cli.vulnetix.com/install.sh
-          sh "$RUNNER_TEMP/vulnetix-install.sh" --install-dir "$HOME/.local/bin" --version "$VULNETIX_VERSION"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Verify Vulnetix authentication
-        run: vulnetix auth verify --no-banner --no-progress --verbose
-
-      - name: Run ${{ matrix.name }}
-        continue-on-error: true
-        run: |
-          ${{ matrix.run }}
-
-      - name: Upload ${{ matrix.name }} artifact
-        uses: actions/upload-artifact@v6
+      - uses: Vulnetix/cli/analyze@v4.23.0
         with:
-          name: ${{ matrix.id }}
-          path: ${{ matrix.artifact }}
-          if-no-files-found: warn
-          include-hidden-files: true
-          retention-days: 7
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: analyze
+          fail-on-findings: false
+
+  sbom:
+    name: SBOM
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/sbom@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          artifact-name: sca
+          fail-on-findings: false
+          dependency-graph: ${{ github.event_name == 'push' }}
+          attest: ${{ github.event_name == 'push' }}
 
   publish:
     name: Publish
     runs-on: [self-hosted, Linux, X64, vulnetix-local]
-    needs: analyze
+    if: ${{ !cancelled() }}
+    needs: [secrets, sast-go, sast-rust, sca-go, sca-cargo, license, cbom, aibom, analyze, sbom]
     permissions:
       contents: read
       actions: read
-    env:
-      VULNETIX_ORG_ID: ${{ secrets.VULNETIX_ORG_ID }}
-      VULNETIX_API_KEY: ${{ secrets.VULNETIX_API_KEY }}
-
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: Vulnetix/cli/gha-upload@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          fail-on-findings: false
 
-      - name: Install Vulnetix CLI
-        run: |
-          # Download to a file, never `curl | sh`: a failed download would
-          # otherwise run an empty script and pass the step.
-          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
-            -o "$RUNNER_TEMP/vulnetix-install.sh" https://cli.vulnetix.com/install.sh
-          sh "$RUNNER_TEMP/vulnetix-install.sh" --install-dir "$HOME/.local/bin" --version "$VULNETIX_VERSION"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Upload all artifacts to Vulnetix
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: vulnetix gha upload --org-id "$VULNETIX_ORG_ID" --json --no-banner --no-progress --verbose
-
-  publish-tea:
+  tea:
     name: TEA
-    needs: analyze
-    # `needs` alone would skip this whenever any one of the nine scanner legs
-    # fails or is cancelled, which on the self-hosted pool is routine. The
-    # design publishes whatever evidence exists, so a partial scan must still
-    # publish. `!cancelled()` still stops it when the whole run is cancelled.
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
     if: ${{ !cancelled() }}
-    uses: Vulnetix/cli/.github/workflows/tea-release.yml@tea-release-v1
-    with:
-      visibility: public
-    secrets: inherit
+    needs: [cbom, aibom, sbom]
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8.0.2
+        continue-on-error: true
+        with:
+          pattern: '{sca,cbom,aibom}'
+          merge-multiple: true
+          path: boms
+      - uses: Vulnetix/cli/tea-release@v4.23.0
+        with:
+          org-id: ${{ secrets.VULNETIX_ORG_ID }}
+          api-key: ${{ secrets.VULNETIX_API_KEY }}
+          tea-files: boms/*.cdx.json
+          tea-auto-version: true
+          tea-checksums-from-release: true
+          fail-on-findings: false
+          tea-visibility: public
