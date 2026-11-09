@@ -724,7 +724,9 @@ func normHost(host string) string {
 	}
 	if strings.HasPrefix(h, "[") { // ipv6 literal [..]:port
 		if j := strings.Index(h, "]"); j > 0 {
-			return h[1:j]
+			// No early return: the bracketed content can itself end in "." or
+			// carry a :port, and skipping the trims below breaks idempotence.
+			h = h[1:j]
 		}
 	}
 	// Strip :port only when the remainder before ':' is not itself part of an
@@ -732,7 +734,10 @@ func normHost(host string) string {
 	if strings.Count(h, ":") == 1 {
 		h = h[:strings.Index(h, ":")]
 	}
-	return strings.TrimSuffix(h, ".")
+	// The :port split can leave a trailing space (e.g. "host :443"), and a
+	// single TrimSuffix would leave a second trailing dot; trim both fully so
+	// the result is a fixed point of normHost.
+	return strings.TrimRight(strings.TrimSpace(h), ".")
 }
 
 // hostOf extracts the host from a URL, email, or bare host string.
