@@ -734,10 +734,18 @@ func normHost(host string) string {
 	if strings.Count(h, ":") == 1 {
 		h = h[:strings.Index(h, ":")]
 	}
-	// The :port split can leave a trailing space (e.g. "host :443"), and a
-	// single TrimSuffix would leave a second trailing dot; trim both fully so
-	// the result is a fixed point of normHost.
-	return strings.TrimRight(strings.TrimSpace(h), ".")
+	// One pass of space/dot trimming is not a fixed point (". .." -> ". ",
+	// ". " -> "") and the bracket/port strips above can expose an inner space
+	// or dot, so repeat until stable: normHost must be idempotent for the
+	// fuzzed invariants to hold.
+	for {
+		t := strings.TrimSpace(strings.TrimRight(h, "."))
+		if t == h {
+			break
+		}
+		h = t
+	}
+	return h
 }
 
 // hostOf extracts the host from a URL, email, or bare host string.

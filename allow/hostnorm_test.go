@@ -98,7 +98,7 @@ func TestNormHostProperties(t *testing.T) {
 func FuzzNormHost(f *testing.F) {
 	for _, seed := range []string{
 		"Example.COM.", "example.com:443", "::1", "[::1]:80", "Host.COM",
-		"  github.com:443  ", "a.:80", ".", "", "EXAMPLE.COM..",
+		"  github.com:443  ", "a.:80", ".", "", "EXAMPLE.COM..", ". ..", ". ",
 		"[fe80::1]:8080", "user@Host.com", "https://Host.COM/p?x=1#f",
 		"a/b", "host.com.",
 	} {
