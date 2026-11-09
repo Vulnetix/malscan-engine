@@ -572,7 +572,7 @@ fn class_chip(ui: &mut egui::Ui, class: Class) {
     let color = class.color();
     egui::Frame::new()
         .fill(color.gamma_multiply(0.25))
-        .stroke(egui::Stroke::new(1.0, color))
+        .stroke(egui::Stroke::new(1.0_f32, color))
         .corner_radius(4.0)
         .inner_margin(egui::Margin::symmetric(6, 1))
         .show(ui, |ui| {
