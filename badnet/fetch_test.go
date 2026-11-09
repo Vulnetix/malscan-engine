@@ -2,8 +2,6 @@ package badnet
 
 import (
 	"context"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,30 +80,15 @@ func TestCuratedFeedsIncludeHighConfidenceCandidates(t *testing.T) {
 }
 
 func TestFetchWithFeedsFile(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/hosts.txt":
-			_, _ = w.Write([]byte("127.0.0.1 custom.badactor.ru\n127.0.0.1 github.com\n"))
-		case "/ips.txt":
-			_, _ = w.Write([]byte("45.137.21.9\n1.2.3.0/24\n"))
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer srv.Close()
-
-	feedsPath := filepath.Join(t.TempDir(), "feeds.json")
-	body := `{
-		"schema_version": "badnet-feeds/v1",
-		"feeds": [
-			{"key": "custom-hosts", "url": "` + srv.URL + `/hosts.txt", "parser": "hosts", "enabled": true},
-			{"key": "custom-ips", "url": "` + srv.URL + `/ips.txt", "parser": "iplist", "enabled": true},
-			{"key": "disabled", "url": "` + srv.URL + `/disabled.txt", "parser": "iplist", "enabled": false}
-		]
-	}`
-	if err := os.WriteFile(feedsPath, []byte(body), 0o644); err != nil {
-		t.Fatalf("write feeds file: %v", err)
-	}
+	srv := newFeedServer(t, map[string]string{
+		"/hosts.txt": "127.0.0.1 custom.badactor.ru\n127.0.0.1 github.com\n",
+		"/ips.txt":   "45.137.21.9\n1.2.3.0/24\n",
+	})
+	feedsPath := writeFeedsFile(t, srv,
+		feedEntry{key: "custom-hosts", path: "/hosts.txt", parser: "hosts", enabled: true},
+		feedEntry{key: "custom-ips", path: "/ips.txt", parser: "iplist", enabled: true},
+		feedEntry{key: "disabled", path: "/disabled.txt", parser: "iplist", enabled: false},
+	)
 
 	set, results, err := FetchWithFeedsFile(context.Background(), srv.Client(), feedsPath)
 	if err != nil {
@@ -135,5 +118,47 @@ func TestFetchWithFeedsFile(t *testing.T) {
 	gotHeader := string(header)
 	if !strings.Contains(gotHeader, "custom-hosts") || !strings.Contains(gotHeader, "custom-ips") || strings.Contains(gotHeader, "disabled") {
 		t.Fatalf("custom source header mismatch:\n%s", gotHeader)
+	}
+}
+
+// A failing feed must be recorded (OK=false with the error) and skipped, while
+// the other enabled feeds still populate the set; FetchWithFeedsFile itself
+// never fails as a whole (fetch.go's resilience contract).
+func TestFetchWithFeedsFileFailingFeed(t *testing.T) {
+	srv := newFeedServer(t, map[string]string{
+		"/good.txt": "45.137.21.9\n",
+	})
+	feedsPath := writeFeedsFile(t, srv,
+		feedEntry{key: "good-feed", path: "/good.txt", parser: "iplist", enabled: true},
+		feedEntry{key: "missing-feed", path: "/gone.txt", parser: "iplist", enabled: true},
+	)
+
+	set, results, err := FetchWithFeedsFile(context.Background(), srv.Client(), feedsPath)
+	if err != nil {
+		t.Fatalf("FetchWithFeedsFile: %v", err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected two enabled feed results, got %d: %+v", len(results), results)
+	}
+	var failing *FeedResult
+	for i := range results {
+		if results[i].Name == "missing-feed" {
+			failing = &results[i]
+		}
+	}
+	if failing == nil {
+		t.Fatalf("no result for missing-feed: %+v", results)
+	}
+	if failing.OK {
+		t.Errorf("missing-feed should report OK=false: %+v", *failing)
+	}
+	if failing.Err == "" {
+		t.Errorf("missing-feed should carry the failure: %+v", *failing)
+	}
+	if failing.IPv4 != 0 || failing.Domains != 0 {
+		t.Errorf("failing feed should contribute no indicators: %+v", *failing)
+	}
+	if !set.HasIP("45.137.21.9") {
+		t.Error("good feed did not populate set alongside the failing one")
 	}
 }
