@@ -125,7 +125,7 @@ func TestWeaknessDoesNotSuppressRealEvidence(t *testing.T) {
 
 // Ownership signals corroborate a payload; they must not turn a weakness into a mint.
 func TestWeaknessIsNotCorroboratedByOwnership(t *testing.T) {
-	f := Detect(&PackageContext{Name: "pkg", Ecosystem: "pypi", PkgbuildContent: execCompileGuarded})
+	f := Detect(ctxFixture("pypi", execCompileGuarded))
 	f = append(f,
 		Trigger(TriggerOwnershipTransfer, "metadata", "owner changed", ""),
 		Trigger(TriggerOwnerKnownBad, "metadata", "owner is catalogued", ""),

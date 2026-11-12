@@ -16,7 +16,7 @@ type ruleCase struct{ id, eco, src string }
 // install script, the only surface they run on.
 func auditRuleFires(id, eco, src string) bool {
 	if len(id) > 10 && id[:10] == "P-INSTALL-" {
-		return slices.Contains(ids(Detect(&PackageContext{Name: "pkg", Ecosystem: eco, InstallScriptContent: src})), id)
+		return slices.Contains(ids(Detect(hookFixture(eco, src))), id)
 	}
 	return ruleFires(id, eco, src)
 }

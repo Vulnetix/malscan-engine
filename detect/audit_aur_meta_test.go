@@ -108,12 +108,14 @@ func TestNonBinaryAssetIsNarrow(t *testing.T) {
 }
 
 func TestOrphanTakeoverIsContext(t *testing.T) {
-	old := nowUnix() - 3*365*86400
+	now := int64(1700000000)
+	stubNowUnix(t, now)
+	old := now - 3*365*86400
 	ctx := &PackageContext{
 		Name: "ocaml-monolith",
 		Meta: &AurMeta{Submitter: "alice", Maintainer: "bob", FirstSubmitted: old},
 		GitLog: []GitCommit{
-			{Author: "bob", Timestamp: nowUnix()},
+			{Author: "bob", Timestamp: now},
 			{Author: "alice", Timestamp: old},
 		},
 	}
@@ -127,7 +129,8 @@ func TestOrphanTakeoverIsContext(t *testing.T) {
 }
 
 func TestTyposquatSkipsYearsOldNames(t *testing.T) {
-	now := nowUnix()
+	now := int64(1700000000)
+	stubNowUnix(t, now)
 	// A 1-edit name registered five years ago is a real project with a similar name.
 	f := analyzeName(&PackageContext{Name: "pary", Meta: &AurMeta{Name: "pary", FirstSubmitted: now - 5*365*86400}})
 	if c, ok := classOf(f, "B-TYPOSQUAT"); !ok || c != ClassContext {

