@@ -626,3 +626,18 @@ func FuzzParseFeed(f *testing.F) {
 		}
 	})
 }
+
+// TestParseFeedUnknownFormat keeps the explicit contract the original table
+// test asserted: an unrecognised format name is an error with an empty result,
+// never a silent best-effort parse.
+func TestParseFeedUnknownFormat(t *testing.T) {
+	for _, name := range []string{"nope", ""} {
+		p, err := ParseFeed(name, "185.220.101.9\n")
+		if err == nil {
+			t.Errorf("ParseFeed(%q): want an error for an unknown format", name)
+		}
+		if len(p.IPs) != 0 || len(p.Domains) != 0 || len(p.Emails) != 0 {
+			t.Errorf("ParseFeed(%q): want the zero Parsed on error, got %+v", name, p)
+		}
+	}
+}
