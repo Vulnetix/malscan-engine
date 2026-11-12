@@ -1,7 +1,7 @@
 package detect
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"sort"
 	"strings"
@@ -53,9 +53,9 @@ func TestRegistrableDomainProperties(t *testing.T) {
 	}
 
 	// IP passthrough: a valid IP literal, v4 or v6, is returned as it is.
-	r := rand.New(rand.NewSource(1))
+	r := rand.New(rand.NewPCG(1, 2))
 	for i := 0; i < 200; i++ {
-		ip := net.IPv4(byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256)), byte(r.Intn(256))).String()
+		ip := net.IPv4(byte(r.IntN(256)), byte(r.IntN(256)), byte(r.IntN(256)), byte(r.IntN(256))).String()
 		if got := registrableDomain(ip); got != ip {
 			t.Errorf("IPv4 passthrough: registrableDomain(%q) = %q", ip, got)
 		}
@@ -63,7 +63,7 @@ func TestRegistrableDomainProperties(t *testing.T) {
 	for i := 0; i < 200; i++ {
 		var b [16]byte
 		for j := range b {
-			b[j] = byte(r.Intn(256))
+			b[j] = byte(r.IntN(256))
 		}
 		ip := net.IP(b[:]).String()
 		if got := registrableDomain(ip); got != ip {
