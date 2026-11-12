@@ -51,7 +51,7 @@ func TestCampaignInstallProcessSubstitutionIsOverrideEvidence(t *testing.T) {
 
 func TestProcessAndCommandSubstitutionShapes(t *testing.T) {
 	install := func(src string) []string {
-		return evidenceIDs(Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", InstallScriptContent: src}))
+		return evidenceIDs(Detect(hookFixture("aur", src)))
 	}
 	build := func(eco, src string, exec bool) []string {
 		return evidenceIDs(Detect(&PackageContext{Name: "pkg", Ecosystem: eco, PkgbuildContent: src, PkgbuildExecutes: exec}))
@@ -123,7 +123,7 @@ func TestSudoersWeakGrantIsWeakness(t *testing.T) {
 		`vpn ALL=(root) NOPASSWD: /usr/bin/iptables *, /usr/bin/nft *`,
 		`%wheel ALL=(root) NOPASSWD: /tmp/tytus-helper.sh`,
 	} {
-		got := weakIDs(Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", InstallScriptContent: src}))
+		got := weakIDs(Detect(hookFixture("aur", src)))
 		if !hasID(got, "P-INSTALL-SUDOERS-WEAK-GRANT") {
 			t.Errorf("install %q: no weakness (%v)", src, got)
 		}
@@ -132,7 +132,7 @@ func TestSudoersWeakGrantIsWeakness(t *testing.T) {
 			t.Errorf("PKGBUILD %q: no weakness (%v)", src, got)
 		}
 	}
-	if got := weakIDs(Detect(&PackageContext{Name: "pkg", Ecosystem: "aur", InstallScriptContent: "ceph ALL=(root) NOPASSWD: /usr/sbin/smartctl -x /dev/sd[a-z]"})); hasID(got, "P-INSTALL-SUDOERS-WEAK-GRANT") {
+	if got := weakIDs(Detect(hookFixture("aur", "ceph ALL=(root) NOPASSWD: /usr/sbin/smartctl -x /dev/sd[a-z]"))); hasID(got, "P-INSTALL-SUDOERS-WEAK-GRANT") {
 		// [a-z] is a bracket, not `*`; a named command with fixed arguments is not a weak grant
 		t.Errorf("scoped grant flagged weak: %v", got)
 	}
